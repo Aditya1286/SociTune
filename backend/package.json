@@ -10,13 +10,14 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type":"module",
+  "type": "module",
   "dependencies": {
     "@clerk/express": "^1.7.74",
     "cloudinary": "^2.9.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "express-fileupload": "^1.5.2",
     "mongoose": "^9.2.2",
     "socket.io": "^4.8.3"
   },
