@@ -1,6 +1,6 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMusicStore } from "@/stores/useMusicStore";
-import { Clock } from "lucide-react";
+import { Clock, Play } from "lucide-react";
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 
@@ -23,11 +23,12 @@ const AlbumPage = () => {
 	return (
 		<div className='h-full'>
 			<ScrollArea className='h-full rounded-md'>
+				{/* Main Content */}
 				<div className='relative min-h-full'>
-					
 					{/* bg gradient */}
 					<div
-						className='absolute inset-0 bg-gradient-to-b from-[#5038a0]/80 via-zinc-900/80 to-zinc-900 pointer-events-none'
+						className='absolute inset-0 bg-gradient-to-b from-[#5038a0]/80 via-zinc-900/80
+					 to-zinc-900 pointer-events-none'
 						aria-hidden='true'
 					/>
 
@@ -39,17 +40,11 @@ const AlbumPage = () => {
 								alt={currentAlbum?.title}
 								className='w-[240px] h-[240px] shadow-xl rounded'
 							/>
-
 							<div className='flex flex-col justify-end'>
 								<p className='text-sm font-medium'>Album</p>
-								<h1 className='text-7xl font-bold my-4'>
-									{currentAlbum?.title}
-								</h1>
-
+								<h1 className='text-7xl font-bold my-4'>{currentAlbum?.title}</h1>
 								<div className='flex items-center gap-2 text-sm text-zinc-100'>
-									<span className='font-medium text-white'>
-										{currentAlbum?.artist}
-									</span>
+									<span className='font-medium text-white'>{currentAlbum?.artist}</span>
 									<span>• {currentAlbum?.songs.length} songs</span>
 									<span>• {currentAlbum?.releaseYear}</span>
 								</div>
@@ -58,9 +53,11 @@ const AlbumPage = () => {
 
 						{/* Table Section */}
 						<div className='bg-black/20 backdrop-blur-sm'>
-							
-							{/* header */}
-							<div className='grid grid-cols-[16px_4fr_2fr_1fr] gap-4 px-10 py-2 text-sm text-zinc-400 border-b border-white/5'>
+							{/* table header */}
+							<div
+								className='grid grid-cols-[16px_4fr_2fr_1fr] gap-4 px-10 py-2 text-sm 
+            text-zinc-400 border-b border-white/5'
+							>
 								<div>#</div>
 								<div>Title</div>
 								<div>Released Date</div>
@@ -69,42 +66,36 @@ const AlbumPage = () => {
 								</div>
 							</div>
 
-							{/* songs */}
+							{/* songs list */}
 							<div className='px-6'>
 								<div className='space-y-2 py-4'>
-									{currentAlbum?.songs.map((song, index) => (
-										<div
-											key={song._id}
-											className='grid grid-cols-[16px_4fr_2fr_1fr] gap-4 px-4 py-2 text-sm text-zinc-400 hover:bg-white/5 rounded-md'
-										>
-											<div>{index + 1}</div>
-
-											<div className='flex items-center gap-3'>
-												<img
-													src={song.imageUrl}
-													alt={song.title}
-													className='size-10'
-												/>
-												<div>
-													<div className='font-medium text-white'>
-														{song.title}
-													</div>
-													<div>{song.artist}</div>
+									{currentAlbum?.songs.map((song, index) => {
+										return (
+											<div
+												key={song._id}
+												className={`grid grid-cols-[16px_4fr_2fr_1fr] gap-4 px-4 py-2 text-sm 
+                      text-zinc-400 hover:bg-white/5 rounded-md group cursor-pointer`}
+											>
+												<div className='flex items-center justify-center'>
+													<span className='group-hover:hidden'>{index + 1}</span>
+													<Play className='h-4 w-4 hidden group-hover:block' />
 												</div>
-											</div>
 
-											<div>
-												{song.createdAt.split("T")[0]}
-											</div>
+												<div className='flex items-center gap-3'>
+													<img src={song.imageUrl} alt={song.title} className='size-10' />
 
-											<div>
-												{formatDuration(song.duration)}
+													<div>
+														<div className={`font-medium text-white`}>{song.title}</div>
+														<div>{song.artist}</div>
+													</div>
+												</div>
+												<div className='flex items-center'>{song.createdAt.split("T")[0]}</div>
+												<div className='flex items-center'>{formatDuration(song.duration)}</div>
 											</div>
-										</div>
-									))}
+										);
+									})}
 								</div>
 							</div>
-
 						</div>
 					</div>
 				</div>
@@ -112,5 +103,4 @@ const AlbumPage = () => {
 		</div>
 	);
 };
-
 export default AlbumPage;
