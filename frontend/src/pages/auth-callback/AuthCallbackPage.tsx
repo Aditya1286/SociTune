@@ -22,7 +22,7 @@ const AuthCallbackPage = () => {
 					firstName: user.firstName,
 					lastName: user.lastName,
 					imageUrl: user.imageUrl,
-				});
+				}); 
 			} catch (error) {
 				console.log("Error in auth callback", error);
 			} finally {
