@@ -7,9 +7,18 @@ import { Outlet } from "react-router-dom";
 import LeftSidebar from "./../layout/components/LeftSidebar";
 import FriendsActivity from "./components/FriendsActivity";
 import AudioPlayer from "./components/AudioPlayer";
+import { PlaybackControls } from "./components/PlaybackControls";
+import { useState, useEffect } from "react";
 const MainLayout = () => {
-  const isMobile = false;
-
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  },[]);
   return (
     <div className="h-screen bg-black text-white flex flex-col">
       <ResizablePanelGroup
@@ -46,6 +55,7 @@ const MainLayout = () => {
           <FriendsActivity />
         </ResizablePanel>
       </ResizablePanelGroup>
+      <PlaybackControls />
     </div>
   );
 };
