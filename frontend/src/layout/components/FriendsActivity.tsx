@@ -6,7 +6,7 @@ import { HeadphonesIcon, Users } from "lucide-react";
 import { useEffect } from "react";
 
 const FriendsActivity = () => {
-	const { users, fetchUsers } = useChatStore();
+	const { users, fetchUsers, onlineUsers, userActivities } = useChatStore();
 	const { user } = useUser();
 
 	useEffect(() => {
@@ -27,6 +27,9 @@ const FriendsActivity = () => {
 			<ScrollArea className='flex-1'>
 				<div className='p-4 space-y-4'>
 					{users.map((user:any) => {
+						const isOnline = onlineUsers.has(user.clerkId);
+						const activity = userActivities.get(user.clerkId) || "Idle";
+
 						return (
 							<div
 								key={user._id}
@@ -39,7 +42,9 @@ const FriendsActivity = () => {
 											<AvatarFallback>{user.fullName[0]}</AvatarFallback>
 										</Avatar>
 										<div
-											className='absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-zinc-900 bg-zinc-500'
+											className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-zinc-900 
+												${isOnline ? "bg-emerald-500" : "bg-zinc-500"}
+											`}
 											aria-hidden='true'
 										/>
 									</div>
@@ -49,7 +54,7 @@ const FriendsActivity = () => {
 											<span className='font-medium text-sm text-white'>{user.fullName}</span>
 										</div>
 
-										<div className='mt-1 text-xs text-zinc-400'>Idle</div>
+										<div className='mt-1 text-xs text-zinc-400'>{activity}</div>
 									</div>
 								</div>
 							</div>
