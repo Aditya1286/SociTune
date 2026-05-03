@@ -20,8 +20,10 @@
     "radix-ui": "^1.4.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-hot-toast": "^2.6.0",
     "react-resizable-panels": "^4.10.0",
     "react-router-dom": "^7.14.1",
+    "socket.io-client": "^4.8.3",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.0",
     "zustand": "^5.0.12"
