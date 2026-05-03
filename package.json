@@ -1,0 +1,21 @@
+{
+  "name": "socitune",
+  "version": "1.0.0",
+  "description": "SociTune is a real-time social music streaming web app inspired by Spotify.   Users can listen to songs, chat with friends, and see what others are currently listening to — all in real time.",
+  "main": "index.js",
+  "scripts": {
+		"build": "npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend",
+		"start": "npm start --prefix backend"
+	},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Aditya1286/SociTune.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Aditya1286/SociTune/issues"
+  },
+  "homepage": "https://github.com/Aditya1286/SociTune#readme"
+}
