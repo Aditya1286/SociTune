@@ -11,9 +11,14 @@ const Topbar = () => {
 
   return (
     <div className="flex items-center justify-between p-4 sticky top-0 bg-zinc-900/75 backdrop-blur-md z-10">
-      <div className="flex gap-2 items-center">
-        SociTune
-      </div>
+      <div className="flex items-center">
+  <img
+  className="h-14 w-auto object-contain"
+  src="/logo.png"
+  alt="Socitune"
+/>
+<div className="font-semibold">SociTune</div>
+</div>
 
       <div className="flex items-center gap-4">
         {isAdmin && (

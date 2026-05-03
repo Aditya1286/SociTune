@@ -6,6 +6,7 @@ import { AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
 import ChatPage from "./pages/chat/ChatPage.tsx";
 import AlbumPage from "./pages/album/AlbumPage.tsx";
 import AdminPage from "./pages/admin/AdminPage.tsx";
+import NotFoundPage from "./pages/404/NotFoundPage.tsx";
 const App = () => {
   return (
     
@@ -21,6 +22,7 @@ const App = () => {
         <Route path='/' element={<HomePage/>} />
         <Route path='/chat' element={<ChatPage/>} />
         <Route path='/albums/:albumId' element={<AlbumPage/>} />
+        <Route path='*' element={<NotFoundPage/>} />
       </Route>
     </Routes>
     </>
