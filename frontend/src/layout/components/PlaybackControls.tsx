@@ -140,9 +140,15 @@ export const PlaybackControls = () => {
 					<Button size='icon' variant='ghost' className='hover:text-white text-zinc-400'>
 						<ListMusic className='h-4 w-4' />
 					</Button>
-					<Button size='icon' variant='ghost' className='hover:text-white text-zinc-400'>
-						<Laptop2 className='h-4 w-4' />
-					</Button>
+					<div className="relative group">
+						<Button size='icon' variant='ghost' className='hover:text-white text-zinc-400'>
+							<Laptop2 className='h-4 w-4' />
+						</Button>
+						<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-max bg-zinc-800 border border-zinc-700 text-xs p-3 rounded-md shadow-lg z-50">
+							<p className="font-semibold text-white mb-1">Current Device</p>
+							<p className="text-green-500 flex items-center gap-2"><Laptop2 className="size-3" /> SociTune Web Player</p>
+						</div>
+					</div>
 
 					<div className='flex items-center gap-2'>
 						<Button size='icon' variant='ghost' className='hover:text-white text-zinc-400'>

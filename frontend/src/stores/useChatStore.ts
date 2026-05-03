@@ -13,13 +13,19 @@ interface ChatStore {
 	userActivities: Map<string, string>;
 	messages: Message[];
 	selectedUser: User | null;
+	unreadMessages: Map<string, number>;
+	replyingToMessage: Message | null;
 
 	fetchUsers: () => Promise<void>;
 	initSocket: (userId: string) => void;
 	disconnectSocket: () => void;
-	sendMessage: (receiverId: string, senderId: string, content: string) => void;
+	sendMessage: (receiverId: string, senderId: string, content: string, replyToId?: string) => void;
+	markMessagesAsRead: (senderId: string) => void;
+	deleteMessage: (messageId: string) => void;
+	reactToMessage: (messageId: string, emoji: string) => void;
 	fetchMessages: (userId: string) => Promise<void>;
 	setSelectedUser: (user: User | null) => void;
+	setReplyingToMessage: (message: Message | null) => void;
 }
 
 const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "/";
@@ -39,8 +45,18 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 	userActivities: new Map(),
 	messages: [],
 	selectedUser: null,
+	unreadMessages: new Map(),
+	replyingToMessage: null,
 
-	setSelectedUser: (user) => set({ selectedUser: user }),
+	setReplyingToMessage: (message) => set({ replyingToMessage: message }),
+
+	setSelectedUser: (user) => set((state) => {
+		const newUnreadMessages = new Map(state.unreadMessages);
+		if (user) {
+			newUnreadMessages.delete(user.clerkId);
+		}
+		return { selectedUser: user, unreadMessages: newUnreadMessages };
+	}),
 
 	fetchUsers: async () => {
 		set({ isLoading: true, error: null });
@@ -75,24 +91,59 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 				}));
 			});
 
-			socket.on("user_disconnected", (userId: string) => {
+			socket.on("user_disconnected", (data: { userId: string, lastSeen: string } | string) => {
+				const disconnectedUserId = typeof data === "string" ? data : data.userId;
 				set((state) => {
 					const newOnlineUsers = new Set(state.onlineUsers);
-					newOnlineUsers.delete(userId);
-					return { onlineUsers: newOnlineUsers };
+					newOnlineUsers.delete(disconnectedUserId);
+
+					const lastSeenTime = typeof data === "string" ? new Date().toISOString() : data.lastSeen;
+
+					const newUsers = state.users.map(u => 
+						u.clerkId === disconnectedUserId ? { ...u, lastSeen: lastSeenTime } : u
+					);
+
+					const newSelectedUser = state.selectedUser?.clerkId === disconnectedUserId
+						? { ...state.selectedUser, lastSeen: lastSeenTime }
+						: state.selectedUser;
+
+					return { onlineUsers: newOnlineUsers, users: newUsers, selectedUser: newSelectedUser };
 				});
 			});
 
 			socket.on("receive_message", (message: Message) => {
-				set((state) => ({
-					messages: [...state.messages, message],
-				}));
+				set((state) => {
+					const isCurrentlyChatting = state.selectedUser?.clerkId === message.senderId;
+					const newUnreadMessages = new Map(state.unreadMessages);
+					if (!isCurrentlyChatting) {
+						newUnreadMessages.set(
+							message.senderId,
+							(newUnreadMessages.get(message.senderId) || 0) + 1
+						);
+					}
+
+					const newUsers = state.users.map((user) => 
+						user.clerkId === message.senderId ? { ...user, lastMessage: message.content } : user
+					);
+
+					return {
+						messages: isCurrentlyChatting ? [...state.messages, message] : state.messages,
+						unreadMessages: newUnreadMessages,
+						users: newUsers,
+					};
+				});
 			});
 
 			socket.on("message_sent", (message: Message) => {
-				set((state) => ({
-					messages: [...state.messages, message],
-				}));
+				set((state) => {
+					const newUsers = state.users.map((user) => 
+						user.clerkId === message.receiverId ? { ...user, lastMessage: message.content } : user
+					);
+					return {
+						messages: [...state.messages, message],
+						users: newUsers,
+					};
+				});
 			});
 
 			socket.on("activity_updated", ({ userId, activity }) => {
@@ -101,6 +152,28 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 					newActivities.set(userId, activity);
 					return { userActivities: newActivities };
 				});
+			});
+
+			socket.on("messages_marked_read", ({ receiverId }) => {
+				set((state) => ({
+					messages: state.messages.map((msg) =>
+						msg.receiverId === receiverId ? { ...msg, isRead: true } : msg
+					),
+				}));
+			});
+
+			socket.on("message_deleted", (messageId: string) => {
+				set((state) => ({
+					messages: state.messages.filter((msg) => msg._id !== messageId),
+				}));
+			});
+
+			socket.on("message_reacted", ({ messageId, reactions }) => {
+				set((state) => ({
+					messages: state.messages.map((msg) =>
+						msg._id === messageId ? { ...msg, reactions } : msg
+					),
+				}));
 			});
 
 			set({ isConnected: true });
@@ -114,11 +187,38 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 		}
 	},
 
-	sendMessage: async (receiverId, senderId, content) => {
+	sendMessage: async (receiverId, senderId, content, replyToId) => {
 		const socket = get().socket;
 		if (!socket) return;
 
-		socket.emit("send_message", { receiverId, senderId, content });
+		socket.emit("send_message", { receiverId, senderId, content, replyToId });
+		set({ replyingToMessage: null });
+	},
+
+	markMessagesAsRead: (senderId: string) => {
+		const socket = get().socket;
+		if (!socket || !socket.auth || !socket.auth.userId) return;
+		
+		// Update local state for immediate feedback
+		set((state) => ({
+			messages: state.messages.map(msg => 
+				msg.senderId === senderId && !msg.isRead ? { ...msg, isRead: true } : msg
+			)
+		}));
+
+		socket.emit("mark_messages_read", { senderId, receiverId: socket.auth.userId });
+	},
+
+	deleteMessage: (messageId: string) => {
+		const socket = get().socket;
+		if (!socket || !socket.auth || !socket.auth.userId) return;
+		socket.emit("delete_message", { messageId, senderId: socket.auth.userId });
+	},
+
+	reactToMessage: (messageId: string, emoji: string) => {
+		const socket = get().socket;
+		if (!socket || !socket.auth || !socket.auth.userId) return;
+		socket.emit("react_message", { messageId, senderId: socket.auth.userId, emoji });
 	},
 
 	fetchMessages: async (userId: string) => {

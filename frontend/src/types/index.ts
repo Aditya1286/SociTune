@@ -31,6 +31,9 @@ export interface Message {
 	senderId: string;
 	receiverId: string;
 	content: string;
+	isRead?: boolean;
+	replyTo?: { _id: string, content: string, senderId: string };
+	reactions?: Record<string, string>;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -40,4 +43,6 @@ export interface User {
 	clerkId: string;
 	fullName: string;
 	imageUrl: string;
+	lastSeen?: string;
+	lastMessage?: string;
 }

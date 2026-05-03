@@ -3,6 +3,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { useEffect } from "react"
 import { useMusicStore } from "@/stores/useMusicStore"
+import { useChatStore } from "@/stores/useChatStore"
 import { SignedIn } from "@clerk/clerk-react"
 import { HomeIcon, Library, MessageCircle } from "lucide-react"
 import { Link } from "react-router-dom"
@@ -10,10 +11,13 @@ import PlaylistSkeleton from "../../components/skeletons/PlaylistSkeleton"
 const LeftSidebar = () => {
     //data fetching => zustand
     const {albums,fetchAlbums,isLoading} = useMusicStore();
+    const { unreadMessages } = useChatStore();
+
     useEffect(() => {
         fetchAlbums();
     },[fetchAlbums])
-    console.log({albums});
+
+    const totalUnread = Array.from(unreadMessages.values()).reduce((sum, count) => sum + count, 0);
   return (
     <div className="h-full flex flex-col gap-2">
       {/* Navigation menu */}
@@ -35,11 +39,16 @@ const LeftSidebar = () => {
               to={"/chat"}
               className={cn(buttonVariants({
                 variant: "ghost",
-                className: "w-full justify-start text-white hover:bg-zinc-800"
+                className: "w-full justify-start text-white hover:bg-zinc-800 relative"
               }))}
             >
               <MessageCircle className="mr-2 size-5" />
               <span className="hidden md:inline">Messages</span>
+              {totalUnread > 0 && (
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-green-500 text-white text-[10px] font-bold size-5 flex items-center justify-center rounded-full md:w-auto md:h-auto md:px-2 md:py-0.5">
+                  {totalUnread}
+                </span>
+              )}
             </Link>
           </SignedIn>
 

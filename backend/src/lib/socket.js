@@ -1,5 +1,6 @@
 import { Server } from "socket.io";
 import { Message } from "../models/message.model.js";
+import { User } from "../models/user.model.js";
 
 export const initializeSocket = (server) => {
 	const io = new Server(server, {
@@ -33,13 +34,23 @@ export const initializeSocket = (server) => {
 
 		socket.on("send_message", async (data) => {
 			try {
-				const { senderId, receiverId, content } = data;
+				const { senderId, receiverId, content, replyToId } = data;
 
-				const message = await Message.create({
+				let messageData = {
 					senderId,
 					receiverId,
 					content,
-				});
+				};
+
+				if (replyToId) {
+					messageData.replyTo = replyToId;
+				}
+
+				let message = await Message.create(messageData);
+
+				if (replyToId) {
+					message = await message.populate("replyTo", "content senderId");
+				}
 
 				// send to receiver in realtime, if they're online
 				const receiverSocketId = userSockets.get(receiverId);
@@ -54,7 +65,61 @@ export const initializeSocket = (server) => {
 			}
 		});
 
-		socket.on("disconnect", () => {
+		socket.on("mark_messages_read", async ({ senderId, receiverId }) => {
+			try {
+				await Message.updateMany(
+					{ senderId, receiverId, isRead: false },
+					{ $set: { isRead: true } }
+				);
+
+				// Notify the original sender that their messages have been read
+				const originalSenderSocketId = userSockets.get(senderId);
+				if (originalSenderSocketId) {
+					io.to(originalSenderSocketId).emit("messages_marked_read", { receiverId });
+				}
+			} catch (error) {
+				console.error("Error marking messages as read:", error);
+			}
+		});
+
+		socket.on("delete_message", async ({ messageId, senderId }) => {
+			try {
+				const message = await Message.findById(messageId);
+				if (!message || message.senderId !== senderId) return;
+
+				await Message.findByIdAndDelete(messageId);
+
+				io.emit("message_deleted", messageId);
+			} catch (error) {
+				console.error("Error deleting message:", error);
+			}
+		});
+
+		socket.on("react_message", async ({ messageId, senderId, emoji }) => {
+			try {
+				const message = await Message.findById(messageId);
+				if (!message) return;
+
+				// Toggle reaction
+				const currentReactions = message.reactions || {};
+				if (currentReactions[senderId] === emoji) {
+					delete currentReactions[senderId];
+				} else {
+					currentReactions[senderId] = emoji;
+				}
+
+				// Mark modified for mongoose Map/Object
+				message.reactions = currentReactions;
+				message.markModified('reactions');
+				await message.save();
+
+				io.emit("message_reacted", { messageId, reactions: currentReactions });
+			} catch (error) {
+				console.error("Error reacting to message:", error);
+			}
+		});
+
+		socket.on("disconnect", async () => {
 			let disconnectedUserId;
 			for (const [userId, socketId] of userSockets.entries()) {
 				// find disconnected user
@@ -66,7 +131,13 @@ export const initializeSocket = (server) => {
 				}
 			}
 			if (disconnectedUserId) {
-				io.emit("user_disconnected", disconnectedUserId);
+				const now = new Date();
+				try {
+					await User.findOneAndUpdate({ clerkId: disconnectedUserId }, { lastSeen: now });
+				} catch (err) {
+					console.error("Error updating lastSeen", err);
+				}
+				io.emit("user_disconnected", { userId: disconnectedUserId, lastSeen: now.toISOString() });
 			}
 		});
 	});
