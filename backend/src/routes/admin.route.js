@@ -5,7 +5,7 @@ const router = Router();
 // router.get('/',getAdmin);
 router.post('/songs',protectRoute,requireAdmin,createSong);
 router.delete('/songs/:id',protectRoute,requireAdmin,deleteSong);
-router.get("/check", checkAdmin);
+router.get("/check", protectRoute, requireAdmin, checkAdmin);
 router.post('/albums',protectRoute,requireAdmin,createAlbum);
 router.delete('/albums/:id',protectRoute,requireAdmin,deleteAlbum);
 
