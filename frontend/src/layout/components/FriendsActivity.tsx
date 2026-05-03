@@ -28,7 +28,7 @@ const FriendsActivity = () => {
 				<div className='p-4 space-y-4'>
 					{users.map((user:any) => {
 						const isOnline = onlineUsers.has(user.clerkId);
-						const activity = userActivities.get(user.clerkId) || "Idle";
+						const activity = userActivities.get(user.clerkId) || "Offline";
 
 						return (
 							<div
