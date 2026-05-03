@@ -4,6 +4,7 @@ import { clerkMiddleware } from '@clerk/express';
 import fileUpload from "express-fileupload";
 import path from "path";
 import cors from "cors";
+import fs from "fs";
 import { initializeSocket } from "./lib/socket.js";
 import userRoutes from "./routes/user.route.js"
 import authRoutes from "./routes/auth.route.js"
