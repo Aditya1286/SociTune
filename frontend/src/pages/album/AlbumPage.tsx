@@ -3,150 +3,225 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMusicStore } from "@/stores/useMusicStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { Clock, Pause, Play } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 export const formatDuration = (seconds: number) => {
-	const minutes = Math.floor(seconds / 60);
-	const remainingSeconds = seconds % 60;
-	return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 };
 
 const AlbumPage = () => {
-	const { albumId } = useParams();
-	const { fetchAlbumById, currentAlbum, isLoading } = useMusicStore();
-	const { currentSong, isPlaying, playAlbum, togglePlay } = usePlayerStore();
+  const { albumId } = useParams();
+  const { fetchAlbumById, currentAlbum, isLoading } = useMusicStore();
+  const { currentSong, isPlaying, playAlbum, togglePlay } = usePlayerStore();
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-	useEffect(() => {
-		if (albumId) fetchAlbumById(albumId);
-	}, [fetchAlbumById, albumId]);
+  useEffect(() => {
+    if (albumId) fetchAlbumById(albumId);
+  }, [fetchAlbumById, albumId]);
 
-	if (isLoading) return null;
+  if (isLoading) return null;
 
-	const handlePlayAlbum = () => {
-		if (!currentAlbum) return;
+  const handlePlayAlbum = () => {
+    if (!currentAlbum) return;
+    const isCurrentAlbumPlaying = currentAlbum?.songs.some((song) => song._id === currentSong?._id);
+    if (isCurrentAlbumPlaying) togglePlay();
+    else playAlbum(currentAlbum?.songs, 0);
+  };
 
-		const isCurrentAlbumPlaying = currentAlbum?.songs.some((song) => song._id === currentSong?._id);
-		if (isCurrentAlbumPlaying) togglePlay();
-		else {
-			// start playing the album from the beginning
-			playAlbum(currentAlbum?.songs, 0);
-		}
-	};
+  const handlePlaySong = (index: number) => {
+    if (!currentAlbum) return;
+    playAlbum(currentAlbum?.songs, index);
+  };
 
-	const handlePlaySong = (index: number) => {
-		if (!currentAlbum) return;
+  const isAlbumPlaying =
+    isPlaying && currentAlbum?.songs.some((song) => song._id === currentSong?._id);
 
-		playAlbum(currentAlbum?.songs, index);
-	};
+  return (
+    <div className="h-full">
+      <style>{`
+        .song-row { transition: background 0.15s ease; }
+        .song-row:hover { background: rgba(255,255,255,0.04); }
+        .song-row.active { background: rgba(34,197,94,0.06); }
 
-	return (
-		<div className='h-full'>
-			<ScrollArea className='h-full rounded-md'>
-				{/* Main Content */}
-				<div className='relative min-h-full'>
-					{/* bg gradient */}
-					<div
-						className='absolute inset-0 bg-gradient-to-b from-[#5038a0]/80 via-zinc-900/80
-					 to-zinc-900 pointer-events-none'
-						aria-hidden='true'
-					/>
+        .play-icon-btn {
+          transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .play-icon-btn:hover {
+          transform: scale(1.05);
+          box-shadow: 0 0 20px rgba(34,197,94,0.35);
+        }
 
-					{/* Content */}
-					<div className='relative z-10'>
-						<div className='flex p-6 gap-6 pb-8'>
-							<img
-								src={currentAlbum?.imageUrl}
-								alt={currentAlbum?.title}
-								className='w-[240px] h-[240px] shadow-xl rounded'
-							/>
-							<div className='flex flex-col justify-end'>
-								<p className='text-sm font-medium'>Album</p>
-								<h1 className='text-7xl font-bold my-4'>{currentAlbum?.title}</h1>
-								<div className='flex items-center gap-2 text-sm text-zinc-100'>
-									<span className='font-medium text-white'>{currentAlbum?.artist}</span>
-									<span>• {currentAlbum?.songs.length} songs</span>
-									<span>• {currentAlbum?.releaseYear}</span>
-								</div>
-							</div>
-						</div>
+        .now-playing-bars {
+          display: flex;
+          align-items: flex-end;
+          gap: 2px;
+          height: 14px;
+        }
+        .eq-bar {
+          width: 2.5px;
+          background: #22c55e;
+          border-radius: 1px;
+          animation: eq 0.9s ease-in-out infinite alternate;
+        }
+        .eq-bar:nth-child(1) { height: 55%; animation-delay: 0s; }
+        .eq-bar:nth-child(2) { height: 100%; animation-delay: 0.2s; }
+        .eq-bar:nth-child(3) { height: 40%; animation-delay: 0.4s; }
+        @keyframes eq {
+          from { transform: scaleY(0.25); }
+          to   { transform: scaleY(1); }
+        }
 
-						{/* play button */}
-						<div className='px-6 pb-4 flex items-center gap-6'>
-							<Button
-								onClick={handlePlayAlbum}
-								size='icon'
-								className='w-14 h-14 rounded-full bg-green-500 hover:bg-green-400 
-                hover:scale-105 transition-all'
-							>
-								{isPlaying && currentAlbum?.songs.some((song) => song._id === currentSong?._id) ? (
-									<Pause className='h-7 w-7 text-black' />
-								) : (
-									<Play className='h-7 w-7 text-black' />
-								)}
-							</Button>
-						</div>
+        .divider {
+          height: 1px;
+          background: rgba(255,255,255,0.06);
+          margin: 0 24px;
+        }
+      `}</style>
 
-						{/* Table Section */}
-						<div className='bg-black/20 backdrop-blur-sm'>
-							{/* table header */}
-							<div
-								className='grid grid-cols-[16px_4fr_2fr_1fr] gap-4 px-10 py-2 text-sm 
-            text-zinc-400 border-b border-white/5'
-							>
-								<div>#</div>
-								<div>Title</div>
-								<div>Released Date</div>
-								<div>
-									<Clock className='h-4 w-4' />
-								</div>
-							</div>
+      <ScrollArea className="h-full rounded-md">
+        <div className="relative min-h-screen" style={{ background: "linear-gradient(to bottom, #1a2e1a 0%, #18181b 35%, #18181b 100%)" }}>
 
-							{/* songs list */}
+          {/* Gradient header backdrop */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: "linear-gradient(to bottom, rgba(26,46,26,0.95) 0%, #18181b 40%)", minHeight: "100vh" }}
+            aria-hidden="true"
+          />
 
-							<div className='px-6'>
-								<div className='space-y-2 py-4'>
-									{currentAlbum?.songs.map((song, index) => {
-										const isCurrentSong = currentSong?._id === song._id;
-										return (
-											<div
-												key={song._id}
-												onClick={() => handlePlaySong(index)}
-												className={`grid grid-cols-[16px_4fr_2fr_1fr] gap-4 px-4 py-2 text-sm 
-                      text-zinc-400 hover:bg-white/5 rounded-md group cursor-pointer
-                      `}
-											>
-												<div className='flex items-center justify-center'>
-													{isCurrentSong && isPlaying ? (
-														<div className='size-4 text-green-500'>♫</div>
-													) : (
-														<span className='group-hover:hidden'>{index + 1}</span>
-													)}
-													{!isCurrentSong && (
-														<Play className='h-4 w-4 hidden group-hover:block' />
-													)}
-												</div>
+          <div className="relative z-10">
 
-												<div className='flex items-center gap-3'>
-													<img src={song.imageUrl} alt={song.title} className='size-10' />
+            {/* ── Hero ── */}
+            <div className="flex flex-col sm:flex-row gap-6 p-6 pb-8">
 
-													<div>
-														<div className={`font-medium text-white`}>{song.title}</div>
-														<div>{song.artist}</div>
-													</div>
-												</div>
-												<div className='flex items-center'>{song.createdAt.split("T")[0]}</div>
-												<div className='flex items-center'>{formatDuration(song.duration)}</div>
-											</div>
-										);
-									})}
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</ScrollArea>
-		</div>
-	);
+              {/* Album art */}
+              <div className="flex-shrink-0">
+                <img
+                  src={currentAlbum?.imageUrl}
+                  alt={currentAlbum?.title}
+                  className="w-44 h-44 sm:w-52 sm:h-52 object-cover rounded-lg shadow-2xl shadow-black/60"
+                />
+              </div>
+
+              {/* Meta */}
+              <div className="flex flex-col justify-end gap-2">
+                <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">Album</p>
+
+                <h1 className="text-3xl sm:text-5xl font-bold text-white leading-tight">
+                  {currentAlbum?.title}
+                </h1>
+
+                <div className="flex items-center gap-2 text-sm text-zinc-400 mt-1">
+                  <span className="text-white font-medium">{currentAlbum?.artist}</span>
+                  <span className="text-zinc-600">·</span>
+                  <span>{currentAlbum?.songs.length} songs</span>
+                  <span className="text-zinc-600">·</span>
+                  <span>{currentAlbum?.releaseYear}</span>
+                </div>
+
+                {/* Play button */}
+                <div className="mt-4">
+                  <Button
+                    onClick={handlePlayAlbum}
+                    size="icon"
+                    className="play-icon-btn w-12 h-12 rounded-full bg-green-500 hover:bg-green-400 border-0"
+                  >
+                    {isAlbumPlaying ? (
+                      <Pause className="h-5 w-5 text-black fill-black" />
+                    ) : (
+                      <Play className="h-5 w-5 text-black fill-black ml-0.5" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Track list ── */}
+            <div>
+              {/* Header */}
+              <div className="divider" />
+              <div className="grid grid-cols-[16px_1fr_auto_52px] gap-4 px-10 py-2 text-xs text-zinc-500 uppercase tracking-wider">
+                <span>#</span>
+                <span>Title</span>
+                <span className="hidden sm:block">Date added</span>
+                <span className="flex justify-end"><Clock className="h-3.5 w-3.5" /></span>
+              </div>
+              <div className="divider" />
+
+              {/* Rows */}
+              <div className="px-4 py-3 space-y-0.5">
+                {currentAlbum?.songs.map((song, index) => {
+                  const isCurrentSong = currentSong?._id === song._id;
+                  const isHovered = hoveredIndex === index;
+
+                  return (
+                    <div
+                      key={song._id}
+                      onClick={() => handlePlaySong(index)}
+                      onMouseEnter={() => setHoveredIndex(index)}
+                      onMouseLeave={() => setHoveredIndex(null)}
+                      className={`song-row grid grid-cols-[16px_1fr_auto_52px] gap-4 px-6 py-2.5 rounded-md cursor-pointer group
+                        ${isCurrentSong ? "active" : ""}`}
+                    >
+                      {/* # / play icon / bars */}
+                      <div className="flex items-center justify-center">
+                        {isCurrentSong && isPlaying ? (
+                          <div className="now-playing-bars">
+                            <div className="eq-bar" />
+                            <div className="eq-bar" />
+                            <div className="eq-bar" />
+                          </div>
+                        ) : isHovered ? (
+                          <Play className="h-3.5 w-3.5 text-white fill-white" />
+                        ) : (
+                          <span className={`text-sm ${isCurrentSong ? "text-green-500" : "text-zinc-500"}`}>
+                            {index + 1}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Thumbnail + title */}
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img
+                          src={song.imageUrl}
+                          alt={song.title}
+                          className="size-9 rounded object-cover flex-shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <p className={`text-sm font-medium truncate ${isCurrentSong ? "text-green-400" : "text-white"}`}>
+                            {song.title}
+                          </p>
+                          <p className="text-xs text-zinc-500 truncate">{song.artist}</p>
+                        </div>
+                      </div>
+
+                      {/* Date */}
+                      <div className="hidden sm:flex items-center">
+                        <span className="text-xs text-zinc-500 tabular-nums">
+                          {song.createdAt.split("T")[0]}
+                        </span>
+                      </div>
+
+                      {/* Duration */}
+                      <div className="flex items-center justify-end">
+                        <span className={`text-xs tabular-nums ${isCurrentSong ? "text-green-500" : "text-zinc-500"}`}>
+                          {formatDuration(song.duration)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="h-10" />
+          </div>
+        </div>
+      </ScrollArea>
+    </div>
+  );
 };
+
 export default AlbumPage;

@@ -17,26 +17,26 @@ const SectionGrid = ({ title, songs, isLoading }: SectionGridProps) => {
                 Show ALL
             </Button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {songs.map((song) => (
 					<div
 						key={song._id}
-						className='bg-zinc-800/40 p-4 rounded-md hover:bg-zinc-700/40 transition-all group cursor-pointer'
+						className='bg-white/5 backdrop-blur-sm p-4 rounded-xl border border-white/5 hover:bg-white/10 hover:border-emerald-500/30 hover:-translate-y-2 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-emerald-500/10 transition-all duration-300 group cursor-pointer'
 					>
 						<div className='relative mb-4'>
-							<div className='aspect-square rounded-md shadow-lg overflow-hidden'>
+							<div className='aspect-square rounded-lg shadow-lg overflow-hidden'>
 								<img
 									src={song.imageUrl}
 									alt={song.title}
-									className='w-full h-full object-cover transition-transform duration-300 
-									group-hover:scale-105'
+									className='w-full h-full object-cover transition-transform duration-500 
+									group-hover:scale-110'
 								/>
-								
+                                <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-300" />
 							</div>
 							<PlayButton song={song} />
 						</div>
-						<h3 className='font-medium mb-2 truncate'>{song.title}</h3>
-						<p className='text-sm text-zinc-400 truncate'>{song.artist}</p>
+						<h3 className='font-semibold text-white/90 group-hover:text-white mb-2 truncate transition-colors'>{song.title}</h3>
+						<p className='text-sm text-zinc-400/80 group-hover:text-zinc-300 truncate transition-colors'>{song.artist}</p>
 					</div>
 				))}
         </div>
