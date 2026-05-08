@@ -7,6 +7,7 @@ import ChatPage from "./pages/chat/ChatPage.tsx";
 import AlbumPage from "./pages/album/AlbumPage.tsx";
 import AdminPage from "./pages/admin/AdminPage.tsx";
 import NotFoundPage from "./pages/404/NotFoundPage.tsx";
+import FounderPage from "./pages/founder/FounderPage.tsx";
 import { useChatStore } from "./stores/useChatStore.ts";
 import { usePlayerStore } from "./stores/usePlayerStore.ts";
 import { useEffect } from "react";
@@ -42,6 +43,7 @@ const App = () => {
         <Route path='/' element={<HomePage/>} />
         <Route path='/chat' element={<ChatPage/>} />
         <Route path='/albums/:albumId' element={<AlbumPage/>} />
+        <Route path='/founder' element={<FounderPage/>} />
         <Route path='*' element={<NotFoundPage/>} />
       </Route>
     </Routes>

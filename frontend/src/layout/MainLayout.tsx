@@ -9,6 +9,7 @@ import FriendsActivity from "./components/FriendsActivity";
 import AudioPlayer from "./components/AudioPlayer";
 import { PlaybackControls } from "./components/PlaybackControls";
 import { useState, useEffect } from "react";
+import FeedbackModal from "@/components/FeedbackModal";
 const MainLayout = () => {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -56,6 +57,7 @@ const MainLayout = () => {
         </ResizablePanel>
       </ResizablePanelGroup>
       <PlaybackControls />
+      <FeedbackModal />
     </div>
   );
 };
