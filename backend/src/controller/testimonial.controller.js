@@ -28,16 +28,19 @@ export const getTestimonials = async (req, res, next) => {
 	try {
 		const testimonials = await Testimonial.find().sort({ createdAt: -1 });
 		
-		// Manually populate user data since we use clerkId string ref
-		const populatedTestimonials = await Promise.all(
-			testimonials.map(async (t) => {
-				const user = await User.findOne({ clerkId: t.userId });
-				return {
-					...t.toObject(),
-					user: user ? { fullName: user.fullName, imageUrl: user.imageUrl } : null
-				};
-			})
-		);
+		// Optimize N+1 query: Fetch all unique users in a single query
+		const userIds = [...new Set(testimonials.map(t => t.userId))];
+		const users = await User.find({ clerkId: { $in: userIds } }).select("clerkId fullName imageUrl");
+		
+		const userMap = users.reduce((acc, user) => {
+			acc[user.clerkId] = { fullName: user.fullName, imageUrl: user.imageUrl };
+			return acc;
+		}, {});
+
+		const populatedTestimonials = testimonials.map((t) => ({
+			...t.toObject(),
+			user: userMap[t.userId] || null
+		}));
 
 		res.status(200).json(populatedTestimonials);
 	} catch (error) {

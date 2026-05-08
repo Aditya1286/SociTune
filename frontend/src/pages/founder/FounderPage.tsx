@@ -114,14 +114,6 @@ export default function FounderPage() {
             },
         });
 
-        ScrollTrigger.create({
-            trigger: ".testimonials-section",
-            start: "top 85%",
-            onEnter: () => {
-                gsap.to(".marquee-container", { opacity: 1, y: 0, duration: 0.8 });
-            },
-        });
-
         // Mouse parallax glow
         const handleMouseMove = (e: MouseEvent) => {
             const x = (e.clientX / window.innerWidth - 0.5) * 35;
@@ -222,7 +214,7 @@ export default function FounderPage() {
                             <Loader2 className="w-10 h-10 animate-spin text-emerald-500" />
                         </div>
                     ) : testimonials.length > 0 ? (
-                        <div className="marquee-container opacity-0 overflow-hidden">
+                        <div className="marquee-container overflow-hidden animate-in fade-in duration-700">
                             <div
                                 ref={marqueeTrackRef}
                                 className="marquee-track flex gap-4 w-max"
