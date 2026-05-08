@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { axiosInstance } from "@/lib/axios";
 import toast from "react-hot-toast";
+import confetti from "canvas-confetti";
 
 const FeedbackModal = () => {
     const [open, setOpen] = useState(false);
@@ -18,10 +19,44 @@ const FeedbackModal = () => {
         try {
             setIsSubmitting(true);
             await axiosInstance.post("/testimonials", { rating, content });
-            toast.success("Thank you for your feedback!");
+            
+            // Close modal and reset form
             setOpen(false);
             setContent("");
             setRating(5);
+            
+            toast.success("Thank you for your feedback!");
+
+            // Epic confetti blast
+            const end = Date.now() + 2 * 1000;
+            const colors = ["#10b981", "#34d399", "#ffffff", "#06b6d4"];
+
+            (function frame() {
+                confetti({
+                    particleCount: 4,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: colors,
+                    zIndex: 1000,
+                });
+                confetti({
+                    particleCount: 4,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: colors,
+                    zIndex: 1000,
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            })();
+
+            // Tell the founder page to refresh its list
+            window.dispatchEvent(new Event("testimonial-added"));
+            
         } catch (error: any) {
             toast.error(error.response?.data?.message || "Failed to submit feedback");
         } finally {
@@ -32,47 +67,56 @@ const FeedbackModal = () => {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="fixed bottom-28 left-8 h-14 w-14 rounded-full bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-emerald-500 shadow-lg shadow-emerald-500/20 z-50 transition-all hover:scale-110"
+                <button 
+                    className="fixed bottom-28 left-6 sm:left-8 text-zinc-500 hover:text-white transition-colors duration-200 z-50 p-2"
+                    aria-label="Provide Feedback"
                 >
-                    <MessageSquareHeart className="h-6 w-6" />
-                </Button>
+                    <MessageSquareHeart className="h-7 w-7" />
+                </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md bg-zinc-900 border-zinc-800 text-white">
-                <DialogHeader>
-                    <DialogTitle className="text-xl text-center">Share your thoughts</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-                    <div className="flex justify-center space-x-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                                key={star}
-                                type="button"
-                                onClick={() => setRating(star)}
-                                className="focus:outline-none transition-transform hover:scale-110"
-                            >
-                                <Star 
-                                    className={`h-8 w-8 ${star <= rating ? 'fill-emerald-500 text-emerald-500' : 'text-zinc-600'}`} 
-                                />
-                            </button>
-                        ))}
-                    </div>
-                    <textarea 
-                        className="w-full bg-zinc-800 border-zinc-700 rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[100px] resize-none"
-                        placeholder="Tell us what you love or what we can improve..."
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                    />
-                    <Button 
-                        type="submit" 
-                        className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? "Submitting..." : "Submit Feedback"}
-                    </Button>
-                </form>
+            <DialogContent className="sm:max-w-md bg-zinc-950/95 backdrop-blur-2xl border border-white/10 text-white shadow-2xl p-0 overflow-hidden">
+                <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-70" />
+                <div className="p-6 sm:p-8">
+                    <DialogHeader className="mb-6 space-y-1.5">
+                        <DialogTitle className="text-2xl text-center font-bold tracking-tight text-zinc-100">
+                            Share your thoughts
+                        </DialogTitle>
+                        <p className="text-center text-sm text-zinc-400 font-light">
+                            Help us improve your SociTune experience
+                        </p>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="flex justify-center space-x-1.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                    key={star}
+                                    type="button"
+                                    onClick={() => setRating(star)}
+                                    className="focus:outline-none transition-transform hover:scale-125"
+                                >
+                                    <Star 
+                                        className={`h-9 w-9 transition-colors duration-200 ${star <= rating ? 'fill-emerald-400 text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'text-zinc-700 hover:text-zinc-500'}`} 
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                        <div className="relative">
+                            <textarea 
+                                className="w-full bg-zinc-900/50 border border-white/5 rounded-xl p-4 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50 min-h-[120px] resize-none transition-all"
+                                placeholder="What do you love? What can we do better?"
+                                value={content}
+                                onChange={(e) => setContent(e.target.value)}
+                            />
+                        </div>
+                        <Button 
+                            type="submit" 
+                            className="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold h-11 rounded-lg transition-colors shadow-lg shadow-emerald-500/20"
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? "Submitting..." : "Submit Feedback"}
+                        </Button>
+                    </form>
+                </div>
             </DialogContent>
         </Dialog>
     );

@@ -11,6 +11,7 @@ import FounderPage from "./pages/founder/FounderPage.tsx";
 import { useChatStore } from "./stores/useChatStore.ts";
 import { usePlayerStore } from "./stores/usePlayerStore.ts";
 import { useEffect } from "react";
+import { SearchCommand } from "./components/SearchCommand.tsx";
 
 const App = () => {
   const { userId } = useAuth();
@@ -32,6 +33,7 @@ const App = () => {
   return (
     
     <>
+    <SearchCommand />
     <Routes>
       
       <Route path='/sso-callback' 

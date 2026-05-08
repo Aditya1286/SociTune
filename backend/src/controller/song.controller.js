@@ -72,3 +72,20 @@ export const getTrendingSongs = async(req,res,next) => {
         next(error);
     }
 }
+
+export const searchSongs = async(req, res, next) => {
+    try {
+        const { q } = req.query;
+        if (!q) return res.json([]);
+        
+        const songs = await Song.find({
+            $or: [
+                { title: { $regex: q, $options: "i" } },
+                { artist: { $regex: q, $options: "i" } }
+            ]
+        }).limit(10);
+        res.json(songs);
+    } catch (error) {
+        next(error);
+    }
+}

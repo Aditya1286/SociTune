@@ -1,4 +1,4 @@
-import { LayoutDashboardIcon } from "lucide-react";
+import { LayoutDashboardIcon, SearchIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SignedOut, UserButton } from "@clerk/clerk-react";
 import SignInOAuthButtons from "./SignInOAuthButtons";
@@ -50,6 +50,34 @@ const Topbar = () => {
 
         {/* ── Actions ── */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Search Trigger */}
+          <button
+            onClick={() => document.dispatchEvent(new CustomEvent("open-search"))}
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "relative flex items-center justify-between w-full sm:w-64 px-4 py-2 text-sm text-zinc-400 bg-zinc-900/50 border-white/10 hover:bg-zinc-800/80 hover:text-white transition-all rounded-full hidden sm:flex"
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <SearchIcon className="w-4 h-4" />
+              <span>Search songs...</span>
+            </span>
+            <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] font-medium text-zinc-400">
+              <span className="text-xs">⌘</span>K
+            </kbd>
+          </button>
+
+          {/* Mobile Search Icon */}
+          <button
+            onClick={() => document.dispatchEvent(new CustomEvent("open-search"))}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "icon" }),
+              "sm:hidden text-zinc-400 hover:text-white"
+            )}
+          >
+            <SearchIcon className="w-5 h-5" />
+          </button>
+
           {isAdmin && (
             <Link
               to="/admin"
