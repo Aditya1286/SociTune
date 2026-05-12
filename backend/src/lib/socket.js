@@ -26,15 +26,31 @@ export const initializeSocket = (server) => {
 			io.emit("activities", Array.from(userActivities.entries()));
 		});
 
-		socket.on("update_activity", ({ userId, activity }) => {
+		socket.on("update_activity", async ({ userId, activity }) => {
 			console.log("activity updated", userId, activity);
 			userActivities.set(userId, activity);
-			io.emit("activity_updated", { userId, activity });
+			
+			// Only emit to friends
+			const user = await User.findOne({ clerkId: userId });
+			if (user && user.friends) {
+				user.friends.forEach((friendId) => {
+					const friendSocketId = userSockets.get(friendId);
+					if (friendSocketId) {
+						io.to(friendSocketId).emit("activity_updated", { userId, activity });
+					}
+				});
+			}
 		});
 
 		socket.on("send_message", async (data) => {
 			try {
 				const { senderId, receiverId, content, replyToId } = data;
+
+				// Check if they are friends
+				const senderUser = await User.findOne({ clerkId: senderId });
+				if (!senderUser || !senderUser.friends.includes(receiverId)) {
+					return socket.emit("message_error", "You must be friends to send a message.");
+				}
 
 				let messageData = {
 					senderId,
@@ -121,10 +137,11 @@ export const initializeSocket = (server) => {
 
 		socket.on("disconnect", async () => {
 			let disconnectedUserId;
+			let lastAct = "Offline";
 			for (const [userId, socketId] of userSockets.entries()) {
-				// find disconnected user
 				if (socketId === socket.id) {
 					disconnectedUserId = userId;
+					lastAct = userActivities.get(userId);
 					userSockets.delete(userId);
 					userActivities.delete(userId);
 					break;
@@ -132,12 +149,20 @@ export const initializeSocket = (server) => {
 			}
 			if (disconnectedUserId) {
 				const now = new Date();
+				let finalActivity = "Offline";
+				if (lastAct && lastAct !== "Idle" && lastAct !== "Offline") {
+					const cleanedAct = lastAct.replace("Paused: ", "");
+					finalActivity = cleanedAct.startsWith("Listening to ") 
+						? cleanedAct.replace("Listening to ", "Recently listened: ") 
+						: `Recently listened: ${cleanedAct}`;
+				}
+
 				try {
-					await User.findOneAndUpdate({ clerkId: disconnectedUserId }, { lastSeen: now });
+					await User.findOneAndUpdate({ clerkId: disconnectedUserId }, { lastSeen: now, lastActivity: finalActivity });
 				} catch (err) {
 					console.error("Error updating lastSeen", err);
 				}
-				io.emit("user_disconnected", { userId: disconnectedUserId, lastSeen: now.toISOString() });
+				io.emit("user_disconnected", { userId: disconnectedUserId, lastSeen: now.toISOString(), lastActivity: finalActivity });
 			}
 		});
 	});

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { useMusicStore } from "@/stores/useMusicStore"
 import { useChatStore } from "@/stores/useChatStore"
 import { SignedIn } from "@clerk/clerk-react"
-import { HomeIcon, Library, MessageCircle, LayoutGrid, List } from "lucide-react"
+import { HomeIcon, Library, MessageCircle, LayoutGrid, List, Award, MessageSquareHeart } from "lucide-react"
 import { Link } from "react-router-dom"
 import PlaylistSkeleton from "../../components/skeletons/PlaylistSkeleton"
 
@@ -53,6 +53,29 @@ const LeftSidebar = () => {
                 </span>
               )}
             </Link>
+
+            <Link
+              to={"/founder"}
+              className={cn(buttonVariants({
+                variant: "ghost",
+                className: "w-full justify-start text-zinc-300 hover:text-white hover:bg-white/10 transition-colors"
+              }))}
+            >
+              <Award className="mr-3 size-5" />
+              <span className="hidden md:inline font-medium">Founders</span>
+            </Link>
+
+            <button
+              onClick={() => document.dispatchEvent(new CustomEvent("open-feedback"))}
+              className={cn(buttonVariants({
+                variant: "ghost",
+                className: "w-full justify-start text-zinc-300 hover:text-white hover:bg-white/10 transition-colors"
+              }))}
+            >
+              <MessageSquareHeart className="mr-3 size-5" />
+              <span className="hidden md:inline font-medium">Feedback</span>
+            </button>
+
           </SignedIn>
 
         </div>

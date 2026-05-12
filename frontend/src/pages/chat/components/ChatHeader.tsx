@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useChatStore } from "@/stores/useChatStore";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Info } from "lucide-react";
 
 const formatLastSeen = (dateString?: string) => {
 	if (!dateString) return "Offline";
@@ -24,7 +24,7 @@ const formatLastSeen = (dateString?: string) => {
 }
 
 const ChatHeader = () => {
-	const { selectedUser, onlineUsers, setSelectedUser } = useChatStore();
+	const { selectedUser, onlineUsers, setSelectedUser, setViewState } = useChatStore();
 
 	if (!selectedUser) return null;
 
@@ -42,9 +42,21 @@ const ChatHeader = () => {
 					</p>
 				</div>
 			</div>
-			<Button variant='ghost' size='icon' onClick={() => setSelectedUser(null)}>
-				<X className='size-5' />
-			</Button>
+			<div className='flex items-center gap-2'>
+				<Button 
+					variant='ghost' 
+					size='icon' 
+					onClick={() => {
+						setViewState('profile');
+						useChatStore.setState({ profileSource: 'chat' });
+					}}
+				>
+					<Info className='size-5 text-emerald-500' />
+				</Button>
+				<Button variant='ghost' size='icon' onClick={() => setSelectedUser(null)}>
+					<X className='size-5' />
+				</Button>
+			</div>
 		</div>
 	);
 };

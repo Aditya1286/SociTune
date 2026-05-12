@@ -42,7 +42,17 @@ export interface User {
 	_id: string;
 	clerkId: string;
 	fullName: string;
+	username?: string;
 	imageUrl: string;
+	bio?: string;
+	favoriteSong?: string;
+	favoriteArtist?: string;
+	friends?: string[];
 	lastSeen?: string;
 	lastMessage?: string;
+	lastActivity?: string;
+	isFriend?: boolean;
+	isPending?: boolean;
+	isSent?: boolean;
+	mutualFriendsCount?: number;
 }

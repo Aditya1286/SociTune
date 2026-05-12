@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { MessageSquareHeart, Star } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { axiosInstance } from "@/lib/axios";
 import toast from "react-hot-toast";
 import confetti from "canvas-confetti";
@@ -11,6 +11,13 @@ const FeedbackModal = () => {
     const [rating, setRating] = useState(5);
     const [content, setContent] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Open via custom event fired from the sidebar nav link
+    useEffect(() => {
+        const handleOpen = () => setOpen(true);
+        document.addEventListener("open-feedback", handleOpen);
+        return () => document.removeEventListener("open-feedback", handleOpen);
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -66,14 +73,6 @@ const FeedbackModal = () => {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <button 
-                    className="fixed bottom-28 left-6 sm:left-8 text-zinc-500 hover:text-white transition-colors duration-200 z-50 p-2"
-                    aria-label="Provide Feedback"
-                >
-                    <MessageSquareHeart className="h-7 w-7" />
-                </button>
-            </DialogTrigger>
             <DialogContent className="sm:max-w-md bg-zinc-950/95 backdrop-blur-2xl border border-white/10 text-white shadow-2xl p-0 overflow-hidden">
                 <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-70" />
                 <div className="p-6 sm:p-8">

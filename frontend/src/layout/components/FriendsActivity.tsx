@@ -33,10 +33,21 @@ const FriendsActivity = () => {
 
 			<ScrollArea className='flex-1 min-h-0 relative z-10'>
 				<div className='p-4 space-y-3'>
-					{users.map((user:any) => {
+					{users.filter((u:any) => u.isFriend).length === 0 ? (
+						<div className="text-center py-8 text-zinc-500 text-sm">
+							You haven't added any friends yet. Add friends to see what they're listening to!
+						</div>
+					) : (
+					users.filter((u:any) => u.isFriend).map((user:any) => {
 						const isOnline = onlineUsers.has(user.clerkId);
-						const activity = userActivities.get(user.clerkId) || "Offline";
-						const isPlaying = activity !== "Offline" && activity !== "Idle";
+						let activity = userActivities.get(user.clerkId) || user.lastActivity || "Offline";
+						
+						if (activity === "Idle" && !isOnline) {
+							activity = "Offline";
+						}
+						
+						const isPlaying = isOnline && activity !== "Offline" && activity !== "Idle";
+						const isLastListened = !isOnline && activity.startsWith("Recently");
 
 						return (
 							<div
@@ -44,39 +55,96 @@ const FriendsActivity = () => {
 								className='cursor-pointer bg-white/5 hover:bg-white/10 p-3 rounded-xl border border-transparent hover:border-white/10 transition-all duration-300 group hover:-translate-y-0.5'
 							>
 								<div className='flex items-start gap-3'>
-									<div className='relative'>
-										<Avatar className='size-12 border-2 border-white/5 group-hover:border-emerald-500/30 transition-colors'>
+									<div className='relative shrink-0'>
+										<Avatar className='size-12 border border-zinc-800 group-hover:border-emerald-500/50 transition-colors'>
 											<AvatarImage src={user.imageUrl} alt={user.fullName} />
 											<AvatarFallback>{user.fullName[0]}</AvatarFallback>
 										</Avatar>
 										<div
-											className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-neutral-900 shadow-sm
+											className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-zinc-900 shadow-sm
 												${isOnline ? "bg-emerald-500 shadow-emerald-500/50" : "bg-zinc-500"}
 											`}
 											aria-hidden='true'
 										/>
 									</div>
 
-									<div className='flex-1 min-w-0 py-0.5'>
+									<div className='flex-1 min-w-0 py-1 overflow-hidden'>
 										<div className='flex items-center gap-2'>
-											<span className='font-semibold text-sm text-white/90 group-hover:text-white transition-colors truncate'>
+											<span className='font-semibold text-sm text-white/90 group-hover:text-white transition-colors truncate block'>
 												{user.fullName}
 											</span>
 										</div>
 
-										<div className='mt-1 flex items-center gap-1.5'>
-											{isPlaying && (
-												<Music className="size-3 text-emerald-400 animate-pulse shrink-0" />
-											)}
-											<span className={`text-xs truncate transition-colors ${isPlaying ? 'text-emerald-400/90 font-medium' : 'text-zinc-500 group-hover:text-zinc-400'}`}>
-												{activity}
-											</span>
-										</div>
+										{isLastListened ? (
+											<div className='mt-1.5 flex flex-col gap-1 w-full'>
+												<div className='flex items-center gap-1.5'>
+													<HeadphonesIcon className="size-3 text-zinc-500 shrink-0" />
+													<span className='text-[10px] text-zinc-500 uppercase tracking-wider font-medium'>Recently listened</span>
+												</div>
+												<div className="pl-4 w-full">
+													{(() => {
+														const cleanActivity = activity.replace("Recently listened: ", "").replace("Paused: ", "").replace("Paused ", "");
+														let songName = cleanActivity;
+														let artistName = "";
+														if (cleanActivity.includes(" by ")) {
+															const parts = cleanActivity.split(" by ");
+															artistName = parts.pop() || "";
+															songName = parts.join(" by ");
+														}
+
+														return (
+															<div className="flex flex-col gap-0.5">
+																<p className='text-xs text-zinc-300 font-medium truncate block w-full'>
+																	{songName}
+																</p>
+																{artistName && (
+																	<p className='text-[10px] text-zinc-500 truncate block w-full'>
+																		by {artistName}
+																	</p>
+																)}
+															</div>
+														);
+													})()}
+												</div>
+											</div>
+										) : (
+											<div className='mt-1.5 flex items-start gap-1.5 w-full'>
+												{isPlaying && (
+													<Music className="size-3 text-emerald-400 animate-pulse shrink-0 mt-0.5" />
+												)}
+												<div className="flex-1 min-w-0">
+													{(() => {
+														const cleanActivity = activity.replace("Playing ", "").replace("Paused ", "");
+														let songName = cleanActivity;
+														let artistName = "";
+														if (cleanActivity.includes(" by ")) {
+															const parts = cleanActivity.split(" by ");
+															artistName = parts.pop() || "";
+															songName = parts.join(" by ");
+														}
+
+														return (
+															<div className="flex flex-col gap-0.5 w-full">
+																<p className={`text-xs truncate block w-full transition-colors ${isPlaying ? 'text-emerald-400/90 font-medium' : 'text-zinc-400'}`}>
+																	{songName}
+																</p>
+																{artistName && (
+																	<p className='text-[10px] text-zinc-500 truncate block w-full'>
+																		by {artistName}
+																	</p>
+																)}
+															</div>
+														);
+													})()}
+												</div>
+											</div>
+										)}
 									</div>
 								</div>
 							</div>
 						);
-					})}
+					})
+					)}
 				</div>
 			</ScrollArea>
 		</div>

@@ -21,6 +21,7 @@ const AuthCallbackPage = () => {
 					id: user.id,
 					firstName: user.firstName,
 					lastName: user.lastName,
+					username: user.username || `${user.firstName?.toLowerCase() || ""}${user.lastName?.toLowerCase() || ""}${Math.floor(Math.random() * 1000)}`,
 					imageUrl: user.imageUrl,
 				}); 
 			} catch (error) {

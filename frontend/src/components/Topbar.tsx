@@ -5,13 +5,16 @@ import SignInOAuthButtons from "./SignInOAuthButtons";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { buttonVariants } from "./ui/button";
 import { cn } from "@/lib/utils";
+import { EditProfileDialog } from "./EditProfileDialog";
 
 const Topbar = () => {
   const { isAdmin } = useAuthStore();
 
   return (
-    <header className="sticky top-0 z-50 w-full">
-      {/* Backdrop blur layer */}
+    <>
+      <EditProfileDialog />
+      <header className="sticky top-0 z-50 w-full">
+        {/* Backdrop blur layer */}
       <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-xl border-b border-white/[0.06]" />
 
       {/* Subtle top accent line */}
@@ -78,6 +81,7 @@ const Topbar = () => {
             <SearchIcon className="w-5 h-5" />
           </button>
 
+
           {isAdmin && (
             <Link
               to="/admin"
@@ -122,11 +126,20 @@ const Topbar = () => {
                   avatarBox: "w-8 h-8",
                 },
               }}
-            />
+            >
+              <UserButton.MenuItems>
+                <UserButton.Action 
+                  label="Edit Profile" 
+                  labelIcon={<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>} 
+                  onClick={() => document.dispatchEvent(new CustomEvent("open-edit-profile"))} 
+                />
+              </UserButton.MenuItems>
+            </UserButton>
           </div>
         </div>
       </div>
     </header>
+    </>
   );
 };
 

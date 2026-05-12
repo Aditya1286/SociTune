@@ -15,6 +15,9 @@ interface ChatStore {
 	selectedUser: User | null;
 	unreadMessages: Map<string, number>;
 	replyingToMessage: Message | null;
+	showProfilePanel: boolean;
+	viewState: 'profile' | 'chat';
+	profileSource: 'chat' | 'discover';
 
 	fetchUsers: () => Promise<void>;
 	initSocket: (userId: string) => void;
@@ -24,8 +27,16 @@ interface ChatStore {
 	deleteMessage: (messageId: string) => void;
 	reactToMessage: (messageId: string, emoji: string) => void;
 	fetchMessages: (userId: string) => Promise<void>;
-	setSelectedUser: (user: User | null) => void;
+	setSelectedUser: (user: User | null, targetViewState?: 'profile' | 'chat') => void;
 	setReplyingToMessage: (message: Message | null) => void;
+	setShowProfilePanel: (show: boolean) => void;
+	setViewState: (viewState: 'profile' | 'chat') => void;
+	sendFriendRequest: (userId: string) => Promise<void>;
+	acceptFriendRequest: (userId: string) => Promise<void>;
+	rejectFriendRequest: (userId: string) => Promise<void>;
+	removeFriend: (userId: string) => Promise<void>;
+	updateProfile: (formData: FormData) => Promise<void>;
+	getMutualFriends: (userId: string) => Promise<User[]>;
 }
 
 const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "/";
@@ -47,15 +58,21 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 	selectedUser: null,
 	unreadMessages: new Map(),
 	replyingToMessage: null,
+	showProfilePanel: false,
+	viewState: 'profile',
+	profileSource: 'discover',
 
 	setReplyingToMessage: (message) => set({ replyingToMessage: message }),
+	setShowProfilePanel: (show) => set({ showProfilePanel: show }),
+	setViewState: (viewState) => set({ viewState }),
 
-	setSelectedUser: (user) => set((state) => {
+	setSelectedUser: (user, targetViewState = 'profile') => set((state) => {
 		const newUnreadMessages = new Map(state.unreadMessages);
 		if (user) {
 			newUnreadMessages.delete(user.clerkId);
 		}
-		return { selectedUser: user, unreadMessages: newUnreadMessages };
+		const profileSource: 'chat' | 'discover' = targetViewState === 'chat' ? 'chat' : 'discover';
+		return { selectedUser: user, unreadMessages: newUnreadMessages, viewState: targetViewState, profileSource };
 	}),
 
 	fetchUsers: async () => {
@@ -67,6 +84,92 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 			set({ error: error.response.data.message });
 		} finally {
 			set({ isLoading: false });
+		}
+	},
+
+	sendFriendRequest: async (userId: string) => {
+		try {
+			await axiosInstance.post(`/users/request/${userId}`);
+			set((state) => ({
+				users: state.users.map((u) => 
+					u.clerkId === userId ? { ...u, isSent: true } : u
+				)
+			}));
+		} catch (error) {
+			console.error("Failed to send request", error);
+		}
+	},
+
+	acceptFriendRequest: async (userId: string) => {
+		try {
+			await axiosInstance.post(`/users/accept/${userId}`);
+			set((state) => ({
+				users: state.users.map((u) => 
+					u.clerkId === userId ? { ...u, isFriend: true, isPending: false } : u
+				)
+			}));
+		} catch (error) {
+			console.error("Failed to accept request", error);
+		}
+	},
+
+	rejectFriendRequest: async (userId: string) => {
+		try {
+			await axiosInstance.post(`/users/reject/${userId}`);
+			set((state) => ({
+				users: state.users.map((u) => 
+					u.clerkId === userId ? { ...u, isPending: false } : u
+				)
+			}));
+		} catch (error) {
+			console.error("Failed to reject request", error);
+		}
+	},
+
+	removeFriend: async (userId: string) => {
+		try {
+			await axiosInstance.post(`/users/remove/${userId}`);
+			set((state) => ({
+				users: state.users.map((u) => 
+					u.clerkId === userId ? { ...u, isFriend: false } : u
+				),
+				selectedUser: state.selectedUser?.clerkId === userId ? null : state.selectedUser
+			}));
+		} catch (error) {
+			console.error("Failed to remove friend", error);
+		}
+	},
+
+	updateProfile: async (formData: FormData) => {
+		try {
+			const res = await axiosInstance.put("/users/profile", formData, {
+				headers: { "Content-Type": "multipart/form-data" }
+			});
+			// Update user in local list + selectedUser if viewing their profile
+			set((state) => ({
+				users: state.users.map((u) =>
+					u.clerkId === res.data.clerkId ? { ...u, ...res.data } : u
+				),
+				// If we're currently viewing the updated user's profile, refresh it too
+				selectedUser:
+					state.selectedUser?.clerkId === res.data.clerkId
+						? { ...state.selectedUser, ...res.data }
+						: state.selectedUser,
+			}));
+			// Re-fetch to ensure all other users see the fresh data from the server
+			await get().fetchUsers();
+		} catch (error) {
+			console.error("Failed to update profile", error);
+		}
+	},
+
+	getMutualFriends: async (userId: string) => {
+		try {
+			const res = await axiosInstance.get(`/users/profile/${userId}/mutual`);
+			return res.data;
+		} catch (error) {
+			console.error("Failed to fetch mutual friends", error);
+			return [];
 		}
 	},
 
@@ -91,23 +194,31 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 				}));
 			});
 
-			socket.on("user_disconnected", (data: { userId: string, lastSeen: string } | string) => {
+			socket.on("user_disconnected", (data: { userId: string, lastSeen: string, lastActivity?: string } | string) => {
 				const disconnectedUserId = typeof data === "string" ? data : data.userId;
 				set((state) => {
 					const newOnlineUsers = new Set(state.onlineUsers);
 					newOnlineUsers.delete(disconnectedUserId);
 
 					const lastSeenTime = typeof data === "string" ? new Date().toISOString() : data.lastSeen;
+					const lastActivity = typeof data !== "string" ? data.lastActivity : undefined;
 
 					const newUsers = state.users.map(u => 
-						u.clerkId === disconnectedUserId ? { ...u, lastSeen: lastSeenTime } : u
+						u.clerkId === disconnectedUserId ? { ...u, lastSeen: lastSeenTime, lastActivity: lastActivity || u.lastActivity } : u
 					);
 
+					const newActivities = new Map(state.userActivities);
+					if (lastActivity && lastActivity !== "Offline" && lastActivity !== "Idle") {
+						newActivities.set(disconnectedUserId, lastActivity);
+					} else {
+						newActivities.delete(disconnectedUserId);
+					}
+
 					const newSelectedUser = state.selectedUser?.clerkId === disconnectedUserId
-						? { ...state.selectedUser, lastSeen: lastSeenTime }
+						? { ...state.selectedUser, lastSeen: lastSeenTime, lastActivity: lastActivity || state.selectedUser.lastActivity }
 						: state.selectedUser;
 
-					return { onlineUsers: newOnlineUsers, users: newUsers, selectedUser: newSelectedUser };
+					return { onlineUsers: newOnlineUsers, users: newUsers, selectedUser: newSelectedUser, userActivities: newActivities };
 				});
 			});
 

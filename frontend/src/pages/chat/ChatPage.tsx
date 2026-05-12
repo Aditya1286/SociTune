@@ -1,14 +1,16 @@
-
 import { useChatStore } from "@/stores/useChatStore";
 import { useUser } from "@clerk/clerk-react";
 import { useEffect } from "react";
-import { CheckCheck, Trash, Reply } from "lucide-react";
+import { CheckCheck, Trash, Reply, Music2, Users } from "lucide-react";
+import { motion } from "framer-motion";
 import UsersList from "./components/UsersList";
 import ChatHeader from "./components/ChatHeader";
+import { UserProfilePanel } from "./components/UserProfilePanel";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import MessageInput from "./components/MessageInput";
 import { Button } from "@/components/ui/button";
+import { BackgroundGradient } from "@/components/ui/background-gradient";
 
 const formatTime = (date: string) => {
 	return new Date(date).toLocaleTimeString("en-US", {
@@ -20,18 +22,20 @@ const formatTime = (date: string) => {
 
 const ChatPage = () => {
 	const { user } = useUser();
-	const { messages, selectedUser, fetchUsers, fetchMessages, markMessagesAsRead, setReplyingToMessage, deleteMessage, reactToMessage } = useChatStore();
+	const { messages, selectedUser, fetchUsers, fetchMessages, markMessagesAsRead, setReplyingToMessage, deleteMessage, reactToMessage, viewState, setViewState } = useChatStore();
 
 	useEffect(() => {
 		if (user) fetchUsers();
 	}, [fetchUsers, user]);
 
 	useEffect(() => {
-		if (selectedUser) fetchMessages(selectedUser.clerkId);
-	}, [selectedUser, fetchMessages]);
+		if (selectedUser && viewState === 'chat') {
+            fetchMessages(selectedUser.clerkId);
+        }
+	}, [selectedUser, fetchMessages, viewState]);
 
 	useEffect(() => {
-		if (selectedUser && messages.length > 0) {
+		if (selectedUser && messages.length > 0 && viewState === 'chat') {
 			const hasUnreadFromSelectedUser = messages.some(
 				(msg) => msg.senderId === selectedUser.clerkId && !msg.isRead
 			);
@@ -39,115 +43,121 @@ const ChatPage = () => {
 				markMessagesAsRead(selectedUser.clerkId);
 			}
 		}
-	}, [selectedUser, messages, markMessagesAsRead]);
+	}, [selectedUser, messages, markMessagesAsRead, viewState]);
 
 	return (
-		<main className='h-full rounded-lg bg-gradient-to-b from-zinc-800 to-zinc-900 overflow-hidden flex flex-col'>
-			<div className='flex flex-1 overflow-hidden'>
-				<div className={`w-[80px] lg:w-[300px] flex-shrink-0 ${selectedUser ? "hidden sm:block" : "block w-full sm:w-[80px]"}`}>
+		<main className='h-full rounded-lg bg-zinc-950 overflow-hidden flex flex-col'>
+			<div className='flex flex-1 overflow-hidden relative'>
+				<div className={`w-[80px] lg:w-[350px] xl:w-[400px] flex-shrink-0 border-r border-white/5 bg-zinc-900/50 ${selectedUser ? "hidden md:block" : "block w-full md:w-[80px]"}`}>
 					<UsersList />
 				</div>
 
-				{/* chat message */}
-				<div className={`flex-1 flex-col h-full min-w-0 overflow-hidden ${selectedUser ? "flex" : "hidden sm:flex"}`}>
+				{/* Main Content Area */}
+				<div className={`flex-1 flex-col h-full min-w-0 overflow-hidden ${selectedUser ? "flex" : "hidden md:flex"} relative`}>
 					{selectedUser ? (
-						<>
-							<ChatHeader />
+                        viewState === 'profile' ? (
+                            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                                <UserProfilePanel user={selectedUser} onClose={() => setViewState('chat')} isMainView={true} />
+                            </div>
+                        ) : (
+                            <>
+                                <ChatHeader />
 
-							{/* Messages */}
-							<ScrollArea className='flex-1 min-h-0'>
-								<div className='p-4 space-y-6'>
-									{messages.map((message) => (
-										<div
-											key={message._id}
-											className={`flex items-end gap-3 group ${
-												message.senderId === user?.id ? "flex-row-reverse" : ""
-											}`}
-										>
-											<Avatar className='size-8 shrink-0'>
-												<AvatarImage
-													src={
-														message.senderId === user?.id
-															? user.imageUrl
-															: selectedUser.imageUrl
-													}
-												/>
-												<AvatarFallback>
-													{message.senderId === user?.id
-														? user?.fullName?.[0]
-														: selectedUser.fullName[0]}
-												</AvatarFallback>
-											</Avatar>
+                                {/* Messages */}
+                                <ScrollArea className='flex-1 min-h-0 bg-[url("/chat-bg.png")] bg-repeat bg-center opacity-95'>
+                                    <div className='p-4 space-y-6'>
+                                        {messages.map((message) => (
+                                            <div
+                                                key={message._id}
+                                                className={`flex items-end gap-3 group ${
+                                                    message.senderId === user?.id ? "flex-row-reverse" : ""
+                                                }`}
+                                            >
+                                                <Avatar className='size-8 shrink-0 border border-white/10 shadow-sm'>
+                                                    <AvatarImage
+                                                        src={
+                                                            message.senderId === user?.id
+                                                                ? user.imageUrl
+                                                                : selectedUser.imageUrl
+                                                        }
+                                                    />
+                                                    <AvatarFallback>
+                                                        {message.senderId === user?.id
+                                                            ? user?.fullName?.[0]
+                                                            : selectedUser.fullName[0]}
+                                                    </AvatarFallback>
+                                                </Avatar>
 
-											<div className={`relative max-w-[70%] flex flex-col ${message.senderId === user?.id ? "items-end" : "items-start"}`}>
-												<div
-													className={`rounded-lg p-3 w-full
-														${message.senderId === user?.id ? "bg-green-500" : "bg-zinc-800"}
-													`}
-												>
-													{message.replyTo && (
-														<div className={`mb-2 p-2 rounded text-xs border-l-2 border-white/20 bg-black/10`}>
-															<span className="font-semibold block mb-0.5">
-																{message.replyTo.senderId === user?.id ? "You" : selectedUser?.fullName}
-															</span>
-															<p className="truncate opacity-80">{message.replyTo.content}</p>
-														</div>
-													)}
+                                                <div className={`relative max-w-[75%] flex flex-col ${message.senderId === user?.id ? "items-end" : "items-start"}`}>
+                                                    <div
+                                                        className={`rounded-2xl p-3 w-full shadow-md
+                                                            ${message.senderId === user?.id ? "bg-emerald-600 text-white rounded-br-none" : "bg-zinc-800/90 text-zinc-100 rounded-bl-none border border-white/5"}
+                                                        `}
+                                                    >
+                                                        {message.replyTo && (
+                                                            <div className={`mb-2 p-2 rounded text-xs border-l-2 border-white/30 bg-black/20`}>
+                                                                <span className="font-semibold block mb-0.5 text-white/90">
+                                                                    {message.replyTo.senderId === user?.id ? "You" : selectedUser?.fullName}
+                                                                </span>
+                                                                <p className="truncate opacity-80">{message.replyTo.content}</p>
+                                                            </div>
+                                                        )}
 
-													<p className='text-sm break-words'>{message.content}</p>
-													<span className='text-[10px] text-zinc-300 mt-1 flex items-center justify-end gap-1'>
-														{formatTime(message.createdAt)}
-														{message.senderId === user?.id && (
-															<CheckCheck className={`size-3 ${message.isRead ? "text-blue-500" : "text-zinc-300"}`} />
-														)}
-													</span>
-												</div>
+                                                        <p className='text-[15px] break-words leading-relaxed'>{message.content}</p>
+                                                        <span className='text-[10px] text-white/50 mt-1 flex items-center justify-end gap-1 font-medium'>
+                                                            {formatTime(message.createdAt)}
+                                                            {message.senderId === user?.id && (
+                                                                <CheckCheck className={`size-3.5 ${message.isRead ? "text-emerald-300" : "text-white/50"}`} />
+                                                            )}
+                                                        </span>
+                                                    </div>
 
-												{message.reactions && Object.keys(message.reactions).length > 0 && (
-													<div className={`absolute -bottom-3 flex gap-1 bg-zinc-900 border border-zinc-700 rounded-full px-2 py-0.5 text-xs shadow-sm z-10
-														${message.senderId === user?.id ? "right-2" : "left-2"}
-													`}>
-														{Array.from(new Set(Object.values(message.reactions))).map((emoji: any) => (
-															<span key={emoji}>{emoji}</span>
-														))}
-														<span className="text-[10px] text-zinc-400 ml-1 font-medium">
-															{Object.keys(message.reactions).length}
-														</span>
-													</div>
-												)}
+                                                    {message.reactions && Object.keys(message.reactions).length > 0 && (
+                                                        <div className={`absolute -bottom-3 flex gap-1 bg-zinc-800 border border-zinc-700 rounded-full px-2 py-0.5 text-xs shadow-lg z-10
+                                                            ${message.senderId === user?.id ? "right-2" : "left-2"}
+                                                        `}>
+                                                            {Array.from(new Set(Object.values(message.reactions))).map((emoji: any) => (
+                                                                <span key={emoji}>{emoji}</span>
+                                                            ))}
+                                                            <span className="text-[10px] text-zinc-400 ml-1 font-medium">
+                                                                {Object.keys(message.reactions).length}
+                                                            </span>
+                                                        </div>
+                                                    )}
 
-												{/* Action Menu */}
-												<div className={`opacity-0 group-hover:opacity-100 transition-opacity absolute top-1/2 -translate-y-1/2 flex items-center gap-1 bg-zinc-800/90 border border-zinc-700 p-1 rounded-full shadow-md z-10
-													${message.senderId === user?.id ? "right-[calc(100%+10px)]" : "left-[calc(100%+10px)]"}
-												`}>
-													<Button variant='ghost' size='icon' className='size-7 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-700' onClick={() => setReplyingToMessage(message)}>
-														<Reply className='size-4' />
-													</Button>
-													<div className="flex items-center gap-0.5 bg-zinc-900/50 rounded-full px-1">
-														{['👍', '❤️', '😂'].map(emoji => (
-															<button 
-																key={emoji}
-																onClick={() => reactToMessage(message._id, emoji)}
-																className={`hover:bg-zinc-700 p-1.5 rounded-full text-sm transition-colors ${message.reactions?.[user?.id || ""] === emoji ? "bg-zinc-700" : ""}`}
-															>
-																{emoji}
-															</button>
-														))}
-													</div>
-													{message.senderId === user?.id && (
-														<Button variant='ghost' size='icon' className='size-7 rounded-full text-red-400 hover:text-red-300 hover:bg-red-400/10' onClick={() => deleteMessage(message._id)}>
-															<Trash className='size-4' />
-														</Button>
-													)}
-												</div>
-											</div>
-										</div>
-									))}
-								</div>
-							</ScrollArea>
+                                                    {/* Action Menu */}
+                                                    <div className={`opacity-0 group-hover:opacity-100 transition-opacity absolute top-1/2 -translate-y-1/2 flex items-center gap-1 bg-zinc-800/95 border border-zinc-700 p-1.5 rounded-full shadow-xl z-10 backdrop-blur-sm
+                                                        ${message.senderId === user?.id ? "right-[calc(100%+12px)]" : "left-[calc(100%+12px)]"}
+                                                    `}>
+                                                        <Button variant='ghost' size='icon' className='size-7 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-700' onClick={() => setReplyingToMessage(message)}>
+                                                            <Reply className='size-4' />
+                                                        </Button>
+                                                        <div className="flex items-center gap-0.5 bg-zinc-900/50 rounded-full px-1">
+                                                            {['👍', '❤️', '😂'].map(emoji => (
+                                                                <button 
+                                                                    key={emoji}
+                                                                    onClick={() => reactToMessage(message._id, emoji)}
+                                                                    className={`hover:bg-zinc-700 p-1.5 rounded-full text-sm transition-colors ${message.reactions?.[user?.id || ""] === emoji ? "bg-zinc-700" : ""}`}
+                                                                >
+                                                                    {emoji}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                        {message.senderId === user?.id && (
+                                                            <Button variant='ghost' size='icon' className='size-7 rounded-full text-red-400 hover:text-red-300 hover:bg-red-400/10' onClick={() => deleteMessage(message._id)}>
+                                                                <Trash className='size-4' />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </ScrollArea>
 
-							<MessageInput />
-						</>
+                                <MessageInput />
+                            </>
+                        )
 					) : (
 						<NoConversationPlaceholder />
 					)}
@@ -158,12 +168,97 @@ const ChatPage = () => {
 };
 export default ChatPage;
 
-const NoConversationPlaceholder = () => (
-	<div className='flex flex-col items-center justify-center h-full space-y-6'>
-		<img src='/logo.png' alt='Socitune' className='size-16 animate-bounce' />
-		<div className='text-center'>
-			<h3 className='text-zinc-300 text-lg font-medium mb-1'>No conversation selected</h3>
-			<p className='text-zinc-500 text-sm'>Choose a friend to start chatting</p>
-		</div>
-	</div>
-);
+const NoConversationPlaceholder = () => {
+    const { users } = useChatStore();
+    const floatingUsers = users.slice(0, 4); // Get a few users for the floating effect
+
+    return (
+        <div className='flex flex-col items-center justify-center h-full relative overflow-hidden bg-zinc-950 w-full'>
+            {/* Deep background glow */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-900/10 via-zinc-950 to-zinc-950" />
+            
+            {/* Floating Avatars */}
+            {floatingUsers.map((u, i) => (
+                <motion.div
+                    key={u.clerkId}
+                    className="absolute z-0 hidden sm:block"
+                    initial={{ y: 0, opacity: 0 }}
+                    animate={{ 
+                        y: [0, -20, 0], 
+                        opacity: [0.3, 0.7, 0.3],
+                        x: [0, i % 2 === 0 ? 15 : -15, 0]
+                    }}
+                    transition={{
+                        duration: 5 + i,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                    }}
+                    style={{
+                        top: `${15 + i * 20}%`,
+                        left: i % 2 === 0 ? `${10 + i * 5}%` : `${80 - i * 5}%`,
+                    }}
+                >
+                    <div className="relative group">
+                        <div className={`absolute -inset-1.5 rounded-full blur-md opacity-40 ${i % 2 === 0 ? 'bg-emerald-500' : 'bg-emerald-400'}`} />
+                        <Avatar className='relative size-12 md:size-14 border-2 border-white/10 shadow-xl'>
+                            <AvatarImage src={u.imageUrl} />
+                            <AvatarFallback>{u.fullName[0]}</AvatarFallback>
+                        </Avatar>
+                    </div>
+                </motion.div>
+            ))}
+
+            <div className='relative z-10 flex flex-col items-center text-center'>
+                <motion.div 
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="relative group mb-8 mt-10"
+                >
+                    <div className="absolute -inset-4 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition duration-1000" />
+                    <img src='/logo.png' alt='Socitune' className='relative size-28 md:size-36 object-contain filter drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]' />
+                </motion.div>
+                
+                <motion.h3 
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2, duration: 0.5 }}
+                    className='text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-200 text-4xl md:text-5xl font-bold mb-4 tracking-tight'
+                >
+                    Discover & Chat
+                </motion.h3>
+                
+                <motion.p 
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
+                    className='text-zinc-400 text-sm md:text-base max-w-md mx-auto mb-10 leading-relaxed px-4'
+                >
+                    Search for friends or select a conversation. The void won't reply back, no matter how long you stare at it.
+                </motion.p>
+
+                <motion.div 
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.4, duration: 0.5 }}
+                    className="flex flex-col gap-4 w-full max-w-[250px] px-4"
+                >
+                    <Button 
+                        onClick={() => document.dispatchEvent(new CustomEvent("open-search"))}
+                        className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white rounded-full shadow-lg shadow-emerald-900/20 transition-all hover:scale-105 border-0 h-12 text-sm font-medium"
+                    >
+                        <Users className="size-4 mr-2" />
+                        Explore Friends
+                    </Button>
+                </motion.div>
+            </div>
+            
+            {/* Bottom waves (CSS aesthetic) */}
+            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-zinc-950 to-transparent z-0 pointer-events-none" />
+            <div className="absolute bottom-6 text-[10px] tracking-[0.3em] uppercase text-zinc-600 font-medium z-10 flex items-center gap-2">
+                <Music2 className="size-3" />
+                MUSIC BRINGS US TOGETHER
+            </div>
+        </div>
+    );
+};
