@@ -5,7 +5,7 @@ import type { User } from "@/types";
 import { Users, Info, ArrowLeft, MessageCircle, UserPlus, UserMinus, Music2, Mic2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { BackgroundGradient } from "@/components/ui/background-gradient";
+
 import { cn } from "@/lib/utils";
 
 interface UserProfilePanelProps {

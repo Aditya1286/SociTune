@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import MessageInput from "./components/MessageInput";
 import { Button } from "@/components/ui/button";
-import { BackgroundGradient } from "@/components/ui/background-gradient";
+
 
 const formatTime = (date: string) => {
 	return new Date(date).toLocaleTimeString("en-US", {
