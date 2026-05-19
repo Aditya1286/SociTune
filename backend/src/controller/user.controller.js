@@ -1,5 +1,6 @@
 import { User } from "../models/user.model.js";
 import { Message } from "../models/message.model.js";
+import { PlayHistory } from "../models/playHistory.model.js";
 import cloudinary from "../lib/cloudinary.js";
 
 export const getAllUsers = async (req, res, next) => {
@@ -251,6 +252,85 @@ export const checkUsername = async (req, res, next) => {
 		res.status(200).json({ available: true, message: "Username is available" });
 	} catch (error) {
 		console.log("Error in checkUsername", error);
+		next(error);
+	}
+};
+
+export const recordPlay = async (req, res, next) => {
+	try {
+		const userId = req.auth.userId;
+		const { songId } = req.body;
+		if (!songId) return res.status(400).json({ message: "songId is required" });
+
+		await PlayHistory.create({ userId, songId });
+		res.status(200).json({ message: "Play recorded" });
+	} catch (error) {
+		next(error);
+	}
+};
+
+export const getTimeTravelStats = async (req, res, next) => {
+	try {
+		const userId = req.auth.userId;
+
+		const now = new Date();
+		const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+		// Aggregate for top artist, top song, total minutes
+		const stats = await PlayHistory.aggregate([
+			{ $match: { userId } },
+			{
+				$lookup: {
+					from: "songs",
+					localField: "songId",
+					foreignField: "_id",
+					as: "song"
+				}
+			},
+			{ $unwind: "$song" },
+			{
+				$facet: {
+					"topSong": [
+						{ $group: { _id: "$song", count: { $sum: 1 } } },
+						{ $sort: { count: -1 } },
+						{ $limit: 1 }
+					],
+					"topArtist": [
+						{ $group: { _id: "$song.artist", count: { $sum: 1 } } },
+						{ $sort: { count: -1 } },
+						{ $limit: 1 }
+					],
+					"totalDuration": [
+						{ $group: { _id: null, totalSeconds: { $sum: "$song.duration" } } }
+					],
+					"thisMonthDuration": [
+						{ $match: { playedAt: { $gte: startOfMonth } } },
+						{ $group: { _id: null, totalSeconds: { $sum: "$song.duration" } } }
+					],
+					"otherMonthDuration": [
+						{ $match: { playedAt: { $lt: startOfMonth } } },
+						{ $group: { _id: null, totalSeconds: { $sum: "$song.duration" } } }
+					]
+				}
+			}
+		]);
+
+		const result = stats[0] || {};
+		const topSong = result.topSong?.[0]?._id || null;
+		const topArtist = result.topArtist?.[0]?._id || null;
+		const totalMinutes = Math.floor((result.totalDuration?.[0]?.totalSeconds || 0) / 60);
+		const thisMonthMinutes = Math.floor((result.thisMonthDuration?.[0]?.totalSeconds || 0) / 60);
+		const otherMonthMinutes = Math.floor((result.otherMonthDuration?.[0]?.totalSeconds || 0) / 60);
+
+		res.status(200).json({
+			topSong,
+			topArtist,
+			totalMinutes,
+			thisMonthMinutes,
+			otherMonthMinutes
+		});
+	} catch (error) {
+		console.log("Error in getTimeTravelStats", error);
 		next(error);
 	}
 };

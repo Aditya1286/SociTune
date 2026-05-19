@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { useMusicStore } from "@/stores/useMusicStore"
 import { useChatStore } from "@/stores/useChatStore"
 import { SignedIn } from "@clerk/clerk-react"
-import { HomeIcon, Library, MessageCircle, LayoutGrid, List, Award, MessageSquareHeart } from "lucide-react"
+import { HomeIcon, Library, MessageCircle, LayoutGrid, List, Award, MessageSquareHeart, Crown, Clock } from "lucide-react"
 import { Link } from "react-router-dom"
 import PlaylistSkeleton from "../../components/skeletons/PlaylistSkeleton"
 
@@ -55,6 +55,17 @@ const LeftSidebar = () => {
             </Link>
 
             <Link
+              to={"/premium"}
+              className={cn(buttonVariants({
+                variant: "ghost",
+                className: "w-full justify-start text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-colors"
+              }))}
+            >
+              <Crown className="mr-3 size-5" />
+              <span className="hidden md:inline font-medium">Premium</span>
+            </Link>
+
+            <Link
               to={"/founder"}
               className={cn(buttonVariants({
                 variant: "ghost",
@@ -63,6 +74,17 @@ const LeftSidebar = () => {
             >
               <Award className="mr-3 size-5" />
               <span className="hidden md:inline font-medium">Founders</span>
+            </Link>
+
+            <Link
+              to={"/time-travel"}
+              className={cn(buttonVariants({
+                variant: "ghost",
+                className: "w-full justify-start text-zinc-300 hover:text-white hover:bg-white/10 transition-colors"
+              }))}
+            >
+              <Clock className="mr-3 size-5" />
+              <span className="hidden md:inline font-medium">Time Travel</span>
             </Link>
 
             <button

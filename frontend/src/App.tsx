@@ -8,6 +8,8 @@ import AlbumPage from "./pages/album/AlbumPage.tsx";
 import AdminPage from "./pages/admin/AdminPage.tsx";
 import NotFoundPage from "./pages/404/NotFoundPage.tsx";
 import FounderPage from "./pages/founder/FounderPage.tsx";
+import PremiumPage from "./pages/premium/PremiumPage.tsx";
+import TimeTravelPage from "./pages/time-travel/TimeTravelPage.tsx";
 import { useChatStore } from "./stores/useChatStore.ts";
 import { usePlayerStore } from "./stores/usePlayerStore.ts";
 import { useEffect } from "react";
@@ -46,6 +48,8 @@ const App = () => {
         <Route path='/chat' element={<ChatPage/>} />
         <Route path='/albums/:albumId' element={<AlbumPage/>} />
         <Route path='/founder' element={<FounderPage/>} />
+        <Route path='/premium' element={<PremiumPage/>} />
+        <Route path='/time-travel' element={<TimeTravelPage/>} />
         <Route path='*' element={<NotFoundPage/>} />
       </Route>
     </Routes>
