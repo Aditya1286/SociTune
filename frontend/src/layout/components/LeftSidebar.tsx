@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { useMusicStore } from "@/stores/useMusicStore"
 import { useChatStore } from "@/stores/useChatStore"
 import { SignedIn } from "@clerk/clerk-react"
-import { HomeIcon, Library, MessageCircle, LayoutGrid, List, Award, MessageSquareHeart, Crown, Clock } from "lucide-react"
+import { HomeIcon, Library, MessageCircle, LayoutGrid, List, Award, MessageSquareHeart, Crown, Clock, Heart, Radar } from "lucide-react"
 import { Link } from "react-router-dom"
 import PlaylistSkeleton from "../../components/skeletons/PlaylistSkeleton"
 
@@ -87,6 +87,17 @@ const LeftSidebar = () => {
               <span className="hidden md:inline font-medium">Time Travel</span>
             </Link>
 
+            <Link
+              to={"/matches"}
+              className={cn(buttonVariants({
+                variant: "ghost",
+                className: "w-full justify-start text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 transition-colors"
+              }))}
+            >
+              <Radar className="mr-3 size-5 animate-pulse" />
+              <span className="hidden md:inline font-medium tracking-wide">Match Engine</span>
+            </Link>
+
             <button
               onClick={() => document.dispatchEvent(new CustomEvent("open-feedback"))}
               className={cn(buttonVariants({
@@ -126,6 +137,28 @@ const LeftSidebar = () => {
                   viewMode === 'grid' ? "grid grid-cols-2 lg:grid-cols-3 gap-3 hidden md:grid" : "space-y-2",
                   viewMode === 'grid' && "md:grid-cols-2 xl:grid-cols-3"
               )}>
+                {/* Liked Songs Fixed Item */}
+                <Link
+                    to="/liked-songs"
+                    className={cn(
+                        "group cursor-pointer transition-all duration-300 hover:bg-white/10 rounded-lg relative overflow-hidden",
+                        viewMode === 'list' ? "p-2 flex items-center gap-3" : "aspect-square block"
+                    )}
+                >
+                    <div className={cn(
+                        "relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600",
+                        viewMode === 'list' ? "size-12 rounded-md flex-shrink-0" : "w-full h-full rounded-lg"
+                    )}>
+                        <Heart className="size-5 text-white fill-white group-hover:scale-110 transition-transform duration-300 drop-shadow-md" />
+                    </div>
+                    {viewMode === 'list' && (
+                        <div className='flex-1 min-w-0 hidden md:block'>
+                            <p className='font-medium text-white/90 group-hover:text-white transition-colors'>Liked Songs</p>
+                            <p className='text-sm text-zinc-400/80 group-hover:text-zinc-300 transition-colors'>Playlist</p>
+                        </div>
+                    )}
+                </Link>
+
                 {
                     isLoading ? (
                         <PlaylistSkeleton />

@@ -5,6 +5,7 @@ import { io } from "socket.io-client";
 
 interface ChatStore {
 	users: User[];
+	recommendations: User[];
 	isLoading: boolean;
 	error: string | null;
 	socket: any;
@@ -20,6 +21,7 @@ interface ChatStore {
 	profileSource: 'chat' | 'discover';
 
 	fetchUsers: () => Promise<void>;
+	fetchRecommendations: () => Promise<void>;
 	initSocket: (userId: string) => void;
 	disconnectSocket: () => void;
 	sendMessage: (receiverId: string, senderId: string, content: string, replyToId?: string) => void;
@@ -48,6 +50,7 @@ const socket = io(baseURL, {
 
 export const useChatStore = create<ChatStore>((set, get) => ({
 	users: [],
+	recommendations: [],
 	isLoading: false,
 	error: null,
 	socket: socket,
@@ -84,6 +87,15 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 			set({ error: error.response.data.message });
 		} finally {
 			set({ isLoading: false });
+		}
+	},
+
+	fetchRecommendations: async () => {
+		try {
+			const response = await axiosInstance.get("/users/recommendations?limit=10");
+			set({ recommendations: response.data });
+		} catch (error) {
+			console.error("Failed to fetch recommendations", error);
 		}
 	},
 

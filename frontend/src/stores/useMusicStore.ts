@@ -12,6 +12,7 @@ interface MusicStore {
 	featuredSongs: Song[];
 	madeForYouSongs: Song[];
 	trendingSongs: Song[];
+	likedSongs: Song[];
 	stats: Stats;
 
 	fetchAlbums: () => Promise<void>;
@@ -19,15 +20,18 @@ interface MusicStore {
 	fetchFeaturedSongs: () => Promise<void>;
 	fetchMadeForYouSongs: () => Promise<void>;
 	fetchTrendingSongs: () => Promise<void>;
+	fetchLikedSongs: () => Promise<void>;
 	fetchStats: () => Promise<void>;
 	fetchSongs: () => Promise<void>;
 	deleteSong: (id: string) => Promise<void>;
 	deleteAlbum: (id: string) => Promise<void>;
+	toggleLikeSong: (id: string) => Promise<void>;
 }
 
 export const useMusicStore = create<MusicStore>((set) => ({
 	albums: [],
 	songs: [],
+	likedSongs: [],
 	isLoading: false,
 	error: null,
 	currentAlbum: null,
@@ -53,6 +57,28 @@ export const useMusicStore = create<MusicStore>((set) => ({
 		} catch (error: any) {
 			console.log("Error in deleteSong", error);
 			toast.error("Error deleting song");
+		} finally {
+			set({ isLoading: false });
+		}
+	},
+
+	toggleLikeSong: async (id) => {
+		try {
+			const response = await axiosInstance.post(`/users/like/${id}`);
+			set({ likedSongs: response.data });
+		} catch (error: any) {
+			console.log("Error in toggleLikeSong", error);
+			toast.error("Failed to update liked songs");
+		}
+	},
+
+	fetchLikedSongs: async () => {
+		set({ isLoading: true, error: null });
+		try {
+			const response = await axiosInstance.get("/users/liked-songs");
+			set({ likedSongs: response.data });
+		} catch (error: any) {
+			set({ error: error.message });
 		} finally {
 			set({ isLoading: false });
 		}

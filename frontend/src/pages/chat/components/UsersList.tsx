@@ -130,7 +130,7 @@ const UsersList = () => {
 										)}
 									</TabsContent>
 									
-									<TabsContent value="discover" className="mt-0 outline-none">
+									<TabsContent value="discover" className="mt-0 outline-none space-y-1">
 										{discoverUsers.length === 0 ? (
 											<div className="text-center py-8 text-zinc-500 text-sm">
 												No more users to discover.

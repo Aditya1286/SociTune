@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Loader } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useChatStore } from "@/stores/useChatStore";
+import { useMusicStore } from "@/stores/useMusicStore";
 
 const updateApiToken = (token: string | null) => {
   if (token) {
@@ -18,6 +19,7 @@ const updateApiToken = (token: string | null) => {
     const [loading, setLoading] = useState(true);
     const {checkAdminStatus} = useAuthStore();
     const { initSocket, disconnectSocket } = useChatStore();
+    const { fetchLikedSongs } = useMusicStore();
 
 
   useEffect(() => {
@@ -26,7 +28,10 @@ const updateApiToken = (token: string | null) => {
         const token = await getToken(); 
         updateApiToken(token);
         if(token) {
-          await checkAdminStatus();
+          await Promise.all([
+            checkAdminStatus(),
+            fetchLikedSongs()
+          ]);
           // init socket
           if (userId) initSocket(userId);
         }

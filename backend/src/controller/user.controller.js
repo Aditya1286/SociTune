@@ -2,6 +2,7 @@ import { User } from "../models/user.model.js";
 import { Message } from "../models/message.model.js";
 import { PlayHistory } from "../models/playHistory.model.js";
 import cloudinary from "../lib/cloudinary.js";
+import { recommender } from "../lib/recommendation.js";
 
 export const getAllUsers = async (req, res, next) => {
 	try {
@@ -263,8 +264,56 @@ export const recordPlay = async (req, res, next) => {
 		if (!songId) return res.status(400).json({ message: "songId is required" });
 
 		await PlayHistory.create({ userId, songId });
+		
+		// Notify recommender engine to clear cache or queue recalculation
+		recommender.recordPlay(userId, songId);
+		
 		res.status(200).json({ message: "Play recorded" });
 	} catch (error) {
+		next(error);
+	}
+};
+
+export const getRecommendedUsers = async (req, res, next) => {
+	try {
+		const userId = req.auth.userId;
+		const topN = parseInt(req.query.limit) || 10;
+		const myUser = await User.findOne({ clerkId: userId });
+		const myFriends = myUser ? (myUser.friends || []) : [];
+		
+		// Get similar user IDs from the recommender (fetch more to account for filtered friends)
+		const similarUserIdsRaw = recommender.getSimilarUsers(userId, 50);
+		
+		// Filter out users you already follow
+		const similarUserIds = similarUserIdsRaw
+			.filter(su => !myFriends.includes(su.userId))
+			.slice(0, topN);
+		
+		if (similarUserIds.length === 0) {
+			return res.status(200).json([]);
+		}
+		
+		const clerkIds = similarUserIds.map(su => su.userId);
+		
+		// Fetch actual user details
+		const users = await User.find({ clerkId: { $in: clerkIds } }).select("fullName imageUrl clerkId username bio");
+		
+		// Map the similarity scores to the user objects
+		const usersWithScores = users.map(user => {
+			const similarityData = similarUserIds.find(su => su.userId === user.clerkId);
+			return {
+				...user.toJSON(),
+				similarityScore: similarityData ? similarityData.score : 0,
+				matchDetails: similarityData ? similarityData.matchDetails : null
+			};
+		});
+		
+		// Sort by similarity score descending
+		usersWithScores.sort((a, b) => b.similarityScore - a.similarityScore);
+		
+		res.status(200).json(usersWithScores);
+	} catch (error) {
+		console.log("Error in getRecommendedUsers", error);
 		next(error);
 	}
 };
@@ -331,6 +380,46 @@ export const getTimeTravelStats = async (req, res, next) => {
 		});
 	} catch (error) {
 		console.log("Error in getTimeTravelStats", error);
+		next(error);
+	}
+};
+
+export const toggleLikeSong = async (req, res, next) => {
+	try {
+		const userId = req.auth.userId;
+		const { songId } = req.params;
+
+		const user = await User.findOne({ clerkId: userId });
+		if (!user) return res.status(404).json({ message: "User not found" });
+
+		const index = user.likedSongs.indexOf(songId);
+		if (index > -1) {
+			user.likedSongs.splice(index, 1);
+		} else {
+			user.likedSongs.push(songId);
+		}
+
+		await user.save();
+		
+		// Return populated liked songs after update
+		const updatedUser = await User.findOne({ clerkId: userId }).populate("likedSongs");
+		res.status(200).json(updatedUser.likedSongs);
+	} catch (error) {
+		console.log("Error in toggleLikeSong", error);
+		next(error);
+	}
+};
+
+export const getLikedSongs = async (req, res, next) => {
+	try {
+		const userId = req.auth.userId;
+		const user = await User.findOne({ clerkId: userId }).populate("likedSongs");
+		
+		if (!user) return res.status(404).json({ message: "User not found" });
+		
+		res.status(200).json(user.likedSongs || []);
+	} catch (error) {
+		console.log("Error in getLikedSongs", error);
 		next(error);
 	}
 };

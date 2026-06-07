@@ -39,6 +39,10 @@ const userSchema = new mongoose.Schema({
     sentRequests: [{
         type: String, // sent requests
     }],
+    likedSongs: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Song"
+    }],
     lastSeen: {
         type: Date,
         default: Date.now

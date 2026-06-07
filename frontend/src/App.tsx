@@ -10,6 +10,8 @@ import NotFoundPage from "./pages/404/NotFoundPage.tsx";
 import FounderPage from "./pages/founder/FounderPage.tsx";
 import PremiumPage from "./pages/premium/PremiumPage.tsx";
 import TimeTravelPage from "./pages/time-travel/TimeTravelPage.tsx";
+import LikedSongsPage from "./pages/liked-songs/LikedSongsPage.tsx";
+import MatchesPage from "./pages/matches/MatchesPage.tsx";
 import { useChatStore } from "./stores/useChatStore.ts";
 import { usePlayerStore } from "./stores/usePlayerStore.ts";
 import { useEffect } from "react";
@@ -50,6 +52,8 @@ const App = () => {
         <Route path='/founder' element={<FounderPage/>} />
         <Route path='/premium' element={<PremiumPage/>} />
         <Route path='/time-travel' element={<TimeTravelPage/>} />
+        <Route path='/liked-songs' element={<LikedSongsPage/>} />
+        <Route path='/matches' element={<MatchesPage/>} />
         <Route path='*' element={<NotFoundPage/>} />
       </Route>
     </Routes>

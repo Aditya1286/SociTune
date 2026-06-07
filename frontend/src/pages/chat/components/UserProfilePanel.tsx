@@ -5,6 +5,8 @@ import type { User } from "@/types";
 import { Users, Info, ArrowLeft, MessageCircle, UserPlus, UserMinus, Music2, Mic2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { FriendButton } from "@/components/FriendButton";
 
 import { cn } from "@/lib/utils";
 
@@ -18,7 +20,7 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 	const { getMutualFriends, onlineUsers, setViewState, sendFriendRequest, removeFriend, setSelectedUser, profileSource } = useChatStore();
 	const [mutualFriends, setMutualFriends] = useState<User[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
-	const [showMutuals, setShowMutuals] = useState(false);
+	const [isMutualsModalOpen, setIsMutualsModalOpen] = useState(false);
 
 	const isOnline = onlineUsers.has(user.clerkId);
 
@@ -124,7 +126,13 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                     <div className="flex items-center gap-3 w-full max-w-xs justify-center mb-8">
                         <Button 
                             onClick={handleMessageClick}
-                            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-900/20 transition-all active:scale-95"
+                            disabled={!user.isFriend}
+                            className={cn(
+                                "flex-1 rounded-xl transition-all active:scale-95",
+                                user.isFriend 
+                                    ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20" 
+                                    : "bg-zinc-800 text-zinc-500 cursor-not-allowed opacity-50"
+                            )}
                         >
                             <MessageCircle className="size-4 mr-2" />
                             Message
@@ -173,15 +181,62 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 							<p className={cn("font-bold text-white group-hover:text-indigo-400 transition-colors", isMainView ? "text-2xl" : "text-xl")}>{user.friends?.length || 0}</p>
 							<p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-medium">Following</p>
 						</div>
-						<div 
-							className="text-center cursor-pointer group min-w-[70px]"
-							onClick={() => setShowMutuals(!showMutuals)}
-						>
-							<p className={cn("font-bold text-white group-hover:text-amber-400 transition-colors", isMainView ? "text-2xl" : "text-xl")}>
-								{user.mutualFriendsCount || mutualFriends.length}
-							</p>
-							<p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-medium">Mutuals</p>
-						</div>
+                        
+                        <Dialog open={isMutualsModalOpen} onOpenChange={setIsMutualsModalOpen}>
+                            <DialogTrigger asChild>
+                                <div className="text-center cursor-pointer group min-w-[70px]">
+                                    <p className={cn("font-bold text-white group-hover:text-amber-400 transition-colors", isMainView ? "text-2xl" : "text-xl")}>
+                                        {user.mutualFriendsCount || mutualFriends.length}
+                                    </p>
+                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-medium">Mutuals</p>
+                                </div>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md bg-zinc-950 border-white/10 text-white shadow-2xl">
+                                <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
+                                        <Users className="size-5 text-emerald-500" />
+                                        Mutual Followers
+                                    </DialogTitle>
+                                </DialogHeader>
+                                <ScrollArea className="max-h-[60vh] mt-2">
+                                    {isLoading ? (
+                                        <div className="flex justify-center py-8">
+                                            <div className="size-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                                        </div>
+                                    ) : mutualFriends.length === 0 ? (
+                                        <div className="py-8 bg-zinc-900/30 rounded-xl border border-white/5 text-center mt-2">
+                                            <p className="text-sm text-zinc-500">No mutual followers</p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col gap-2 pr-4 pb-4">
+                                            {mutualFriends.map(mutual => (
+                                                <div key={mutual.clerkId} className="flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/50 transition-colors group">
+                                                    <div 
+                                                        className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" 
+                                                        onClick={() => { 
+                                                            setIsMutualsModalOpen(false); 
+                                                            setSelectedUser(mutual, 'profile'); 
+                                                        }}
+                                                    >
+                                                        <Avatar className="size-11 border border-zinc-800 shadow-sm group-hover:border-emerald-500/30 transition-colors">
+                                                            <AvatarImage src={mutual.imageUrl} />
+                                                            <AvatarFallback className="bg-zinc-800 text-zinc-400 font-bold">{mutual.fullName[0]}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-semibold text-white truncate group-hover:text-emerald-400 transition-colors">{mutual.fullName}</p>
+                                                            {mutual.username && <p className="text-[11px] text-zinc-500 truncate">@{mutual.username}</p>}
+                                                        </div>
+                                                    </div>
+                                                    <div className="shrink-0 ml-3">
+                                                        <FriendButton user={mutual} />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </ScrollArea>
+                            </DialogContent>
+                        </Dialog>
 					</div>
 
                     {/* Music Identity */}
@@ -211,42 +266,6 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                             )}
                         </div>
                     )}
-
-					{/* Mutual Friends List */}
-					{showMutuals && (
-						<div className={cn(
-                            "w-full animate-in fade-in slide-in-from-top-4 duration-300",
-                            isMainView ? "max-w-2xl" : ""
-                        )}>
-							<div className="flex items-center gap-2 mb-4 px-1">
-								<Users className="size-4 text-emerald-500" />
-								<h4 className="text-sm font-bold text-white uppercase tracking-wider">Mutual Followers</h4>
-							</div>
-							
-							{isLoading ? (
-								<p className="text-sm text-zinc-500 text-center py-6">Loading mutuals...</p>
-							) : mutualFriends.length === 0 ? (
-								<div className="py-8 bg-zinc-900/30 rounded-2xl border border-white/5 text-center">
-                                    <p className="text-sm text-zinc-500">No mutual followers</p>
-                                </div>
-							) : (
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-									{mutualFriends.map(mutual => (
-										<div key={mutual.clerkId} className="flex items-center gap-4 p-3 rounded-xl bg-zinc-900/40 hover:bg-zinc-800/60 border border-transparent hover:border-white/5 transition-all cursor-pointer group">
-											<Avatar className="size-10 border border-zinc-700 shadow-sm group-hover:border-emerald-500/50 transition-colors">
-												<AvatarImage src={mutual.imageUrl} />
-												<AvatarFallback className="bg-zinc-800 text-zinc-400">{mutual.fullName[0]}</AvatarFallback>
-											</Avatar>
-											<div className="flex-1 min-w-0">
-												<p className="text-sm font-medium text-white truncate group-hover:text-emerald-400 transition-colors">{mutual.fullName}</p>
-												{mutual.username && <p className="text-xs text-zinc-500 truncate mt-0.5">@{mutual.username}</p>}
-											</div>
-										</div>
-									))}
-								</div>
-							)}
-						</div>
-					)}
 				</div>
 			</ScrollArea>
 		</div>

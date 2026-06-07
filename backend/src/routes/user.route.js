@@ -1,7 +1,10 @@
 import {Router} from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
-import {getAllUsers, getMessages, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, removeFriend, updateProfile, getMutualFriends, checkUsername, recordPlay, getTimeTravelStats} from "../controller/user.controller.js";
+import {getAllUsers, getMessages, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, removeFriend, updateProfile, getMutualFriends, checkUsername, recordPlay, getTimeTravelStats, getRecommendedUsers, toggleLikeSong, getLikedSongs} from "../controller/user.controller.js";
 const router = Router();
+router.post('/like/:songId', protectRoute, toggleLikeSong);
+router.get('/liked-songs', protectRoute, getLikedSongs);
+router.get('/recommendations', protectRoute, getRecommendedUsers);
 router.get('/check-username', protectRoute, checkUsername);
 router.post('/play-history', protectRoute, recordPlay);
 router.get('/time-travel', protectRoute, getTimeTravelStats);

@@ -3,6 +3,7 @@ import { Slider } from "@/components/ui/slider";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { Laptop2, ListMusic, Mic2, Pause, Play, Repeat, Shuffle, SkipBack, SkipForward, Volume1 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { LikeButton } from "@/components/LikeButton";
 
 const formatTime = (seconds: number) => {
 	const minutes = Math.floor(seconds / 60);
@@ -102,6 +103,7 @@ export const PlaybackControls = () => {
 									{currentSong.artist}
 								</div>
 							</div>
+							<LikeButton songId={currentSong._id} className="ml-2" />
 						</>
 					)}
 				</div>

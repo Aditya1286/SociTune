@@ -38,6 +38,32 @@ export interface Message {
 	updatedAt: string;
 }
 
+export interface MatchDetails {
+	grade?: string;
+	compatibility_score?: number;
+	signal_breakdown?: {
+		genre_overlap: number;
+		audio_similarity: number;
+		mood_alignment: number;
+		artist_graph: number;
+		context_sync: number;
+	};
+	shared_genres?: string[];
+	taste_tension_points?: string[];
+	narrative_summary?: string;
+	
+	topSongs: { id: string; title: string; artist: string; playsA: number; playsB: number }[];
+	topArtists: { name: string; commonSongs: number }[];
+	commonGenres: { name: string; percentA: number; percentB: number }[];
+	audioMatch: {
+		energy: number;
+		tempo: number;
+		valence: number;
+		acousticness: number;
+	};
+	preferredTime?: string;
+}
+
 export interface User {
 	_id: string;
 	clerkId: string;
@@ -55,4 +81,6 @@ export interface User {
 	isPending?: boolean;
 	isSent?: boolean;
 	mutualFriendsCount?: number;
+	similarityScore?: number;
+	matchDetails?: MatchDetails | null;
 }

@@ -20,6 +20,30 @@ const songSchema = new mongoose.Schema({
         type:Number,
         required:true,
     },
+    tempo: {
+        type: Number,
+        default: () => Math.floor(Math.random() * (180 - 60 + 1) + 60) // Random default 60-180 BPM
+    },
+    energy: {
+        type: Number,
+        default: () => Math.random()
+    },
+    valence: {
+        type: Number,
+        default: () => Math.random()
+    },
+    acousticness: {
+        type: Number,
+        default: () => Math.random()
+    },
+    danceability: {
+        type: Number,
+        default: () => Math.random()
+    },
+    genre: {
+        type: String,
+        default: "Pop"
+    },
     albumId:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'Album',

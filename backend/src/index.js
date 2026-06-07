@@ -74,7 +74,10 @@ app.use((err,req,res,next)=>{
     res.status(500).json({message: process.env.NODE_ENV==="production"?"Internal Server Error":err.message});
 })
 
-httpServer.listen(PORT,()=>{
+import { recommender } from "./lib/recommendation.js";
+
+httpServer.listen(PORT,async ()=>{
     console.log("Server is runnnig at port "+PORT);
-    connectDB();
+    await connectDB();
+    await recommender.init();
 })
