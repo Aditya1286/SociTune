@@ -1,7 +1,7 @@
 import { useChatStore } from "@/stores/useChatStore";
 import { useUser } from "@clerk/clerk-react";
-import { useEffect } from "react";
-import { CheckCheck, Trash, Reply, Music2, Users } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { CheckCheck, Trash, Reply, Music2, Users, X, Download, Play, Pause } from "lucide-react";
 import { motion } from "framer-motion";
 import UsersList from "./components/UsersList";
 import ChatHeader from "./components/ChatHeader";
@@ -20,9 +20,84 @@ const formatTime = (date: string) => {
 	});
 };
 
+const VoiceMessagePlayer = ({ url, isSender }: { url: string; isSender: boolean }) => {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const progressRef = useRef<HTMLDivElement>(null);
+
+    const togglePlay = () => {
+        if (audioRef.current) {
+            if (isPlaying) {
+                audioRef.current.pause();
+            } else {
+                audioRef.current.play();
+            }
+            setIsPlaying(!isPlaying);
+        }
+    };
+
+    const handleTimeUpdate = () => {
+        if (audioRef.current && progressRef.current) {
+            const currentTime = audioRef.current.currentTime;
+            let duration = audioRef.current.duration;
+            if (isNaN(duration) || duration === Infinity) {
+                duration = 10; // Fallback
+            }
+            const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+            progressRef.current.style.width = `${Math.min(progress, 100)}%`;
+        }
+    };
+
+    const handleEnded = () => {
+        setIsPlaying(false);
+        if (progressRef.current) {
+            progressRef.current.style.width = '0%';
+        }
+    };
+
+    return (
+        <div className={`flex items-center gap-2 p-1.5 pr-3 rounded-full mb-2 w-fit ${isSender ? "bg-emerald-700/80 border border-emerald-500/50 shadow-inner shadow-black/10" : "bg-zinc-900 border border-zinc-700/50 shadow-inner shadow-black/20"}`}>
+            <Button variant="ghost" size="icon" onClick={togglePlay} className={`h-8 w-8 rounded-full shadow-sm ${isSender ? "bg-emerald-500 hover:bg-emerald-400 text-white" : "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400"}`}>
+                {isPlaying ? <Pause className="size-4" /> : <Play className="size-4 ml-0.5" />}
+            </Button>
+            <div className="flex items-center w-24 md:w-32">
+                <div className={`h-1 w-full rounded-full overflow-hidden ${isSender ? "bg-emerald-800/50" : "bg-zinc-700"}`}>
+                    <div ref={progressRef} className={`h-full ${isSender ? "bg-white" : "bg-emerald-500"}`} style={{ width: `0%`, transition: 'width 0.1s linear' }} />
+                </div>
+            </div>
+            <audio 
+
+                ref={audioRef} 
+                src={url} 
+                onTimeUpdate={handleTimeUpdate}
+                onEnded={handleEnded}
+                className="hidden" 
+            />
+        </div>
+    );
+};
+
 const ChatPage = () => {
 	const { user } = useUser();
 	const { messages, selectedUser, fetchUsers, fetchMessages, markMessagesAsRead, setReplyingToMessage, deleteMessage, reactToMessage, viewState, setViewState } = useChatStore();
+	const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+	const handleDownloadImage = async (url: string) => {
+		try {
+			const response = await fetch(url);
+			const blob = await response.blob();
+			const blobUrl = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = blobUrl;
+			link.download = "socitune_image.png";
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			URL.revokeObjectURL(blobUrl);
+		} catch (error) {
+			console.error("Failed to download image", error);
+		}
+	};
 
 	useEffect(() => {
 		if (user) fetchUsers();
@@ -46,6 +121,7 @@ const ChatPage = () => {
 	}, [selectedUser, messages, markMessagesAsRead, viewState]);
 
 	return (
+        <>
 		<main className='h-full rounded-lg bg-zinc-950 overflow-hidden flex flex-col'>
 			<div className='flex flex-1 overflow-hidden relative'>
 				<div className={`w-[80px] lg:w-[350px] xl:w-[400px] flex-shrink-0 border-r border-white/5 bg-zinc-900/50 ${selectedUser ? "hidden md:block" : "block w-full md:w-[80px]"}`}>
@@ -103,7 +179,17 @@ const ChatPage = () => {
                                                             </div>
                                                         )}
 
-                                                        <p className='text-[15px] break-words leading-relaxed'>{message.content}</p>
+                                                        {message.imageUrl && (
+                                                            <div className="mb-2 rounded-lg overflow-hidden relative cursor-pointer" onClick={() => setPreviewImage(message.imageUrl!)}>
+                                                                <img src={message.imageUrl} alt="attachment" className="max-w-[200px] md:max-w-[250px] object-cover border border-white/10 hover:opacity-90 transition-opacity" />
+                                                            </div>
+                                                        )}
+                                                        {message.voiceNoteUrl && (
+                                                            <VoiceMessagePlayer url={message.voiceNoteUrl} isSender={message.senderId === user?.id} />
+                                                        )}
+                                                        {message.content && (
+                                                            <p className='text-[15px] break-words leading-relaxed'>{message.content}</p>
+                                                        )}
                                                         <span className='text-[10px] text-white/50 mt-1 flex items-center justify-end gap-1 font-medium'>
                                                             {formatTime(message.createdAt)}
                                                             {message.senderId === user?.id && (
@@ -133,7 +219,7 @@ const ChatPage = () => {
                                                             <Reply className='size-4' />
                                                         </Button>
                                                         <div className="flex items-center gap-0.5 bg-zinc-900/50 rounded-full px-1">
-                                                            {['👍', '❤️', '😂'].map(emoji => (
+                                                            {['👍', '❤️', '😂', '😮', '😢', '🙏'].map(emoji => (
                                                                 <button 
                                                                     key={emoji}
                                                                     onClick={() => reactToMessage(message._id, emoji)}
@@ -164,6 +250,22 @@ const ChatPage = () => {
 				</div>
 			</div>
 		</main>
+        {previewImage && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                <div className="relative max-w-4xl max-h-[90vh] w-full flex flex-col items-center">
+                    <div className="absolute -top-12 right-0 flex gap-4">
+                        <Button variant="ghost" size="icon" onClick={() => handleDownloadImage(previewImage)} className="text-white hover:bg-white/20 rounded-full">
+                            <Download className="size-6" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setPreviewImage(null)} className="text-white hover:bg-white/20 rounded-full">
+                            <X className="size-6" />
+                        </Button>
+                    </div>
+                    <img src={previewImage} alt="Preview" className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" />
+                </div>
+            </div>
+        )}
+        </>
 	);
 };
 export default ChatPage;

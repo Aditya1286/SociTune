@@ -80,11 +80,11 @@ const LeftSidebar = () => {
               to={"/time-travel"}
               className={cn(buttonVariants({
                 variant: "ghost",
-                className: "w-full justify-start text-zinc-300 hover:text-white hover:bg-white/10 transition-colors"
+                className: "w-full justify-start text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 transition-colors"
               }))}
             >
-              <Clock className="mr-3 size-5" />
-              <span className="hidden md:inline font-medium">Time Travel</span>
+              <Clock className="mr-3 size-5 animate-[pulse_3s_ease-in-out_infinite]" />
+              <span className="hidden md:inline font-medium tracking-wide">Time Travel</span>
             </Link>
 
             <Link

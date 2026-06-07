@@ -76,8 +76,17 @@ app.use((err,req,res,next)=>{
 
 import { recommender } from "./lib/recommendation.js";
 
-httpServer.listen(PORT,async ()=>{
-    console.log("Server is runnnig at port "+PORT);
-    await connectDB();
-    await recommender.init();
-})
+const startServer = async () => {
+    try {
+        await connectDB();
+        await recommender.init();
+        httpServer.listen(PORT, () => {
+            console.log("Server is running at port " + PORT);
+        });
+    } catch (error) {
+        console.error("Failed to start server:", error);
+        process.exit(1);
+    }
+};
+
+startServer();

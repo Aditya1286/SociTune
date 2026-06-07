@@ -24,7 +24,7 @@ interface ChatStore {
 	fetchRecommendations: () => Promise<void>;
 	initSocket: (userId: string) => void;
 	disconnectSocket: () => void;
-	sendMessage: (receiverId: string, senderId: string, content: string, replyToId?: string) => void;
+	sendMessage: (receiverId: string, senderId: string, content: string, replyToId?: string, imageUrl?: string, voiceNoteUrl?: string) => void;
 	markMessagesAsRead: (senderId: string) => void;
 	deleteMessage: (messageId: string) => void;
 	reactToMessage: (messageId: string, emoji: string) => void;
@@ -39,6 +39,7 @@ interface ChatStore {
 	removeFriend: (userId: string) => Promise<void>;
 	updateProfile: (formData: FormData) => Promise<void>;
 	getMutualFriends: (userId: string) => Promise<User[]>;
+	getUserFriends: (userId: string) => Promise<User[]>;
 }
 
 const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "/";
@@ -185,6 +186,16 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 		}
 	},
 
+	getUserFriends: async (userId: string) => {
+		try {
+			const res = await axiosInstance.get(`/users/profile/${userId}/friends`);
+			return res.data;
+		} catch (error) {
+			console.error("Failed to fetch user friends", error);
+			return [];
+		}
+	},
+
 	initSocket: (userId) => {
 		if (!get().isConnected) {
 			socket.auth = { userId };
@@ -310,11 +321,11 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 		}
 	},
 
-	sendMessage: async (receiverId, senderId, content, replyToId) => {
+	sendMessage: async (receiverId, senderId, content, replyToId, imageUrl, voiceNoteUrl) => {
 		const socket = get().socket;
 		if (!socket) return;
 
-		socket.emit("send_message", { receiverId, senderId, content, replyToId });
+		socket.emit("send_message", { receiverId, senderId, content, replyToId, imageUrl, voiceNoteUrl });
 		set({ replyingToMessage: null });
 	},
 

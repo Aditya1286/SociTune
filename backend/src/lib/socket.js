@@ -44,7 +44,7 @@ export const initializeSocket = (server) => {
 
 		socket.on("send_message", async (data) => {
 			try {
-				const { senderId, receiverId, content, replyToId } = data;
+				const { senderId, receiverId, content, replyToId, imageUrl, voiceNoteUrl } = data;
 
 				// Check if they are friends
 				const senderUser = await User.findOne({ clerkId: senderId });
@@ -55,8 +55,11 @@ export const initializeSocket = (server) => {
 				let messageData = {
 					senderId,
 					receiverId,
-					content,
+					content: content || "",
 				};
+
+				if (imageUrl) messageData.imageUrl = imageUrl;
+				if (voiceNoteUrl) messageData.voiceNoteUrl = voiceNoteUrl;
 
 				if (replyToId) {
 					messageData.replyTo = replyToId;

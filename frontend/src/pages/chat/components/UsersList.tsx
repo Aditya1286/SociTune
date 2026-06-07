@@ -73,13 +73,13 @@ const UsersList = () => {
 				) : null}
 
 				<div className="hidden lg:block">
-					<FriendButton user={user} />
+					{!isFriendTab && <FriendButton user={user} />}
 				</div>
 			</div>
 			
 			{/* Mobile view action button */}
 			<div className="lg:hidden shrink-0">
-				<FriendButton user={user} />
+				{!isFriendTab && <FriendButton user={user} />}
 			</div>
 		</div>
 	);

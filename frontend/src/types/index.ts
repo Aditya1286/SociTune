@@ -31,6 +31,8 @@ export interface Message {
 	senderId: string;
 	receiverId: string;
 	content: string;
+	imageUrl?: string;
+	voiceNoteUrl?: string;
 	isRead?: boolean;
 	replyTo?: { _id: string, content: string, senderId: string };
 	reactions?: Record<string, string>;

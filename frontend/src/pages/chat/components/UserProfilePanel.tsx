@@ -1,8 +1,9 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@clerk/clerk-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChatStore } from "@/stores/useChatStore";
 import type { User } from "@/types";
-import { Users, Info, ArrowLeft, MessageCircle, UserPlus, UserMinus, Music2, Mic2, X } from "lucide-react";
+import { Users, Info, ArrowLeft, MessageCircle, UserPlus, UserMinus, Music2, Mic2, X, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -17,22 +18,31 @@ interface UserProfilePanelProps {
 }
 
 export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProfilePanelProps) => {
-	const { getMutualFriends, onlineUsers, setViewState, sendFriendRequest, removeFriend, setSelectedUser, profileSource } = useChatStore();
+	const { userId } = useAuth();
+	const { getMutualFriends, getUserFriends, onlineUsers, setViewState, sendFriendRequest, removeFriend, setSelectedUser, profileSource } = useChatStore();
 	const [mutualFriends, setMutualFriends] = useState<User[]>([]);
+	const [userFriends, setUserFriends] = useState<User[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isMutualsModalOpen, setIsMutualsModalOpen] = useState(false);
+	const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
+	const [isFollowingModalOpen, setIsFollowingModalOpen] = useState(false);
+	const [isHoveringFollow, setIsHoveringFollow] = useState(false);
 
 	const isOnline = onlineUsers.has(user.clerkId);
 
 	useEffect(() => {
-		const fetchMutuals = async () => {
+		const fetchFriendsData = async () => {
 			setIsLoading(true);
-			const friends = await getMutualFriends(user.clerkId);
-			setMutualFriends(friends);
+			const [mutuals, friends] = await Promise.all([
+				getMutualFriends(user.clerkId),
+				getUserFriends(user.clerkId)
+			]);
+			setMutualFriends(mutuals);
+			setUserFriends(friends);
 			setIsLoading(false);
 		};
-		fetchMutuals();
-	}, [user.clerkId, getMutualFriends]);
+		fetchFriendsData();
+	}, [user.clerkId, getMutualFriends, getUserFriends]);
 
 	const handleMessageClick = () => {
 		setViewState('chat');
@@ -123,41 +133,49 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                     )}
 					
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-3 w-full max-w-xs justify-center mb-8">
-                        <Button 
-                            onClick={handleMessageClick}
-                            disabled={!user.isFriend}
-                            className={cn(
-                                "flex-1 rounded-xl transition-all active:scale-95",
-                                user.isFriend 
-                                    ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20" 
-                                    : "bg-zinc-800 text-zinc-500 cursor-not-allowed opacity-50"
-                            )}
-                        >
-                            <MessageCircle className="size-4 mr-2" />
-                            Message
-                        </Button>
-                        <Button 
-                            onClick={handleFollowClick}
-                            variant={user.isFriend ? "outline" : "default"}
-                            className={cn(
-                                "flex-1 rounded-xl transition-all active:scale-95",
-                                user.isFriend 
-                                    ? "bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white" 
-                                    : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-900/20"
-                            )}
-                        >
-                            {user.isFriend ? (
-                                <><UserMinus className="size-4 mr-2" /> Following</>
-                            ) : user.isSent ? (
-                                "Requested"
-                            ) : user.isPending ? (
-                                "Accept"
-                            ) : (
-                                <><UserPlus className="size-4 mr-2" /> Follow</>
-                            )}
-                        </Button>
-                    </div>
+                    {user.clerkId !== userId && (
+                        <div className="flex items-center gap-3 w-full max-w-xs justify-center mb-8">
+                            <Button 
+                                onClick={handleMessageClick}
+                                disabled={!user.isFriend}
+                                className={cn(
+                                    "flex-1 rounded-xl transition-all active:scale-95",
+                                    user.isFriend 
+                                        ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20" 
+                                        : "bg-zinc-800 text-zinc-500 cursor-not-allowed opacity-50"
+                                )}
+                            >
+                                <MessageCircle className="size-4 mr-2" />
+                                Message
+                            </Button>
+                            <Button 
+                                onClick={handleFollowClick}
+                                onMouseEnter={() => setIsHoveringFollow(true)}
+                                onMouseLeave={() => setIsHoveringFollow(false)}
+                                variant={user.isFriend ? "outline" : "default"}
+                                className={cn(
+                                    "flex-1 rounded-xl transition-all active:scale-95",
+                                    user.isFriend 
+                                        ? (isHoveringFollow ? "bg-red-500/10 border-red-500/50 text-red-500 hover:bg-red-500/20" : "bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white")
+                                        : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-900/20"
+                                )}
+                            >
+                                {user.isFriend ? (
+                                    isHoveringFollow ? (
+                                        <><UserMinus className="size-4 mr-2" /> Unfollow</>
+                                    ) : (
+                                        <><UserCheck className="size-4 mr-2" /> Following</>
+                                    )
+                                ) : user.isSent ? (
+                                    "Requested"
+                                ) : user.isPending ? (
+                                    "Accept"
+                                ) : (
+                                    <><UserPlus className="size-4 mr-2" /> Follow</>
+                                )}
+                            </Button>
+                        </div>
+                    )}
 
 					{user.bio && (
 						<p className={cn(
@@ -173,14 +191,113 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                         "flex w-full justify-center border-y border-white/5",
                         isMainView ? "gap-8 md:gap-16 mb-8 py-6 max-w-2xl" : "gap-4 sm:gap-6 mb-6 py-4 flex-wrap"
                     )}>
-						<div className="text-center group min-w-[70px]">
-							<p className={cn("font-bold text-white group-hover:text-emerald-400 transition-colors", isMainView ? "text-2xl" : "text-xl")}>{user.friends?.length || 0}</p>
-							<p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-medium">Followers</p>
-						</div>
-                        <div className="text-center group min-w-[70px]">
-							<p className={cn("font-bold text-white group-hover:text-indigo-400 transition-colors", isMainView ? "text-2xl" : "text-xl")}>{user.friends?.length || 0}</p>
-							<p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-medium">Following</p>
-						</div>
+                        <Dialog open={isFollowersModalOpen} onOpenChange={setIsFollowersModalOpen}>
+                            <DialogTrigger asChild>
+                                <div className="text-center cursor-pointer group min-w-[70px]">
+                                    <p className={cn("font-bold text-white group-hover:text-emerald-400 transition-colors", isMainView ? "text-2xl" : "text-xl")}>{user.friends?.length || 0}</p>
+                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-medium">Followers</p>
+                                </div>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md bg-zinc-950 border-white/10 text-white shadow-2xl">
+                                <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
+                                        <Users className="size-5 text-emerald-500" />
+                                        Followers
+                                    </DialogTitle>
+                                </DialogHeader>
+                                <ScrollArea className="max-h-[60vh] mt-2">
+                                    {isLoading ? (
+                                        <div className="flex justify-center py-8">
+                                            <div className="size-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                                        </div>
+                                    ) : userFriends.length === 0 ? (
+                                        <div className="py-8 bg-zinc-900/30 rounded-xl border border-white/5 text-center mt-2">
+                                            <p className="text-sm text-zinc-500">No followers</p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col gap-2 pr-4 pb-4">
+                                            {userFriends.map(friend => (
+                                                <div key={friend.clerkId} className="flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/50 transition-colors group">
+                                                    <div 
+                                                        className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" 
+                                                        onClick={() => { 
+                                                            setIsFollowersModalOpen(false); 
+                                                            setSelectedUser(friend, 'profile'); 
+                                                        }}
+                                                    >
+                                                        <Avatar className="size-11 border border-zinc-800 shadow-sm group-hover:border-emerald-500/30 transition-colors">
+                                                            <AvatarImage src={friend.imageUrl} />
+                                                            <AvatarFallback className="bg-zinc-800 text-zinc-400 font-bold">{friend.fullName[0]}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-semibold text-white truncate group-hover:text-emerald-400 transition-colors">{friend.fullName}</p>
+                                                            {friend.username && <p className="text-[11px] text-zinc-500 truncate">@{friend.username}</p>}
+                                                        </div>
+                                                    </div>
+                                                    <div className="shrink-0 ml-3">
+                                                        {friend.clerkId !== userId && <FriendButton user={friend} />}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </ScrollArea>
+                            </DialogContent>
+                        </Dialog>
+
+                        <Dialog open={isFollowingModalOpen} onOpenChange={setIsFollowingModalOpen}>
+                            <DialogTrigger asChild>
+                                <div className="text-center cursor-pointer group min-w-[70px]">
+                                    <p className={cn("font-bold text-white group-hover:text-indigo-400 transition-colors", isMainView ? "text-2xl" : "text-xl")}>{user.friends?.length || 0}</p>
+                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-medium">Following</p>
+                                </div>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md bg-zinc-950 border-white/10 text-white shadow-2xl">
+                                <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
+                                        <Users className="size-5 text-indigo-500" />
+                                        Following
+                                    </DialogTitle>
+                                </DialogHeader>
+                                <ScrollArea className="max-h-[60vh] mt-2">
+                                    {isLoading ? (
+                                        <div className="flex justify-center py-8">
+                                            <div className="size-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                                        </div>
+                                    ) : userFriends.length === 0 ? (
+                                        <div className="py-8 bg-zinc-900/30 rounded-xl border border-white/5 text-center mt-2">
+                                            <p className="text-sm text-zinc-500">Not following anyone</p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col gap-2 pr-4 pb-4">
+                                            {userFriends.map(friend => (
+                                                <div key={friend.clerkId} className="flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/50 transition-colors group">
+                                                    <div 
+                                                        className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" 
+                                                        onClick={() => { 
+                                                            setIsFollowingModalOpen(false); 
+                                                            setSelectedUser(friend, 'profile'); 
+                                                        }}
+                                                    >
+                                                        <Avatar className="size-11 border border-zinc-800 shadow-sm group-hover:border-indigo-500/30 transition-colors">
+                                                            <AvatarImage src={friend.imageUrl} />
+                                                            <AvatarFallback className="bg-zinc-800 text-zinc-400 font-bold">{friend.fullName[0]}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-semibold text-white truncate group-hover:text-indigo-400 transition-colors">{friend.fullName}</p>
+                                                            {friend.username && <p className="text-[11px] text-zinc-500 truncate">@{friend.username}</p>}
+                                                        </div>
+                                                    </div>
+                                                    <div className="shrink-0 ml-3">
+                                                        {friend.clerkId !== userId && <FriendButton user={friend} />}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </ScrollArea>
+                            </DialogContent>
+                        </Dialog>
                         
                         <Dialog open={isMutualsModalOpen} onOpenChange={setIsMutualsModalOpen}>
                             <DialogTrigger asChild>
@@ -228,7 +345,7 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                                                         </div>
                                                     </div>
                                                     <div className="shrink-0 ml-3">
-                                                        <FriendButton user={mutual} />
+                                                        {mutual.clerkId !== userId && <FriendButton user={mutual} />}
                                                     </div>
                                                 </div>
                                             ))}

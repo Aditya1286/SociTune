@@ -231,6 +231,26 @@ export const getMutualFriends = async (req, res, next) => {
 	}
 };
 
+export const getFriends = async (req, res, next) => {
+	try {
+		const { userId } = req.params;
+
+		const user = await User.findOne({ clerkId: userId });
+
+		if (!user) return res.status(404).json({ message: "User not found" });
+
+		const friendIds = user.friends || [];
+
+		const friends = await User.find({ clerkId: { $in: friendIds } })
+			.select("fullName imageUrl clerkId username");
+
+		res.status(200).json(friends);
+	} catch (error) {
+		console.log("Error in getFriends", error);
+		next(error);
+	}
+};
+
 export const checkUsername = async (req, res, next) => {
 	try {
 		const { username } = req.query;
@@ -420,6 +440,23 @@ export const getLikedSongs = async (req, res, next) => {
 		res.status(200).json(user.likedSongs || []);
 	} catch (error) {
 		console.log("Error in getLikedSongs", error);
+		next(error);
+	}
+};
+
+export const uploadMedia = async (req, res, next) => {
+	try {
+		if (!req.files || !req.files.media) {
+			return res.status(400).json({ message: "No file uploaded" });
+		}
+		const mediaFile = req.files.media;
+		const resourceType = mediaFile.mimetype.startsWith("audio/") || mediaFile.name.endsWith(".webm") ? "video" : "auto";
+		const result = await cloudinary.uploader.upload(mediaFile.tempFilePath, {
+			resource_type: resourceType,
+		});
+		res.status(200).json({ url: result.secure_url });
+	} catch (error) {
+		console.log("Error in uploadMedia", error);
 		next(error);
 	}
 };
