@@ -43,19 +43,18 @@ const UsersList = () => {
 						className={`absolute bottom-0 right-0 h-3 w-3 rounded-full ring-2 ring-zinc-900
 						${onlineUsers.has(user.clerkId) ? "bg-green-500" : "bg-zinc-500"}`}
 					/>
-					{isFriendTab && unreadMessages.get(user.clerkId) && unreadMessages.get(user.clerkId)! > 0 ? (
-						<div className="lg:hidden absolute -top-1 -right-1 size-4 rounded-full bg-green-500 items-center justify-center text-[10px] font-bold text-white flex">
-							{unreadMessages.get(user.clerkId)}
-						</div>
-					) : null}
 				</div>
 
 				<div className='flex-1 min-w-0 hidden lg:block'>
-					<span className='font-medium truncate block text-white/90 group-hover:text-white transition-colors'>{user.fullName}</span>
+					<div className="flex items-center gap-2">
+					    <span className='font-medium truncate text-white/90 group-hover:text-white transition-colors'>{user.fullName}</span>
+					</div>
 					{user.username && <span className="text-[10px] text-zinc-500 truncate block mt-0.5">@{user.username}</span>}
 					{isFriendTab ? (
-						<p className='text-xs text-zinc-400 truncate mt-0.5'>
-							{user.lastMessage ? user.lastMessage : "Say hi!"}
+						<p className={`text-xs truncate mt-0.5 ${unreadMessages.get(user.clerkId) ? "text-emerald-400 font-medium" : "text-zinc-400"}`}>
+							{unreadMessages.get(user.clerkId) 
+                                ? `${unreadMessages.get(user.clerkId)} new message${unreadMessages.get(user.clerkId)! > 1 ? 's' : ''}` 
+                                : (user.lastMessage ? user.lastMessage : "Say hi!")}
 						</p>
 					) : (
 						<p className='text-[10px] text-zinc-500 truncate mt-0.5'>
@@ -67,7 +66,7 @@ const UsersList = () => {
 			
 			<div className="flex items-center gap-2 shrink-0">
 				{isFriendTab && unreadMessages.get(user.clerkId) && unreadMessages.get(user.clerkId)! > 0 ? (
-					<div className="hidden lg:flex size-5 rounded-full bg-green-500 items-center justify-center text-xs font-bold text-white">
+					<div className="flex size-5 rounded-full bg-emerald-500 items-center justify-center text-[10px] font-bold text-white shadow-sm shadow-emerald-500/20">
 						{unreadMessages.get(user.clerkId)}
 					</div>
 				) : null}

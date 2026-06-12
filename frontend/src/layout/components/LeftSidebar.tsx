@@ -48,9 +48,12 @@ const LeftSidebar = () => {
               <MessageCircle className="mr-3 size-5" />
               <span className="hidden md:inline font-medium">Messages</span>
               {totalUnread > 0 && (
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-500 text-white text-[10px] font-bold size-5 flex items-center justify-center rounded-full md:w-auto md:h-auto md:px-2 md:py-0.5 shadow-sm shadow-emerald-500/50">
-                  {totalUnread}
-                </span>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-30"></span>
+                  <span className="relative bg-emerald-500 text-white text-[10px] font-bold size-5 flex items-center justify-center rounded-full md:w-auto md:h-auto md:px-2 md:py-0.5 shadow-sm shadow-emerald-500/50">
+                    {totalUnread}
+                  </span>
+                </div>
               )}
             </Link>
 

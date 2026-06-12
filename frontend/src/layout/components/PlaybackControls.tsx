@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { usePlayerStore } from "@/stores/usePlayerStore";
-import { Laptop2, ListMusic, Mic2, Pause, Play, Repeat, Shuffle, SkipBack, SkipForward, Volume1 } from "lucide-react";
+import { Laptop2, ListMusic, Mic2, Pause, Play, Repeat, Shuffle, SkipBack, SkipForward, Volume1, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { LikeButton } from "@/components/LikeButton";
 
@@ -12,13 +12,20 @@ const formatTime = (seconds: number) => {
 };
 
 export const PlaybackControls = () => {
-	const { currentSong, isPlaying, togglePlay, playNext, playPrevious } = usePlayerStore();
+	const { currentSong, isPlaying, togglePlay, playNext, playPrevious, isShuffled, isLooping, toggleShuffle, toggleLoop } = usePlayerStore();
 
 	const [volume, setVolume] = useState(75);
 	const [currentTime, setCurrentTime] = useState(0);
 	const [duration, setDuration] = useState(0);
 	const [currentDevice, setCurrentDevice] = useState("SociTune Web Player");
 	const audioRef = useRef<HTMLAudioElement | null>(null);
+	const [isMuted, setIsMuted] = useState(false);
+
+	const toggleMute = () => {
+		if (!audioRef.current) return;
+		audioRef.current.muted = !isMuted;
+		setIsMuted(!isMuted);
+	};
 
 	useEffect(() => {
 		const getAudioDevice = async () => {
@@ -114,7 +121,8 @@ export const PlaybackControls = () => {
 						<Button
 							size='icon'
 							variant='ghost'
-							className='hidden sm:inline-flex hover:text-white text-zinc-400'
+							className={`hidden sm:inline-flex hover:text-white ${isShuffled ? "text-green-500" : "text-zinc-400"}`}
+							onClick={toggleShuffle}
 						>
 							<Shuffle className='h-4 w-4' />
 						</Button>
@@ -149,7 +157,8 @@ export const PlaybackControls = () => {
 						<Button
 							size='icon'
 							variant='ghost'
-							className='hidden sm:inline-flex hover:text-white text-zinc-400'
+							className={`hidden sm:inline-flex hover:text-white ${isLooping ? "text-green-500" : "text-zinc-400"}`}
+							onClick={toggleLoop}
 						>
 							<Repeat className='h-4 w-4' />
 						</Button>
@@ -186,8 +195,8 @@ export const PlaybackControls = () => {
 					</div>
 
 					<div className='flex items-center gap-2'>
-						<Button size='icon' variant='ghost' className='hover:text-white text-zinc-400'>
-							<Volume1 className='h-4 w-4' />
+						<Button size='icon' variant='ghost' className='hover:text-white text-zinc-400' onClick={toggleMute}>
+							{isMuted ? <VolumeX className='h-4 w-4' /> : <Volume1 className='h-4 w-4' />}
 						</Button>
 
 						<Slider
@@ -199,6 +208,13 @@ export const PlaybackControls = () => {
 								setVolume(value[0]);
 								if (audioRef.current) {
 									audioRef.current.volume = value[0] / 100;
+									if (isMuted && value[0] > 0) {
+										audioRef.current.muted = false;
+										setIsMuted(false);
+									} else if (!isMuted && value[0] === 0) {
+										audioRef.current.muted = true;
+										setIsMuted(true);
+									}
 								}
 							}}
 						/>

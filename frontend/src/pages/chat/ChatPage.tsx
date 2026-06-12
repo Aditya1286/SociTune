@@ -1,6 +1,6 @@
 import { useChatStore } from "@/stores/useChatStore";
 import { useUser } from "@clerk/clerk-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { CheckCheck, Trash, Reply, Music2, Users, X, Download, Play, Pause } from "lucide-react";
 import { motion } from "framer-motion";
 import UsersList from "./components/UsersList";
@@ -18,6 +18,24 @@ const formatTime = (date: string) => {
 		minute: "2-digit",
 		hour12: true,
 	});
+};
+
+const formatMessageDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return "Today";
+    if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+    
+    const diffTime = Math.abs(today.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 7) {
+        return date.toLocaleDateString("en-US", { weekday: "long" });
+    }
+    return date.toLocaleDateString("en-GB");
 };
 
 const VoiceMessagePlayer = ({ url, isSender }: { url: string; isSender: boolean }) => {
@@ -81,6 +99,29 @@ const ChatPage = () => {
 	const { user } = useUser();
 	const { messages, selectedUser, fetchUsers, fetchMessages, markMessagesAsRead, setReplyingToMessage, deleteMessage, reactToMessage, viewState, setViewState } = useChatStore();
 	const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+	const groupedMessages = useMemo(() => {
+		const groups: { date: string; messages: any[] }[] = [];
+		messages.forEach((msg) => {
+			const dateLabel = formatMessageDate(msg.createdAt);
+			const lastGroup = groups[groups.length - 1];
+			if (lastGroup && lastGroup.date === dateLabel) {
+				lastGroup.messages.push(msg);
+			} else {
+				groups.push({ date: dateLabel, messages: [msg] });
+			}
+		});
+		return groups;
+	}, [messages]);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages, viewState]);
 
 	const handleDownloadImage = async (url: string) => {
 		try {
@@ -142,10 +183,17 @@ const ChatPage = () => {
                                 {/* Messages */}
                                 <ScrollArea className='flex-1 min-h-0 bg-[url("/chat-bg.png")] bg-repeat bg-center opacity-95'>
                                     <div className='p-4 space-y-6'>
-                                        {messages.map((message) => (
-                                            <div
-                                                key={message._id}
-                                                className={`flex items-end gap-3 group ${
+                                        {groupedMessages.map((group) => (
+                                            <div key={group.date} className="space-y-6">
+                                                <div className="flex justify-center sticky top-2 z-20">
+                                                    <span className="bg-zinc-800/80 backdrop-blur-md text-zinc-300 text-xs px-3 py-1 rounded-full border border-white/10 shadow-lg font-medium">
+                                                        {group.date}
+                                                    </span>
+                                                </div>
+                                                {group.messages.map((message) => (
+                                                    <div
+                                                        key={message._id}
+                                                        className={`flex items-end gap-3 group ${
                                                     message.senderId === user?.id ? "flex-row-reverse" : ""
                                                 }`}
                                             >
@@ -153,7 +201,7 @@ const ChatPage = () => {
                                                     <AvatarImage
                                                         src={
                                                             message.senderId === user?.id
-                                                                ? user.imageUrl
+                                                                ? user?.imageUrl
                                                                 : selectedUser.imageUrl
                                                         }
                                                     />
@@ -236,8 +284,11 @@ const ChatPage = () => {
                                                         )}
                                                     </div>
                                                 </div>
+                                                    </div>
+                                                ))}
                                             </div>
                                         ))}
+                                        <div ref={messagesEndRef} />
                                     </div>
                                 </ScrollArea>
 

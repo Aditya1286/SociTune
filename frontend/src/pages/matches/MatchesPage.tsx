@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FriendButton } from "@/components/FriendButton";
 import { cn } from "@/lib/utils";
 
+
 export default function MatchesPage() {
   const { recommendations, fetchRecommendations, isLoading, setSelectedUser, onlineUsers } = useChatStore();
   const pageRef = useRef<HTMLDivElement>(null);
@@ -49,6 +50,7 @@ export default function MatchesPage() {
           </p>
         </div>
 
+        <div className="w-full mt-0">
         {recommendations.length === 0 ? (
           <div className="text-center py-20 animate-in fade-in duration-1000">
             <Music2 className="size-16 text-emerald-500/20 mx-auto mb-4" />
@@ -267,6 +269,7 @@ export default function MatchesPage() {
             })}
           </div>
         )}
+        </div>
       </div>
     </div>
   );

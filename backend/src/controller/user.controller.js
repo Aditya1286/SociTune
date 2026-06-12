@@ -3,6 +3,7 @@ import { Message } from "../models/message.model.js";
 import { PlayHistory } from "../models/playHistory.model.js";
 import cloudinary from "../lib/cloudinary.js";
 import { recommender } from "../lib/recommendation.js";
+import { io, userSockets } from "../lib/socket.js";
 
 export const getAllUsers = async (req, res, next) => {
 	try {
@@ -22,6 +23,7 @@ export const getAllUsers = async (req, res, next) => {
 				const mutualFriendsCount = mutualFriends.length;
 
 				let lastMessageContent = null;
+				let unreadCount = 0;
 
 				if (isFriend) {
 					const lastMessage = await Message.findOne({
@@ -31,11 +33,18 @@ export const getAllUsers = async (req, res, next) => {
 						],
 					}).sort({ createdAt: -1 });
 					lastMessageContent = lastMessage ? lastMessage.content : null;
+
+					unreadCount = await Message.countDocuments({
+						senderId: user.clerkId,
+						receiverId: currentUserId,
+						isRead: false
+					});
 				}
 
 				return {
 					...user.toJSON(),
 					lastMessage: lastMessageContent,
+					unreadCount,
 					isFriend,
 					isPending,
 					isSent,
@@ -83,6 +92,12 @@ export const sendFriendRequest = async (req, res, next) => {
 		await User.updateOne({ clerkId: myId }, { $addToSet: { sentRequests: userId } });
 		await User.updateOne({ clerkId: userId }, { $addToSet: { pendingRequests: myId } });
 
+		const senderUser = await User.findOne({ clerkId: myId }).select("fullName imageUrl clerkId username");
+		const receiverSocketId = userSockets.get(userId);
+		if (receiverSocketId && io) {
+			io.to(receiverSocketId).emit("friend_request_received", senderUser);
+		}
+
 		res.status(200).json({ success: true, message: "Friend request sent" });
 	} catch (error) {
 		next(error);
@@ -109,6 +124,12 @@ export const acceptFriendRequest = async (req, res, next) => {
 				$addToSet: { friends: myId },
 			}
 		);
+
+		const accepterUser = await User.findOne({ clerkId: myId }).select("fullName imageUrl clerkId username");
+		const senderSocketId = userSockets.get(userId);
+		if (senderSocketId && io) {
+			io.to(senderSocketId).emit("friend_request_accepted", accepterUser);
+		}
 
 		res.status(200).json({ success: true, message: "Friend request accepted" });
 	} catch (error) {

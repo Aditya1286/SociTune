@@ -1,4 +1,5 @@
 import {Route,Routes} from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
 import HomePage from "./pages/home/HomePage.tsx"
 import MainLayout from "./layout/MainLayout.tsx";
 import AuthCallbackPage from "./pages/auth-callback/AuthCallbackPage.tsx"
@@ -38,6 +39,7 @@ const App = () => {
     
     <>
     <SearchCommand />
+    <Toaster theme="dark" position="top-center" />
     <Routes>
       
       <Route path='/sso-callback' 

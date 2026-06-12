@@ -2,6 +2,7 @@ import { axiosInstance } from "@/lib/axios";
 import type { Message, User } from "@/types";
 import { create } from "zustand";
 import { io } from "socket.io-client";
+import { toast } from "sonner";
 
 interface ChatStore {
 	users: User[];
@@ -83,7 +84,20 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 		set({ isLoading: true, error: null });
 		try {
 			const response = await axiosInstance.get("/users");
-			set({ users: response.data });
+			const users = response.data;
+			
+			const newUnreadMessages = new Map(get().unreadMessages);
+			users.forEach((user: any) => {
+				if (user.unreadCount !== undefined) {
+					if (user.unreadCount > 0) {
+						newUnreadMessages.set(user.clerkId, user.unreadCount);
+					} else {
+						newUnreadMessages.delete(user.clerkId);
+					}
+				}
+			});
+
+			set({ users, unreadMessages: newUnreadMessages });
 		} catch (error: any) {
 			set({ error: error.response.data.message });
 		} finally {
@@ -199,9 +213,17 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 	initSocket: (userId) => {
 		if (!get().isConnected) {
 			socket.auth = { userId };
-			socket.connect();
+			
+			socket.off("connect");
+			socket.on("connect", () => {
+				socket.emit("user_connected", userId);
+			});
 
-			socket.emit("user_connected", userId);
+			socket.connect();
+			
+			if (socket.connected) {
+				socket.emit("user_connected", userId);
+			}
 
 			socket.on("users_online", (users: string[]) => {
 				set({ onlineUsers: new Set(users) });
@@ -286,6 +308,16 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 					newActivities.set(userId, activity);
 					return { userActivities: newActivities };
 				});
+			});
+
+			socket.on("friend_request_received", (user: User) => {
+				toast(`New friend request from ${user.fullName}`);
+				get().fetchUsers();
+			});
+
+			socket.on("friend_request_accepted", (user: User) => {
+				toast(`${user.fullName} accepted your friend request!`);
+				get().fetchUsers();
 			});
 
 			socket.on("messages_marked_read", ({ receiverId }) => {

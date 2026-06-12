@@ -2,16 +2,17 @@ import { Server } from "socket.io";
 import { Message } from "../models/message.model.js";
 import { User } from "../models/user.model.js";
 
+export let io;
+export const userSockets = new Map(); // { userId: socketId} store karega, taaki hum kisi user ko message bhej sakein agar wo online hai to, nahi to uske next login pe message bhejenge
+export const userActivities = new Map(); // {userId: activity} store karega
+
 export const initializeSocket = (server) => {
-	const io = new Server(server, {
+	io = new Server(server, {
 		cors: {
 			origin: process.env.NODE_ENV === "production" ? true : ["http://localhost:3000"],
 			credentials: true,
 		},
 	});
-
-	const userSockets = new Map(); // { userId: socketId} store karega, taaki hum kisi user ko message bhej sakein agar wo online hai to, nahi to uske next login pe message bhejenge
-	const userActivities = new Map(); // {userId: activity} store karega
 
 	io.on("connection", (socket) => {
 		socket.on("user_connected", (userId) => {
