@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import { Song } from "../models/song.model.js";
 import dotenv from "dotenv";
+import Singleton from "../utils/Singleton.js";
+import LyricsService from "../services/lyrics.service.js";
 dotenv.config();
 
 const songs = [
@@ -140,9 +142,15 @@ const seedSongs = async () => {
 		await Song.deleteMany({});
 
 		// Insert new songs
-		await Song.insertMany(songs);
+		const insertedSongs = await Song.insertMany(songs);
+		console.log(`Songs seeded. Fetching lyrics for ${insertedSongs.length} songs...`);
 
-		console.log("Songs seeded successfully!");
+		const lyricsService = Singleton.instance<LyricsService>(LyricsService);
+		for (const song of insertedSongs) {
+			await lyricsService.fetchAndSaveLyrics(song._id.toString());
+		}
+
+		console.log("Songs and lyrics seeded successfully!");
 	} catch (error) {
 		console.error("Error seeding songs:", error);
 	} finally {

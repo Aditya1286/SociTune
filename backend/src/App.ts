@@ -11,6 +11,7 @@ import { Routes } from "./typings/routes.js";
 import { connectWithMongo } from './databases/index.js';
 import { initializeSocket } from "./services/socket.service.js";
 import { recommender } from "./services/recommendation.service.js";
+import { seedDatabaseOnStartup } from "./services/seeder.service.js";
 
 class App {
   public env: string;
@@ -36,6 +37,7 @@ class App {
 
   private async initialiseDatabases() {
     await connectWithMongo();
+    await seedDatabaseOnStartup();
     await recommender.init();
   }
 

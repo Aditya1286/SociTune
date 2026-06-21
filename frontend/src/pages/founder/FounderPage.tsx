@@ -2,9 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { axiosInstance } from "@/lib/axios";
-import { useAuthStore } from "@/stores/useAuthStore";
 import toast from "react-hot-toast";
-import { Loader2, Users, Trash2 } from "lucide-react";
+import { Loader2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -50,7 +49,6 @@ const founders = [
 export default function FounderPage() {
     const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const { isAdmin } = useAuthStore();
 
     // Refs
     const pageRef = useRef<HTMLDivElement>(null);
@@ -72,17 +70,6 @@ export default function FounderPage() {
     useEffect(() => {
         fetchTestimonials();
     }, []);
-
-    const handleDelete = async (id: string) => {
-        if (!confirm("Delete this testimonial?")) return;
-        try {
-            await axiosInstance.delete(`/testimonials/${id}`);
-            toast.success("Testimonial deleted");
-            setTestimonials((prev) => prev.filter((t) => t._id !== id));
-        } catch {
-            toast.error("Failed to delete testimonial");
-        }
-    };
 
     /* ── GSAP & Animations ── */
     useEffect(() => {
@@ -223,8 +210,6 @@ export default function FounderPage() {
                                     <TestiCard
                                         key={`${t._id}-${i}`}
                                         item={t}
-                                        isAdmin={isAdmin}
-                                        onDelete={handleDelete}
                                     />
                                 ))}
                             </div>
@@ -337,7 +322,7 @@ function FounderCard({ founder }: { founder: typeof founders[0] }) {
     );
 }
 
-function TestiCard({ item, isAdmin, onDelete }: { item: Testimonial; isAdmin: boolean; onDelete: (id: string) => void }) {
+function TestiCard({ item }: { item: Testimonial }) {
     return (
         <div className="bg-[#0d1211] border border-[#1e2422] rounded-2xl p-6 w-[320px] flex-shrink-0 hover:border-emerald-500/30 transition-colors flex flex-col justify-between min-h-[180px]">
             <div>
@@ -376,14 +361,6 @@ function TestiCard({ item, isAdmin, onDelete }: { item: Testimonial; isAdmin: bo
                         </div>
                     )}
                 </div>
-                {isAdmin && (
-                    <button
-                        onClick={() => onDelete(item._id)}
-                        className="text-[#4a5955] hover:text-red-500 p-1 rounded hover:bg-red-500/10 transition-colors"
-                    >
-                        <Trash2 size={14} />
-                    </button>
-                )}
             </div>
         </div>
     );

@@ -1,24 +1,24 @@
 import mongoose from "mongoose";
 const songSchema = new mongoose.Schema({
-    title:{
-        type:String,
-        required:true
+    title: {
+        type: String,
+        required: true
     },
-    artist:{
-        type:String,
-        required:true,
+    artist: {
+        type: String,
+        required: true,
     },
-    imageUrl:{
-        type:String,
-        required:true,
+    imageUrl: {
+        type: String,
+        required: true,
     },
-    audioUrl:{
-        type:String,
-        required:true,
+    audioUrl: {
+        type: String,
+        required: true,
     },
-    duration:{
-        type:Number,
-        required:true,
+    duration: {
+        type: Number,
+        required: true,
     },
     tempo: {
         type: Number,
@@ -44,10 +44,10 @@ const songSchema = new mongoose.Schema({
         type: String,
         default: "Pop"
     },
-    albumId:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:'Album',
-        required:false,
+    albumId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Album',
+        required: false,
     },
     lyrics: {
         type: String,
@@ -61,6 +61,5 @@ const songSchema = new mongoose.Schema({
         type: Date,
         default: null
     }
-},{timestamps:true});
-
-export const Song = mongoose.model('Song',songSchema);
+}, { timestamps: true });
+export const Song = mongoose.model('Song', songSchema);

@@ -8,6 +8,9 @@ export interface Song {
 	duration: number;
 	createdAt: string;
 	updatedAt: string;
+	lyrics?: string;
+	lyricsSource?: string;
+	lyricsFetchedAt?: string;
 }
 
 export interface Album {

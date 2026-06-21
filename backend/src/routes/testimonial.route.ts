@@ -25,12 +25,7 @@ class TestimonialRoutes implements Routes {
             this.authMiddleware.protectRoute,
             asyncHandler(this.testimonialController.createTestimonial)
         );
-        this.router.delete(
-            `${this.path}/:id`,
-            this.authMiddleware.protectRoute,
-            this.authMiddleware.requireAdmin,
-            asyncHandler(this.testimonialController.deleteTestimonial)
-        );
+
     }
 }
 
