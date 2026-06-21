@@ -1,19 +1,15 @@
-import { Request, Response, NextFunction } from "express";
 import { Song } from "../models/song.model.js";
-import Singleton from "../utils/Singleton.js";
-import LyricsService from "../services/lyrics.service.js";
-
 class SongController {
-    public async getAllSongs(req: Request, res: Response, next: NextFunction) {
+    async getAllSongs(req, res, next) {
         try {
             const songs = await Song.find().sort({ createdAt: -1 });
             res.json(songs);
-        } catch (error) {
+        }
+        catch (error) {
             next(error);
         }
     }
-
-    public async getFeaturedSongs(req: Request, res: Response, next: NextFunction) {
+    async getFeaturedSongs(req, res, next) {
         try {
             const songs = await Song.aggregate([
                 { $sample: { size: 6 } },
@@ -28,12 +24,12 @@ class SongController {
                 }
             ]);
             res.json(songs);
-        } catch (error) {
+        }
+        catch (error) {
             next(error);
         }
     }
-
-    public async getMadeForYouSongs(req: Request, res: Response, next: NextFunction) {
+    async getMadeForYouSongs(req, res, next) {
         try {
             const songs = await Song.aggregate([
                 { $sample: { size: 4 } },
@@ -48,12 +44,12 @@ class SongController {
                 }
             ]);
             res.json(songs);
-        } catch (error) {
+        }
+        catch (error) {
             next(error);
         }
     }
-
-    public async getTrendingSongs(req: Request, res: Response, next: NextFunction) {
+    async getTrendingSongs(req, res, next) {
         try {
             const songs = await Song.aggregate([
                 { $sample: { size: 4 } },
@@ -68,62 +64,44 @@ class SongController {
                 }
             ]);
             res.json(songs);
-        } catch (error) {
+        }
+        catch (error) {
             next(error);
         }
     }
-
-    public async searchSongs(req: Request, res: Response, next: NextFunction) {
+    async searchSongs(req, res, next) {
         try {
             const { q } = req.query;
-            if (!q) return res.json([]);
-            
+            if (!q)
+                return res.json([]);
             const songs = await Song.find({
                 $or: [
-                    { title: { $regex: q as string, $options: "i" } },
-                    { artist: { $regex: q as string, $options: "i" } }
+                    { title: { $regex: q, $options: "i" } },
+                    { artist: { $regex: q, $options: "i" } }
                 ]
             }).limit(10);
             res.json(songs);
-        } catch (error) {
+        }
+        catch (error) {
             next(error);
         }
     }
-
-    public async getSongLyrics(req: Request, res: Response, next: NextFunction) {
+    async getSongLyrics(req, res, next) {
         try {
             const { id } = req.params;
             const song = await Song.findById(id);
             if (!song) {
                 return res.status(404).json({ message: "Song not found" });
             }
-
-            // If lyrics are not cached, or previously failed/empty, fetch and save them on-the-fly
-            if (song.lyrics === null || song.lyrics === "" || song.lyricsSource === "None") {
-                console.log(`[SongController] Lyrics not cached for "${song.title}". Fetching on-the-fly...`);
-                const lyricsService = Singleton.instance<LyricsService>(LyricsService);
-                await lyricsService.fetchAndSaveLyrics(id as string);
-
-                // Reload the song document to get the newly generated lyrics
-                const updatedSong = await Song.findById(id);
-                if (updatedSong) {
-                    return res.json({
-                        lyrics: updatedSong.lyrics || null,
-                        lyricsSource: updatedSong.lyricsSource || null,
-                        lyricsFetchedAt: updatedSong.lyricsFetchedAt || null
-                    });
-                }
-            }
-
             res.json({
                 lyrics: song.lyrics || null,
                 lyricsSource: song.lyricsSource || null,
                 lyricsFetchedAt: song.lyricsFetchedAt || null
             });
-        } catch (error) {
+        }
+        catch (error) {
             next(error);
         }
     }
 }
-
 export default SongController;

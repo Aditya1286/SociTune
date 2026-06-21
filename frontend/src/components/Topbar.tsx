@@ -1,15 +1,12 @@
-import { LayoutDashboardIcon, SearchIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SignedOut, UserButton } from "@clerk/clerk-react";
 import SignInOAuthButtons from "./SignInOAuthButtons";
-import { useAuthStore } from "@/stores/useAuthStore";
 import { buttonVariants } from "./ui/button";
 import { cn } from "@/lib/utils";
 import { EditProfileDialog } from "./EditProfileDialog";
 
 const Topbar = () => {
-  const { isAdmin } = useAuthStore();
-
   return (
     <>
       <EditProfileDialog />
@@ -81,38 +78,6 @@ const Topbar = () => {
             <SearchIcon className="w-5 h-5" />
           </button>
 
-
-          {isAdmin && (
-            <Link
-              to="/admin"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "relative overflow-hidden border-zinc-700/80 bg-zinc-900/60 text-zinc-300",
-                "hover:text-white hover:border-emerald-500/60 hover:bg-emerald-950/40",
-                "transition-all duration-200 gap-1.5 text-xs font-medium tracking-wide",
-                "hidden sm:flex"
-              )}
-            >
-              <LayoutDashboardIcon className="size-3.5 shrink-0" />
-              <span>Admin</span>
-            </Link>
-          )}
-
-          {/* Mobile admin icon only */}
-          {isAdmin && (
-            <Link
-              to="/admin"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "icon" }),
-                "sm:hidden w-8 h-8 border-zinc-700/80 bg-zinc-900/60 text-zinc-300",
-                "hover:text-white hover:border-emerald-500/60 hover:bg-emerald-950/40",
-                "transition-all duration-200"
-              )}
-              aria-label="Admin Dashboard"
-            >
-              <LayoutDashboardIcon className="size-3.5" />
-            </Link>
-          )}
 
           <SignedOut>
             <SignInOAuthButtons />

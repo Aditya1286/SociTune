@@ -27,7 +27,20 @@ const formatTime = (seconds: number) => {
 };
 
 export const PlaybackControls = () => {
-	const { currentSong, isPlaying, togglePlay, playNext, playPrevious, isShuffled, isLooping, toggleShuffle, toggleLoop } = usePlayerStore();
+	const { 
+		currentSong, 
+		isPlaying, 
+		togglePlay, 
+		playNext, 
+		playPrevious, 
+		isShuffled, 
+		isLooping, 
+		toggleShuffle, 
+		toggleLoop,
+		lyrics,
+		isLoadingLyrics,
+		fetchLyrics
+	} = usePlayerStore();
 	const { user } = useUser();
 
 	const [volume, setVolume] = useState(75);
@@ -37,6 +50,15 @@ export const PlaybackControls = () => {
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const [isMuted, setIsMuted] = useState(false);
 	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+	const [activeTab, setActiveTab] = useState<"details" | "lyrics">("details");
+
+	const songLyrics = currentSong ? lyrics[currentSong._id] : null;
+
+	useEffect(() => {
+		if (currentSong && activeTab === "lyrics") {
+			fetchLyrics(currentSong._id);
+		}
+	}, [currentSong, activeTab, fetchLyrics]);
 
 	const toggleMute = () => {
 		if (!audioRef.current) return;
@@ -213,7 +235,17 @@ export const PlaybackControls = () => {
 
 					{/* volume controls */}
 					<div className='hidden sm:flex items-center gap-4 min-w-[180px] w-[30%] justify-end'>
-						<Button size='icon' variant='ghost' className='hover:text-white text-zinc-400 hover:bg-transparent transition-colors'>
+						<Button 
+							size='icon' 
+							variant='ghost' 
+							className={`hover:text-white hover:bg-transparent transition-colors ${isPreviewOpen && activeTab === "lyrics" ? "text-emerald-400" : "text-zinc-400"}`}
+							onClick={() => {
+								if (currentSong) {
+									setActiveTab("lyrics");
+									setIsPreviewOpen(true);
+								}
+							}}
+						>
 							<Mic2 className='h-4 w-4' />
 						</Button>
 						<Button size='icon' variant='ghost' className='hover:text-white text-zinc-400 hover:bg-transparent transition-colors'>
@@ -262,12 +294,13 @@ export const PlaybackControls = () => {
 			{currentSong && isPreviewOpen && (
 				<div className="fixed inset-0 z-[9999] bg-[#050507] flex flex-col p-6 sm:p-10 font-['Poppins'] animate-in fade-in duration-300 select-none overflow-hidden h-screen w-screen">
 					
-					{/* Ambient Blurred Album Art Background */}
+					{/* Ambient Blurred Album Art Background with Apple Music organic shift animation */}
 					<div 
-						className="absolute inset-0 bg-cover bg-center filter blur-[100px] scale-110 opacity-30 pointer-events-none transition-all duration-700" 
+						className="absolute inset-0 bg-cover bg-center filter blur-[130px] opacity-[0.55] pointer-events-none transition-all duration-700 animate-ambient-glow" 
 						style={{ backgroundImage: `url(${currentSong.imageUrl})` }}
 					/>
-					<div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/60 to-[#050507] pointer-events-none" />
+					<div className="absolute inset-0 bg-noise opacity-[0.06] pointer-events-none" />
+					<div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/55 to-[#040406] pointer-events-none" />
 
 					{/* Top header navigation row */}
 					<div className="flex items-center justify-between relative z-10 w-full max-w-lg mx-auto mb-6">
@@ -294,17 +327,100 @@ export const PlaybackControls = () => {
 						</Button>
 					</div>
 
-					{/* Middle Static Album Art with Rounded Square (Apple style) */}
-					<div className="flex-1 flex flex-col items-center justify-center relative z-10 w-full max-w-lg mx-auto my-4">
-						<div className="relative aspect-square w-64 h-64 sm:w-80 sm:h-80 mb-8 flex justify-center items-center">
-							{/* Outer ambient glow */}
-							<div className="absolute inset-0 rounded-3xl bg-emerald-500/5 blur-3xl pointer-events-none" />
-							<img
-								src={currentSong.imageUrl}
-								alt={currentSong.title}
-								className="w-full h-full object-cover rounded-2xl sm:rounded-[32px] shadow-[0_24px_50px_rgba(0,0,0,0.7)] border border-white/[0.08] relative z-10 transition-transform duration-500 hover:scale-[1.02]"
-							/>
-						</div>
+					{/* Tabs */}
+					<div className="flex justify-center gap-6 relative z-10 mb-2">
+						<button 
+							onClick={() => setActiveTab("details")}
+							className={`text-xs font-bold uppercase tracking-wider pb-1.5 border-b-2 transition-all duration-200 ${
+								activeTab === "details" 
+									? "text-emerald-400 border-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]" 
+									: "text-zinc-500 border-transparent hover:text-zinc-300"
+							}`}
+						>
+							Artwork
+						</button>
+						<button 
+							onClick={() => setActiveTab("lyrics")}
+							className={`text-xs font-bold uppercase tracking-wider pb-1.5 border-b-2 transition-all duration-200 ${
+								activeTab === "lyrics" 
+									? "text-emerald-400 border-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]" 
+									: "text-zinc-500 border-transparent hover:text-zinc-300"
+							}`}
+						>
+							Lyrics
+						</button>
+					</div>
+
+					{/* Middle Content - Apple Music Responsive Layout */}
+					<div className={`flex-1 flex relative z-10 w-full mx-auto my-4 overflow-hidden transition-all duration-500 ${
+						activeTab === "lyrics" 
+							? "max-w-5xl flex-col md:flex-row gap-10 items-stretch justify-center px-4" 
+							: "max-w-lg flex-col items-center justify-center"
+					}`}>
+						{activeTab === "details" ? (
+							<div className="relative aspect-square w-64 h-64 sm:w-80 sm:h-80 mb-8 flex justify-center items-center">
+								{/* Outer ambient glow */}
+								<div className="absolute inset-0 rounded-[32px] bg-emerald-500/10 blur-3xl pointer-events-none" />
+								<img
+									src={currentSong.imageUrl}
+									alt={currentSong.title}
+									className="w-full h-full object-cover rounded-2xl sm:rounded-[32px] shadow-[0_24px_50px_rgba(0,0,0,0.7)] border border-white/[0.08] relative z-10 transition-transform duration-500 hover:scale-[1.02]"
+								/>
+							</div>
+						) : (
+							<>
+								{/* Left Column (Artwork & Song Details) - Only on Desktop for Lyrics view */}
+								<div className="hidden md:flex flex-col justify-center items-center w-[35%] gap-6 shrink-0 text-center select-none">
+									<div className="relative aspect-square w-64 h-64 flex justify-center items-center">
+										{/* Ambient glow under artwork */}
+										<div className="absolute inset-0 rounded-[24px] bg-white/5 blur-2xl pointer-events-none" />
+										<img
+											src={currentSong.imageUrl}
+											alt={currentSong.title}
+											className="w-full h-full object-cover rounded-[24px] shadow-[0_20px_40px_rgba(0,0,0,0.6)] border border-white/[0.08] relative z-10"
+										/>
+									</div>
+									<div className="max-w-full px-2">
+										<h3 className="text-2xl font-extrabold text-white leading-tight truncate">
+											{currentSong.title}
+										</h3>
+										<p className="text-zinc-400 font-semibold text-sm mt-1 truncate">
+											{currentSong.artist}
+										</p>
+									</div>
+								</div>
+
+								{/* Right Column (Scrollable Lyrics list) */}
+								<div className="flex-1 w-full md:w-[65%] flex flex-col justify-center relative overflow-hidden h-full">
+									{isLoadingLyrics ? (
+										<div className="flex flex-col items-center justify-center gap-3 h-full">
+											<div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+											<span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Loading lyrics...</span>
+										</div>
+									) : songLyrics ? (
+										<div 
+											className="w-full h-[40vh] md:h-[480px] overflow-y-auto pr-6 text-left select-text scroll-smooth [&::-webkit-scrollbar]:hidden flex flex-col gap-6"
+											style={{ scrollbarWidth: 'none' }}
+										>
+											{songLyrics.split("\n").map((line, idx) => (
+												<p 
+													key={idx} 
+													className="transition-all duration-300 hover:text-white hover:translate-x-2 origin-left cursor-default text-white/35 text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight"
+												>
+													{line || "\u00A0"}
+												</p>
+											))}
+										</div>
+									) : (
+										<div className="text-center p-8 flex flex-col items-center justify-center h-full">
+											<Mic2 className="size-10 text-zinc-600 mb-3 animate-pulse" />
+											<p className="text-zinc-400 font-bold text-base">Lyrics unavailable</p>
+											<p className="text-zinc-600 text-sm mt-1">No lyrics found for this song.</p>
+										</div>
+									)}
+								</div>
+							</>
+						)}
 					</div>
 
 					{/* Bottom Playback area with clean glass panel */}
@@ -399,7 +515,12 @@ export const PlaybackControls = () => {
 								<Button variant="ghost" size="icon" className="hover:text-white p-0 h-auto">
 									<ListMusic size={18} />
 								</Button>
-								<Button variant="ghost" size="icon" className="hover:text-white p-0 h-auto">
+								<Button 
+									variant="ghost" 
+									size="icon" 
+									className={`hover:text-white p-0 h-auto transition-colors ${activeTab === "lyrics" ? "text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]" : "text-zinc-500"}`}
+									onClick={() => setActiveTab(activeTab === "lyrics" ? "details" : "lyrics")}
+								>
 									<Mic2 size={18} />
 								</Button>
 								<Button variant="ghost" size="icon" className="hover:text-white p-0 h-auto">

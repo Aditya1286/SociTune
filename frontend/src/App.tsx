@@ -6,7 +6,6 @@ import AuthCallbackPage from "./pages/auth-callback/AuthCallbackPage.tsx"
 import { AuthenticateWithRedirectCallback, useAuth } from "@clerk/clerk-react";
 import ChatPage from "./pages/chat/ChatPage.tsx";
 import AlbumPage from "./pages/album/AlbumPage.tsx";
-import AdminPage from "./pages/admin/AdminPage.tsx";
 import NotFoundPage from "./pages/404/NotFoundPage.tsx";
 import FounderPage from "./pages/founder/FounderPage.tsx";
 import PremiumPage from "./pages/premium/PremiumPage.tsx";
@@ -45,7 +44,6 @@ const App = () => {
       <Route path='/sso-callback' 
       element={<AuthenticateWithRedirectCallback signUpForceRedirectUrl={"/auth-callback"}/>} 
       />
-       <Route path='/admin' element={<AdminPage />} />
       <Route path='/auth-callback' element={<AuthCallbackPage/>} />
       <Route element={<MainLayout />}>
         <Route path='/' element={<HomePage/>} />

@@ -19,7 +19,6 @@ class SongRoutes implements Routes {
         this.router.get(
             `${this.path}/`,
             this.authMiddleware.protectRoute,
-            this.authMiddleware.requireAdmin,
             asyncHandler(this.songController.getAllSongs)
         );
         this.router.get(
@@ -37,6 +36,11 @@ class SongRoutes implements Routes {
         this.router.get(
             `${this.path}/search`,
             asyncHandler(this.songController.searchSongs)
+        );
+        this.router.get(
+            `${this.path}/:id/lyrics`,
+            this.authMiddleware.protectRoute,
+            asyncHandler(this.songController.getSongLyrics)
         );
     }
 }

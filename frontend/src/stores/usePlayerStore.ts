@@ -26,6 +26,9 @@ interface PLayerStore {
     toggleLoop: () => void;
     isShuffled: boolean;
     isLooping: boolean;
+    lyrics: Record<string, string | null>;
+    isLoadingLyrics: boolean;
+    fetchLyrics: (songId: string) => Promise<void>;
 }
 
 export const usePlayerStore = create<PLayerStore>((set,get) => ({
@@ -116,6 +119,25 @@ export const usePlayerStore = create<PLayerStore>((set,get) => ({
         }
         else{
             set({isPlaying: false});
+        }
+    },
+    lyrics: {},
+    isLoadingLyrics: false,
+    fetchLyrics: async (songId: string) => {
+        if (get().lyrics[songId] !== undefined) return;
+        set({ isLoadingLyrics: true });
+        try {
+            const response = await axiosInstance.get(`/songs/${songId}/lyrics`);
+            set((state) => ({
+                lyrics: { ...state.lyrics, [songId]: response.data.lyrics },
+            }));
+        } catch (error) {
+            console.error("Failed to fetch lyrics:", error);
+            set((state) => ({
+                lyrics: { ...state.lyrics, [songId]: null },
+            }));
+        } finally {
+            set({ isLoadingLyrics: false });
         }
     },
 }));
