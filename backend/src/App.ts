@@ -61,9 +61,6 @@ class App {
 
     if (this.env === "production") {
       this.app.use(express.static(path.join(this.__dirname, "../frontend/dist")));
-      this.app.get(/.*/, (req, res) => {
-        res.sendFile(path.resolve(this.__dirname, "../frontend", "dist", "index.html"));
-      });
     }
   }
 
@@ -71,6 +68,12 @@ class App {
     this.routes.forEach(route => {
       this.app.use('/', route.router);
     });
+
+    if (this.env === "production") {
+      this.app.get("*", (req, res) => {
+        res.sendFile(path.resolve(this.__dirname, "../frontend", "dist", "index.html"));
+      });
+    }
 
     // Error handler
     this.app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
