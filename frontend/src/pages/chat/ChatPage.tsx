@@ -74,17 +74,16 @@ const VoiceMessagePlayer = ({ url, isSender }: { url: string; isSender: boolean 
     };
 
     return (
-        <div className={`flex items-center gap-2 p-1.5 pr-3 rounded-full mb-2 w-fit ${isSender ? "bg-emerald-700/80 border border-emerald-500/50 shadow-inner shadow-black/10" : "bg-zinc-900 border border-zinc-700/50 shadow-inner shadow-black/20"}`}>
-            <Button variant="ghost" size="icon" onClick={togglePlay} className={`h-8 w-8 rounded-full shadow-sm ${isSender ? "bg-emerald-500 hover:bg-emerald-400 text-white" : "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400"}`}>
-                {isPlaying ? <Pause className="size-4" /> : <Play className="size-4 ml-0.5" />}
+        <div className={`flex items-center gap-3 p-2 pr-3.5 rounded-full mb-1.5 w-fit shadow-sm backdrop-blur-md ${isSender ? "bg-white/10 border border-white/20 shadow-inner" : "bg-white/[0.04] border border-white/[0.06] shadow-inner"}`}>
+            <Button variant="ghost" size="icon" onClick={togglePlay} className={`h-8 w-8 rounded-full shadow-sm hover:scale-105 active:scale-95 transition-all shrink-0 ${isSender ? "bg-white text-emerald-600 hover:bg-white/90" : "bg-emerald-500 text-white hover:bg-emerald-400"}`}>
+                {isPlaying ? <Pause className="size-4 fill-currentColor" /> : <Play className="size-4 ml-0.5 fill-currentColor" />}
             </Button>
-            <div className="flex items-center w-24 md:w-32">
-                <div className={`h-1 w-full rounded-full overflow-hidden ${isSender ? "bg-emerald-800/50" : "bg-zinc-700"}`}>
-                    <div ref={progressRef} className={`h-full ${isSender ? "bg-white" : "bg-emerald-500"}`} style={{ width: `0%`, transition: 'width 0.1s linear' }} />
+            <div className="flex items-center w-28 md:w-36">
+                <div className={`h-1 w-full rounded-full overflow-hidden ${isSender ? "bg-white/20" : "bg-zinc-800"}`}>
+                    <div ref={progressRef} className={`h-full rounded-full ${isSender ? "bg-white" : "bg-emerald-500"}`} style={{ width: `0%`, transition: 'width 0.1s linear' }} />
                 </div>
             </div>
             <audio 
-
                 ref={audioRef} 
                 src={url} 
                 onTimeUpdate={handleTimeUpdate}
@@ -146,8 +145,8 @@ const ChatPage = () => {
 
 	useEffect(() => {
 		if (selectedUser && viewState === 'chat') {
-            fetchMessages(selectedUser.clerkId);
-        }
+             fetchMessages(selectedUser.clerkId);
+         }
 	}, [selectedUser, fetchMessages, viewState]);
 
 	useEffect(() => {
@@ -163,14 +162,18 @@ const ChatPage = () => {
 
 	return (
         <>
-		<main className='h-full rounded-lg bg-zinc-950 overflow-hidden flex flex-col'>
-			<div className='flex flex-1 overflow-hidden relative'>
-				<div className={`w-[80px] lg:w-[350px] xl:w-[400px] flex-shrink-0 border-r border-white/5 bg-zinc-900/50 ${selectedUser ? "hidden md:block" : "block w-full md:w-[80px]"}`}>
+		<main className='h-full rounded-2xl bg-[#09090b] border border-white/[0.04] overflow-hidden flex flex-col relative shadow-2xl'>
+			{/* Apple Ambient Mesh Glows */}
+			<div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-3xl pointer-events-none z-0" />
+			<div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-3xl pointer-events-none z-0" />
+
+			<div className='flex flex-1 overflow-hidden relative z-10'>
+				<div className={`w-[80px] lg:w-[350px] xl:w-[400px] flex-shrink-0 border-r border-white/[0.04] bg-[#0a0a0c]/60 backdrop-blur-md ${selectedUser ? "hidden md:block" : "block w-full md:w-[80px]"}`}>
 					<UsersList />
 				</div>
 
 				{/* Main Content Area */}
-				<div className={`flex-1 flex-col h-full min-w-0 overflow-hidden ${selectedUser ? "flex" : "hidden md:flex"} relative`}>
+				<div className={`flex-1 flex-col h-full min-w-0 overflow-hidden bg-[#070709]/80 backdrop-blur-md ${selectedUser ? "flex" : "hidden md:flex"} relative`}>
 					{selectedUser ? (
                         viewState === 'profile' ? (
                             <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -181,23 +184,23 @@ const ChatPage = () => {
                                 <ChatHeader />
 
                                 {/* Messages */}
-                                <ScrollArea className='flex-1 min-h-0 bg-[url("/chat-bg.png")] bg-repeat bg-center opacity-95'>
+                                <ScrollArea className='flex-1 min-h-0 bg-[url("/chat-bg.png")] bg-repeat bg-center bg-blend-overlay bg-opacity-25'>
                                     <div className='p-4 space-y-6'>
                                         {groupedMessages.map((group) => (
                                             <div key={group.date} className="space-y-6">
                                                 <div className="flex justify-center sticky top-2 z-20">
-                                                    <span className="bg-zinc-800/80 backdrop-blur-md text-zinc-300 text-xs px-3 py-1 rounded-full border border-white/10 shadow-lg font-medium">
+                                                    <span className="bg-[#121216]/90 border border-white/[0.06] backdrop-blur-md text-zinc-300 text-[11px] px-3.5 py-1 rounded-full shadow-lg font-semibold tracking-wide">
                                                         {group.date}
                                                     </span>
                                                 </div>
                                                 {group.messages.map((message) => (
                                                     <div
                                                         key={message._id}
-                                                        className={`flex items-end gap-3 group ${
+                                                        className={`flex items-end gap-3 group/row ${
                                                     message.senderId === user?.id ? "flex-row-reverse" : ""
                                                 }`}
                                             >
-                                                <Avatar className='size-8 shrink-0 border border-white/10 shadow-sm'>
+                                                <Avatar className='size-8 shrink-0 border border-white/[0.06] shadow-sm'>
                                                     <AvatarImage
                                                         src={
                                                             message.senderId === user?.id
@@ -214,12 +217,14 @@ const ChatPage = () => {
 
                                                 <div className={`relative max-w-[75%] flex flex-col ${message.senderId === user?.id ? "items-end" : "items-start"}`}>
                                                     <div
-                                                        className={`rounded-2xl p-3 w-full shadow-md
-                                                            ${message.senderId === user?.id ? "bg-emerald-600 text-white rounded-br-none" : "bg-zinc-800/90 text-zinc-100 rounded-bl-none border border-white/5"}
+                                                        className={`rounded-[20px] p-3 px-4 w-full shadow-sm relative group/bubble transition-all duration-200
+                                                            ${message.senderId === user?.id 
+                                                                ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-br-[4px] shadow-[0_2px_12px_rgba(16,185,129,0.12)]" 
+                                                                : "bg-white/[0.04] border border-white/[0.06] text-white/95 rounded-bl-[4px] shadow-[0_2px_12px_rgba(0,0,0,0.15)]"}
                                                         `}
                                                     >
                                                         {message.replyTo && (
-                                                            <div className={`mb-2 p-2 rounded text-xs border-l-2 border-white/30 bg-black/20`}>
+                                                            <div className={`mb-2.5 p-2 rounded-xl text-xs border-l-2 border-white/30 bg-black/25`}>
                                                                 <span className="font-semibold block mb-0.5 text-white/90">
                                                                     {message.replyTo.senderId === user?.id ? "You" : selectedUser?.fullName}
                                                                 </span>
@@ -228,57 +233,57 @@ const ChatPage = () => {
                                                         )}
 
                                                         {message.imageUrl && (
-                                                            <div className="mb-2 rounded-lg overflow-hidden relative cursor-pointer" onClick={() => setPreviewImage(message.imageUrl!)}>
-                                                                <img src={message.imageUrl} alt="attachment" className="max-w-[200px] md:max-w-[250px] object-cover border border-white/10 hover:opacity-90 transition-opacity" />
+                                                            <div className="mb-2 rounded-xl overflow-hidden relative border border-white/[0.06] cursor-pointer" onClick={() => setPreviewImage(message.imageUrl!)}>
+                                                                <img src={message.imageUrl} alt="attachment" className="max-w-[200px] md:max-w-[250px] object-cover hover:scale-[1.02] transition-transform duration-300" />
                                                             </div>
                                                         )}
                                                         {message.voiceNoteUrl && (
                                                             <VoiceMessagePlayer url={message.voiceNoteUrl} isSender={message.senderId === user?.id} />
                                                         )}
                                                         {message.content && (
-                                                            <p className='text-[15px] break-words leading-relaxed'>{message.content}</p>
+                                                            <p className='text-[14px] leading-relaxed break-words font-medium'>{message.content}</p>
                                                         )}
-                                                        <span className='text-[10px] text-white/50 mt-1 flex items-center justify-end gap-1 font-medium'>
+                                                        <span className='text-[10px] text-white/40 mt-1.5 flex items-center justify-end gap-1 font-semibold'>
                                                             {formatTime(message.createdAt)}
                                                             {message.senderId === user?.id && (
-                                                                <CheckCheck className={`size-3.5 ${message.isRead ? "text-emerald-300" : "text-white/50"}`} />
+                                                                <CheckCheck className={`size-3.5 ${message.isRead ? "text-emerald-400" : "text-white/40"}`} />
                                                             )}
                                                         </span>
                                                     </div>
 
                                                     {message.reactions && Object.keys(message.reactions).length > 0 && (
-                                                        <div className={`absolute -bottom-3 flex gap-1 bg-zinc-800 border border-zinc-700 rounded-full px-2 py-0.5 text-xs shadow-lg z-10
-                                                            ${message.senderId === user?.id ? "right-2" : "left-2"}
+                                                        <div className={`absolute -bottom-2 flex items-center gap-1 bg-[#121216]/90 border border-white/[0.08] backdrop-blur-md rounded-full px-2 py-0.5 text-[11px] shadow-lg z-10 hover:scale-105 active:scale-95 transition-all select-none
+                                                            ${message.senderId === user?.id ? "right-3" : "left-3"}
                                                         `}>
                                                             {Array.from(new Set(Object.values(message.reactions))).map((emoji: any) => (
                                                                 <span key={emoji}>{emoji}</span>
                                                             ))}
-                                                            <span className="text-[10px] text-zinc-400 ml-1 font-medium">
+                                                            <span className="text-[10px] text-zinc-400 ml-0.5 font-bold">
                                                                 {Object.keys(message.reactions).length}
                                                             </span>
                                                         </div>
                                                     )}
 
-                                                    {/* Action Menu */}
-                                                    <div className={`opacity-0 group-hover:opacity-100 transition-opacity absolute top-1/2 -translate-y-1/2 flex items-center gap-1 bg-zinc-800/95 border border-zinc-700 p-1.5 rounded-full shadow-xl z-10 backdrop-blur-sm
+                                                    {/* Action Menu (Apple Design floating glass pill) */}
+                                                    <div className={`opacity-0 group-hover/row:opacity-100 transition-all duration-200 absolute top-1/2 -translate-y-1/2 flex items-center gap-1 bg-[#121215]/90 border border-white/[0.08] p-1 rounded-full shadow-2xl z-10 backdrop-blur-md scale-95 group-hover/row:scale-100
                                                         ${message.senderId === user?.id ? "right-[calc(100%+12px)]" : "left-[calc(100%+12px)]"}
                                                     `}>
-                                                        <Button variant='ghost' size='icon' className='size-7 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-700' onClick={() => setReplyingToMessage(message)}>
+                                                        <Button variant='ghost' size='icon' className='size-7 rounded-full text-zinc-400 hover:text-white hover:bg-white/5 active:scale-90 transition-all' onClick={() => setReplyingToMessage(message)}>
                                                             <Reply className='size-4' />
                                                         </Button>
-                                                        <div className="flex items-center gap-0.5 bg-zinc-900/50 rounded-full px-1">
+                                                        <div className="flex items-center gap-0.5 bg-black/25 rounded-full px-1.5 py-0.5">
                                                             {['👍', '❤️', '😂', '😮', '😢', '🙏'].map(emoji => (
                                                                 <button 
                                                                     key={emoji}
                                                                     onClick={() => reactToMessage(message._id, emoji)}
-                                                                    className={`hover:bg-zinc-700 p-1.5 rounded-full text-sm transition-colors ${message.reactions?.[user?.id || ""] === emoji ? "bg-zinc-700" : ""}`}
+                                                                    className={`hover:scale-125 p-1 rounded-full text-sm transition-transform active:scale-90 ${message.reactions?.[user?.id || ""] === emoji ? "bg-white/10" : ""}`}
                                                                 >
                                                                     {emoji}
                                                                 </button>
                                                             ))}
                                                         </div>
                                                         {message.senderId === user?.id && (
-                                                            <Button variant='ghost' size='icon' className='size-7 rounded-full text-red-400 hover:text-red-300 hover:bg-red-400/10' onClick={() => deleteMessage(message._id)}>
+                                                            <Button variant='ghost' size='icon' className='size-7 rounded-full text-red-400 hover:text-red-300 hover:bg-red-500/10 active:scale-90 transition-all' onClick={() => deleteMessage(message._id)}>
                                                                 <Trash className='size-4' />
                                                             </Button>
                                                         )}
@@ -326,9 +331,9 @@ const NoConversationPlaceholder = () => {
     const floatingUsers = users.slice(0, 4); // Get a few users for the floating effect
 
     return (
-        <div className='flex flex-col items-center justify-center h-full relative overflow-hidden bg-zinc-950 w-full'>
+        <div className='flex flex-col items-center justify-center h-full relative overflow-hidden bg-transparent w-full'>
             {/* Deep background glow */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-900/10 via-zinc-950 to-zinc-950" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-950/20 via-transparent to-transparent z-0" />
             
             {/* Floating Avatars */}
             {floatingUsers.map((u, i) => (
@@ -385,7 +390,7 @@ const NoConversationPlaceholder = () => {
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.3, duration: 0.5 }}
-                    className='text-zinc-400 text-sm md:text-base max-w-md mx-auto mb-10 leading-relaxed px-4'
+                    className='text-zinc-400 text-sm md:text-base max-w-md mx-auto mb-10 leading-relaxed px-4 font-medium'
                 >
                     Search for friends or select a conversation. The void won't reply back, no matter how long you stare at it.
                 </motion.p>
@@ -398,7 +403,7 @@ const NoConversationPlaceholder = () => {
                 >
                     <Button 
                         onClick={() => document.dispatchEvent(new CustomEvent("open-search"))}
-                        className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white rounded-full shadow-lg shadow-emerald-900/20 transition-all hover:scale-105 border-0 h-12 text-sm font-medium"
+                        className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white rounded-full shadow-lg shadow-emerald-950/20 transition-all hover:scale-105 border-0 h-12 text-sm font-semibold"
                     >
                         <Users className="size-4 mr-2" />
                         Explore Friends
@@ -407,8 +412,8 @@ const NoConversationPlaceholder = () => {
             </div>
             
             {/* Bottom waves (CSS aesthetic) */}
-            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-zinc-950 to-transparent z-0 pointer-events-none" />
-            <div className="absolute bottom-6 text-[10px] tracking-[0.3em] uppercase text-zinc-600 font-medium z-10 flex items-center gap-2">
+            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#09090b] to-transparent z-0 pointer-events-none" />
+            <div className="absolute bottom-6 text-[10px] tracking-[0.3em] uppercase text-zinc-500 font-semibold z-10 flex items-center gap-2">
                 <Music2 className="size-3" />
                 MUSIC BRINGS US TOGETHER
             </div>

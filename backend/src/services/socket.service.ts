@@ -1,15 +1,17 @@
-import { Server } from "socket.io";
+import { Server as SocketIOServer, Socket } from "socket.io";
+import { Server } from "http";
 import { Message } from "../models/message.model.js";
 import { User } from "../models/user.model.js";
+import { NODE_ENV } from "../config/index.js";
 
-export let io;
-export const userSockets = new Map(); // { userId: socketId} store karega, taaki hum kisi user ko message bhej sakein agar wo online hai to, nahi to uske next login pe message bhejenge
-export const userActivities = new Map(); // {userId: activity} store karega
+export let io: SocketIOServer;
+export const userSockets = new Map<string, string>(); // { userId: socketId} store karega, taaki hum kisi user ko message bhej sakein agar wo online hai to, nahi to uske next login pe message bhejenge
+export const userActivities = new Map<string, string>(); // {userId: activity} store karega
 
-export const initializeSocket = (server) => {
-	io = new Server(server, {
+export const initializeSocket = (server: Server) => {
+	io = new SocketIOServer(server, {
 		cors: {
-			origin: process.env.NODE_ENV === "production" ? true : ["http://localhost:3000"],
+			origin: NODE_ENV === "production" ? true : ["http://localhost:3000"],
 			credentials: true,
 		},
 	});
@@ -53,7 +55,7 @@ export const initializeSocket = (server) => {
 					return socket.emit("message_error", "You must be friends to send a message.");
 				}
 
-				let messageData = {
+				let messageData: any = {
 					senderId,
 					receiverId,
 					content: content || "",

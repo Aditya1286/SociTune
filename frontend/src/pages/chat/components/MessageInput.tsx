@@ -185,16 +185,16 @@ const MessageInput = () => {
 	};
 
 	return (
-		<div className='p-4 mt-auto border-t border-zinc-800 flex flex-col gap-2'>
+		<div className='p-4 pt-2 pb-5 mt-auto border-t border-white/[0.04] bg-[#0a0a0c]/60 backdrop-blur-md flex flex-col gap-2'>
 			{replyingToMessage && (
-				<div className='bg-zinc-800/50 rounded-md p-2 flex items-center justify-between border border-zinc-700/50'>
-					<div className='text-sm truncate pr-4 text-zinc-300'>
-						<span className='font-semibold text-white mr-2'>
+				<div className='bg-white/[0.04] backdrop-blur-md rounded-2xl p-2.5 px-4 flex items-center justify-between border border-white/[0.06] mb-1'>
+					<div className='text-xs truncate pr-4 text-zinc-300 font-semibold'>
+						<span className='text-emerald-400 mr-2'>
 							Replying to {replyingToMessage.senderId === user?.id ? "Yourself" : selectedUser?.fullName}:
 						</span>
 						{replyingToMessage.content || (replyingToMessage.imageUrl ? "Image" : "Voice Note")}
 					</div>
-					<Button variant='ghost' size='icon' className='size-6 shrink-0 text-zinc-400 hover:text-white' onClick={() => setReplyingToMessage(null)}>
+					<Button variant='ghost' size='icon' className='size-6 shrink-0 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full active:scale-90 transition-all' onClick={() => setReplyingToMessage(null)}>
 						<X className='size-4' />
 					</Button>
 				</div>
@@ -202,12 +202,12 @@ const MessageInput = () => {
 			
 			{imagePreview && (
 				<div className="relative inline-block mb-2 self-start">
-					<img src={imagePreview} alt="Preview" className="h-20 rounded-md border border-zinc-700 object-cover" />
+					<img src={imagePreview} alt="Preview" className="h-20 rounded-xl border border-white/[0.08] object-cover" />
 					<button 
 						onClick={() => { setImageFile(null); setImagePreview(null); }} 
-						className="absolute -top-2 -right-2 bg-zinc-900 border border-zinc-700 rounded-full p-0.5 text-zinc-400 hover:text-white"
+						className="absolute -top-2 -right-2 bg-[#121215] border border-white/[0.08] rounded-full p-1 text-zinc-400 hover:text-white hover:scale-105 active:scale-95 transition-all shadow-md"
 					>
-						<X className="size-4" />
+						<X className="size-3" />
 					</button>
 				</div>
 			)}
@@ -215,19 +215,19 @@ const MessageInput = () => {
 			{audioBlob && !isRecording && (
 				<motion.div 
 					initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-					className="flex items-center gap-3 bg-zinc-900 border border-zinc-700/50 p-2 pr-3 rounded-full mb-2 w-fit shadow-lg shadow-black/20"
+					className="flex items-center gap-3 bg-white/[0.04] border border-white/[0.06] backdrop-blur-md p-1.5 pr-3.5 rounded-full mb-2 w-fit shadow-lg"
 				>
-					<Button variant="ghost" size="icon" onClick={togglePreviewPlay} className="h-8 w-8 rounded-full bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-300">
-						{isPlayingPreview ? <Pause className="size-4" /> : <Play className="size-4 ml-0.5" />}
+					<Button variant="ghost" size="icon" onClick={togglePreviewPlay} className="h-8 w-8 rounded-full bg-emerald-500 text-white hover:bg-emerald-400 hover:scale-105 active:scale-95 transition-all">
+						{isPlayingPreview ? <Pause className="size-4 fill-currentColor" /> : <Play className="size-4 ml-0.5 fill-currentColor" />}
 					</Button>
 					<div className="flex items-center gap-1.5 opacity-70">
-						<Volume2 className="size-4 text-emerald-500" />
-						<div className="h-1 w-24 bg-zinc-700 rounded-full overflow-hidden">
-							<motion.div className="h-full bg-emerald-500" initial={{ width: "0%" }} animate={{ width: isPlayingPreview ? "100%" : "0%" }} transition={{ duration: recordingDuration || 2, ease: "linear", repeat: isPlayingPreview ? Infinity : 0 }} />
+						<Volume2 className="size-4 text-emerald-400" />
+						<div className="h-1 w-24 bg-zinc-800 rounded-full overflow-hidden">
+							<motion.div className="h-full bg-emerald-400" initial={{ width: "0%" }} animate={{ width: isPlayingPreview ? "100%" : "0%" }} transition={{ duration: recordingDuration || 2, ease: "linear", repeat: isPlayingPreview ? Infinity : 0 }} />
 						</div>
 					</div>
-					<span className="text-xs font-mono text-zinc-400">{formatDuration(recordingDuration)}</span>
-					<Button variant="ghost" size="icon" onClick={cancelRecording} className="h-6 w-6 rounded-full text-red-400 hover:text-red-300 hover:bg-red-400/20 ml-2">
+					<span className="text-xs font-semibold font-mono text-zinc-400">{formatDuration(recordingDuration)}</span>
+					<Button variant="ghost" size="icon" onClick={cancelRecording} className="h-6 w-6 rounded-full text-red-400 hover:text-red-300 hover:bg-red-500/10 ml-2 active:scale-90 transition-all">
 						<X className="size-3" />
 					</Button>
 					<audio 
@@ -239,12 +239,12 @@ const MessageInput = () => {
 				</motion.div>
 			)}
 
-			<div className='flex gap-2 items-center'>
+			<div className='flex gap-2 items-center bg-white/[0.03] border border-white/[0.06] rounded-full p-1.5 pl-3 shadow-[0_4px_20px_rgba(0,0,0,0.2)] focus-within:border-emerald-500/30 focus-within:bg-white/[0.04] transition-all relative'>
 				{isRecording ? (
 					<motion.div 
 						initial={{ opacity: 0, y: 10, scale: 0.95 }}
 						animate={{ opacity: 1, y: 0, scale: 1 }}
-						className="flex-1 flex items-center gap-4 bg-zinc-900 border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.1)] rounded-full px-4 py-2"
+						className="flex-1 flex items-center gap-4 bg-red-500/10 border border-red-500/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] rounded-full px-4 h-9"
 					>
 						<div className="flex items-center gap-2">
 							<motion.div 
@@ -252,7 +252,7 @@ const MessageInput = () => {
 								transition={{ repeat: Infinity, duration: 1.5 }}
 								className="size-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" 
 							/>
-							<span className="text-red-400 font-mono text-sm tracking-wider font-medium">{formatDuration(recordingDuration)}</span>
+							<span className="text-red-400 font-mono text-sm tracking-wider font-semibold">{formatDuration(recordingDuration)}</span>
 						</div>
 						
 						{/* Simulated Audio Wave */}
@@ -261,14 +261,14 @@ const MessageInput = () => {
 								<motion.div
 									key={i}
 									className="w-1 bg-red-400 rounded-full"
-									animate={{ height: ['10px', '24px', '10px'] }}
+									animate={{ height: ['10px', '22px', '10px'] }}
 									transition={{ repeat: Infinity, duration: 0.8 + (i * 0.1), delay: i * 0.1 }}
 								/>
 							))}
 						</div>
 
-						<Button size="sm" variant="ghost" className="text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-full h-8 px-3" onClick={stopRecording}>
-							<Square className="size-3.5 mr-1.5" /> Stop
+						<Button size="sm" variant="ghost" className="text-zinc-300 hover:text-white hover:bg-white/5 rounded-full h-8 px-3.5 font-semibold transition-all active:scale-95" onClick={stopRecording}>
+							<Square className="size-3 mr-1.5 fill-current" /> Stop
 						</Button>
 					</motion.div>
 				) : (
@@ -283,18 +283,18 @@ const MessageInput = () => {
 						<Button 
 							variant="ghost" 
 							size="icon" 
-							className="text-zinc-400 hover:text-white shrink-0" 
+							className="text-zinc-400 hover:text-white hover:bg-white/5 rounded-full size-9 shrink-0 transition-colors duration-200" 
 							onClick={() => fileInputRef.current?.click()}
 							disabled={isUploading || !!audioBlob}
 						>
 							<Paperclip className="size-5" />
 						</Button>
 
-						<div className="relative">
+						<div className="relative flex items-center">
 							<Button 
 								variant="ghost" 
 								size="icon" 
-								className={`shrink-0 transition-colors ${showEmojiPicker ? "text-emerald-400 bg-emerald-400/10" : "text-zinc-400 hover:text-white"}`}
+								className={`size-9 shrink-0 transition-all rounded-full hover:scale-105 active:scale-95 ${showEmojiPicker ? "text-emerald-400 bg-emerald-400/10" : "text-zinc-400 hover:text-white hover:bg-white/5"}`}
 								onClick={() => setShowEmojiPicker(!showEmojiPicker)}
 								disabled={isUploading || !!audioBlob}
 							>
@@ -307,13 +307,13 @@ const MessageInput = () => {
 										initial={{ opacity: 0, scale: 0.9, y: 10 }}
 										animate={{ opacity: 1, scale: 1, y: 0 }}
 										exit={{ opacity: 0, scale: 0.9, y: 10 }}
-										className="absolute bottom-full left-0 mb-2 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl p-3 w-64 z-50 grid grid-cols-6 gap-2"
+										className="absolute bottom-full left-0 mb-3 bg-[#121215]/95 border border-white/[0.08] backdrop-blur-xl rounded-2xl shadow-2xl p-3 w-64 z-50 grid grid-cols-6 gap-2"
 									>
 										{emojis.map(emoji => (
 											<button 
 												key={emoji}
 												onClick={() => { setNewMessage(prev => prev + emoji); setShowEmojiPicker(false); }}
-												className="text-xl hover:bg-zinc-800 rounded-md p-1 transition-transform hover:scale-125"
+												className="text-xl hover:bg-white/10 rounded-md p-1 transition-transform hover:scale-125"
 											>
 												{emoji}
 											</button>
@@ -327,7 +327,7 @@ const MessageInput = () => {
 							placeholder='Type a message...'
 							value={newMessage}
 							onChange={(e) => setNewMessage(e.target.value)}
-							className='flex-1 min-w-0 bg-zinc-800 border-none'
+							className='flex-1 min-w-0 bg-transparent border-none text-white text-[14px] placeholder:text-zinc-500 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none px-2 h-9 font-medium shadow-none'
 							onKeyDown={(e) => e.key === "Enter" && handleSend()}
 							disabled={isUploading || !!audioBlob}
 						/>
@@ -335,7 +335,7 @@ const MessageInput = () => {
 						<Button 
 							variant="ghost" 
 							size="icon" 
-							className="text-zinc-400 hover:text-emerald-400 shrink-0"
+							className="text-zinc-400 hover:text-emerald-400 hover:bg-white/5 rounded-full size-9 shrink-0 transition-all active:scale-95"
 							onMouseDown={startRecording}
 							disabled={isUploading || !!imageFile || !!audioBlob || newMessage.length > 0}
 						>
@@ -348,7 +348,7 @@ const MessageInput = () => {
 					size="icon" 
 					onClick={handleSend} 
 					disabled={isUploading || isRecording || (!newMessage.trim() && !imageFile && !audioBlob)} 
-					className="shrink-0 bg-emerald-600 hover:bg-emerald-500 text-white"
+					className="shrink-0 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full size-9 shadow-md shadow-emerald-500/20 active:scale-95 hover:scale-105 transition-all flex items-center justify-center"
 				>
 					{isUploading ? <Loader2 className="size-4 animate-spin" /> : <Send className='size-4' />}
 				</Button>

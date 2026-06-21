@@ -1,13 +1,15 @@
+import { Request, Response, NextFunction } from "express";
 import { User } from "../models/user.model.js";
 import { Message } from "../models/message.model.js";
 import { PlayHistory } from "../models/playHistory.model.js";
-import cloudinary from "../lib/cloudinary.js";
-import { recommender } from "../lib/recommendation.js";
-import { io, userSockets } from "../lib/socket.js";
+import cloudinary from "../services/cloudinary.service.js";
+import { recommender } from "../services/recommendation.service.js";
+import { io, userSockets } from "../services/socket.service.js";
 
-export const getAllUsers = async (req, res, next) => {
+class UserController {
+public async getAllUsers(req: Request, res: Response, next: NextFunction) {
 	try {
-		const currentUserId = req.auth.userId;
+		const currentUserId = (req as any).auth.userId;
 		const currentUser = await User.findOne({ clerkId: currentUserId });
 		
 		const users = await User.find({ clerkId: { $ne: currentUserId } });
@@ -50,7 +52,7 @@ export const getAllUsers = async (req, res, next) => {
 					isSent,
 					mutualFriendsCount,
 					lastActivity: isFriend ? user.lastActivity : undefined,
-				};
+				}
 			})
 		);
 
@@ -58,16 +60,16 @@ export const getAllUsers = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
-export const getMessages = async (req, res, next) => {
+public async getMessages(req: Request, res: Response, next: NextFunction) {
 	try {
-		const myId = req.auth.userId;
+		const myId = (req as any).auth.userId;
 		const { userId } = req.params;
 
 		// Optional: check if they are friends before allowing message fetch
 		const currentUser = await User.findOne({ clerkId: myId });
-		if (!currentUser.friends.includes(userId)) {
+		if (!currentUser.friends.includes(userId as string)) {
 			return res.status(403).json({ message: "You must be friends to view messages." });
 		}
 
@@ -82,18 +84,18 @@ export const getMessages = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
-export const sendFriendRequest = async (req, res, next) => {
+public async sendFriendRequest(req: Request, res: Response, next: NextFunction) {
 	try {
-		const myId = req.auth.userId;
+		const myId = (req as any).auth.userId;
 		const { userId } = req.params;
 
 		await User.updateOne({ clerkId: myId }, { $addToSet: { sentRequests: userId } });
 		await User.updateOne({ clerkId: userId }, { $addToSet: { pendingRequests: myId } });
 
 		const senderUser = await User.findOne({ clerkId: myId }).select("fullName imageUrl clerkId username");
-		const receiverSocketId = userSockets.get(userId);
+		const receiverSocketId = userSockets.get(userId as string);
 		if (receiverSocketId && io) {
 			io.to(receiverSocketId).emit("friend_request_received", senderUser);
 		}
@@ -102,11 +104,11 @@ export const sendFriendRequest = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
-export const acceptFriendRequest = async (req, res, next) => {
+public async acceptFriendRequest(req: Request, res: Response, next: NextFunction) {
 	try {
-		const myId = req.auth.userId;
+		const myId = (req as any).auth.userId;
 		const { userId } = req.params;
 
 		await User.updateOne(
@@ -126,7 +128,7 @@ export const acceptFriendRequest = async (req, res, next) => {
 		);
 
 		const accepterUser = await User.findOne({ clerkId: myId }).select("fullName imageUrl clerkId username");
-		const senderSocketId = userSockets.get(userId);
+		const senderSocketId = userSockets.get(userId as string);
 		if (senderSocketId && io) {
 			io.to(senderSocketId).emit("friend_request_accepted", accepterUser);
 		}
@@ -135,11 +137,11 @@ export const acceptFriendRequest = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
-export const rejectFriendRequest = async (req, res, next) => {
+public async rejectFriendRequest(req: Request, res: Response, next: NextFunction) {
 	try {
-		const myId = req.auth.userId;
+		const myId = (req as any).auth.userId;
 		const { userId } = req.params;
 
 		await User.updateOne(
@@ -156,11 +158,11 @@ export const rejectFriendRequest = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
-export const removeFriend = async (req, res, next) => {
+public async removeFriend(req: Request, res: Response, next: NextFunction) {
 	try {
-		const myId = req.auth.userId;
+		const myId = (req as any).auth.userId;
 		const { userId } = req.params;
 
 		await User.updateOne(
@@ -177,13 +179,13 @@ export const removeFriend = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
-export const updateProfile = async (req, res, next) => {
+public async updateProfile(req: Request, res: Response, next: NextFunction) {
 	try {
-		const userId = req.auth.userId;
+		const userId = (req as any).auth.userId;
 		const { bio } = req.body;
-		const imageFile = req.files?.imageFile;
+		const imageFile = (req as any).files?.imageFile;
 
 		// Fetch current user first so we can compare values
 		const currentUser = await User.findOne({ clerkId: userId });
@@ -197,7 +199,7 @@ export const updateProfile = async (req, res, next) => {
 			imageUrl = result.secure_url;
 		}
 
-		const updateData = {};
+		const updateData: any = {}
 		if (bio !== undefined) updateData.bio = bio;
 		if (imageUrl) updateData.imageUrl = imageUrl;
 		if (req.body.fullName) updateData.fullName = req.body.fullName;
@@ -226,11 +228,11 @@ export const updateProfile = async (req, res, next) => {
 		console.log("Error in updateProfile", error);
 		next(error);
 	}
-};
+}
 
-export const getMutualFriends = async (req, res, next) => {
+public async getMutualFriends(req: Request, res: Response, next: NextFunction) {
 	try {
-		const myId = req.auth.userId;
+		const myId = (req as any).auth.userId;
 		const { userId } = req.params;
 
 		const me = await User.findOne({ clerkId: myId });
@@ -250,9 +252,9 @@ export const getMutualFriends = async (req, res, next) => {
 		console.log("Error in getMutualFriends", error);
 		next(error);
 	}
-};
+}
 
-export const getFriends = async (req, res, next) => {
+public async getFriends(req: Request, res: Response, next: NextFunction) {
 	try {
 		const { userId } = req.params;
 
@@ -270,12 +272,12 @@ export const getFriends = async (req, res, next) => {
 		console.log("Error in getFriends", error);
 		next(error);
 	}
-};
+}
 
-export const checkUsername = async (req, res, next) => {
+public async checkUsername(req: Request, res: Response, next: NextFunction) {
 	try {
 		const { username } = req.query;
-		const myId = req.auth.userId;
+		const myId = (req as any).auth.userId;
 
 		if (!username) {
 			return res.status(400).json({ message: "Username is required" });
@@ -296,11 +298,11 @@ export const checkUsername = async (req, res, next) => {
 		console.log("Error in checkUsername", error);
 		next(error);
 	}
-};
+}
 
-export const recordPlay = async (req, res, next) => {
+public async recordPlay(req: Request, res: Response, next: NextFunction) {
 	try {
-		const userId = req.auth.userId;
+		const userId = (req as any).auth.userId;
 		const { songId } = req.body;
 		if (!songId) return res.status(400).json({ message: "songId is required" });
 
@@ -313,12 +315,12 @@ export const recordPlay = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
-export const getRecommendedUsers = async (req, res, next) => {
+public async getRecommendedUsers(req: Request, res: Response, next: NextFunction) {
 	try {
-		const userId = req.auth.userId;
-		const topN = parseInt(req.query.limit) || 10;
+		const userId = (req as any).auth.userId;
+		const topN = parseInt(req.query.limit as string) || 10;
 		const myUser = await User.findOne({ clerkId: userId });
 		const myFriends = myUser ? (myUser.friends || []) : [];
 		
@@ -346,7 +348,7 @@ export const getRecommendedUsers = async (req, res, next) => {
 				...user.toJSON(),
 				similarityScore: similarityData ? similarityData.score : 0,
 				matchDetails: similarityData ? similarityData.matchDetails : null
-			};
+			}
 		});
 		
 		// Sort by similarity score descending
@@ -357,11 +359,11 @@ export const getRecommendedUsers = async (req, res, next) => {
 		console.log("Error in getRecommendedUsers", error);
 		next(error);
 	}
-};
+}
 
-export const getTimeTravelStats = async (req, res, next) => {
+public async getTimeTravelStats(req: Request, res: Response, next: NextFunction) {
 	try {
-		const userId = req.auth.userId;
+		const userId = (req as any).auth.userId;
 
 		const now = new Date();
 		const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -405,7 +407,7 @@ export const getTimeTravelStats = async (req, res, next) => {
 			}
 		]);
 
-		const result = stats[0] || {};
+		const result = stats[0] || {}
 		const topSong = result.topSong?.[0]?._id || null;
 		const topArtist = result.topArtist?.[0]?._id || null;
 		const totalMinutes = Math.floor((result.totalDuration?.[0]?.totalSeconds || 0) / 60);
@@ -423,21 +425,21 @@ export const getTimeTravelStats = async (req, res, next) => {
 		console.log("Error in getTimeTravelStats", error);
 		next(error);
 	}
-};
+}
 
-export const toggleLikeSong = async (req, res, next) => {
+public async toggleLikeSong(req: Request, res: Response, next: NextFunction) {
 	try {
-		const userId = req.auth.userId;
+		const userId = (req as any).auth.userId;
 		const { songId } = req.params;
 
 		const user = await User.findOne({ clerkId: userId });
 		if (!user) return res.status(404).json({ message: "User not found" });
 
-		const index = user.likedSongs.indexOf(songId);
+		const index = user.likedSongs.findIndex((id) => id.toString() === songId.toString());
 		if (index > -1) {
-			user.likedSongs.splice(index, 1);
+			user.likedSongs = user.likedSongs.filter((id) => id.toString() !== songId.toString());
 		} else {
-			user.likedSongs.push(songId);
+			user.likedSongs.push(songId as any);
 		}
 
 		await user.save();
@@ -449,11 +451,11 @@ export const toggleLikeSong = async (req, res, next) => {
 		console.log("Error in toggleLikeSong", error);
 		next(error);
 	}
-};
+}
 
-export const getLikedSongs = async (req, res, next) => {
+public async getLikedSongs(req: Request, res: Response, next: NextFunction) {
 	try {
-		const userId = req.auth.userId;
+		const userId = (req as any).auth.userId;
 		const user = await User.findOne({ clerkId: userId }).populate("likedSongs");
 		
 		if (!user) return res.status(404).json({ message: "User not found" });
@@ -463,14 +465,14 @@ export const getLikedSongs = async (req, res, next) => {
 		console.log("Error in getLikedSongs", error);
 		next(error);
 	}
-};
+}
 
-export const uploadMedia = async (req, res, next) => {
+public async uploadMedia(req: Request, res: Response, next: NextFunction) {
 	try {
-		if (!req.files || !req.files.media) {
+		if (!(req as any).files || !(req as any).files.media) {
 			return res.status(400).json({ message: "No file uploaded" });
 		}
-		const mediaFile = req.files.media;
+		const mediaFile = (req as any).files.media;
 		const resourceType = mediaFile.mimetype.startsWith("audio/") || mediaFile.name.endsWith(".webm") ? "video" : "auto";
 		const result = await cloudinary.uploader.upload(mediaFile.tempFilePath, {
 			resource_type: resourceType,
@@ -480,4 +482,7 @@ export const uploadMedia = async (req, res, next) => {
 		console.log("Error in uploadMedia", error);
 		next(error);
 	}
-};
+}
+}
+
+export default UserController;

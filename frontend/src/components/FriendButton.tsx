@@ -39,21 +39,25 @@ export const FriendButton = ({ user }: { user: any }) => {
 	if (user.isFriend) {
 		return (
 			<Button 
-				variant="ghost" 
+				variant="outline" 
 				size="sm" 
 				onClick={handleRemoveRequest}
 				disabled={isLoading}
 				onMouseEnter={() => setIsHovering(true)}
 				onMouseLeave={() => setIsHovering(false)}
-				className={`transition-colors ${isHovering ? "text-red-400 bg-red-500/10 hover:bg-red-500/20" : "text-emerald-500"}`}
+				className={`rounded-full px-4 transition-colors font-medium border-white/10 ${
+					isHovering 
+						? "text-red-400 bg-red-500/10 border-red-500/20 hover:bg-red-500/20" 
+						: "text-zinc-300 hover:text-white"
+				}`}
 			>
 				{isHovering ? (
 					<>
-						<X className="size-4 mr-2" /> Remove
+						<X className="size-3.5 mr-2" /> Remove
 					</>
 				) : (
 					<>
-						<UserCheck className="size-4 mr-2" /> Friends
+						<UserCheck className="size-3.5 mr-2" /> Friends
 					</>
 				)}
 			</Button>
@@ -62,8 +66,8 @@ export const FriendButton = ({ user }: { user: any }) => {
 
 	if (user.isSent) {
 		return (
-			<Button variant="outline" size="sm" disabled className="text-zinc-400 border-zinc-700 bg-zinc-800/50">
-				<Clock className="size-3 mr-2" /> Pending
+			<Button variant="outline" size="sm" disabled className="text-zinc-500 border-white/[0.04] bg-transparent rounded-full px-4 font-medium">
+				<Clock className="size-3.5 mr-2" /> Pending
 			</Button>
 		);
 	}
@@ -76,16 +80,16 @@ export const FriendButton = ({ user }: { user: any }) => {
 					size="sm" 
 					onClick={handleAcceptRequest} 
 					disabled={isLoading}
-					className="bg-emerald-600 hover:bg-emerald-500"
+					className="bg-white hover:bg-white/90 text-black font-semibold rounded-full px-4"
 				>
-					<Check className="size-4 mr-1" /> Accept
+					<Check className="size-3.5 mr-1" /> Accept
 				</Button>
 				<Button 
 					variant="ghost" 
 					size="icon" 
 					onClick={handleRejectRequest} 
 					disabled={isLoading}
-					className="hover:bg-red-500/20 hover:text-red-400 text-zinc-400"
+					className="hover:bg-red-500/20 hover:text-red-400 text-zinc-500 rounded-full"
 				>
 					<X className="size-4" />
 				</Button>
@@ -95,13 +99,13 @@ export const FriendButton = ({ user }: { user: any }) => {
 
 	return (
 		<Button 
-			variant="outline" 
+			variant="default" 
 			size="sm" 
 			onClick={handleSendRequest} 
 			disabled={isLoading}
-			className="hover:bg-emerald-500/20 hover:text-emerald-400 border-zinc-700 hover:border-emerald-500/50"
+			className="bg-white hover:bg-white/90 text-black font-semibold rounded-full px-4 shadow-sm"
 		>
-			<UserPlus className="size-4 mr-2" /> Add Friend
+			<UserPlus className="size-3.5 mr-2" /> Add Friend
 		</Button>
 	);
 };
