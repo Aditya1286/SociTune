@@ -70,7 +70,7 @@ class App {
     });
 
     if (this.env === "production") {
-      this.app.get("*", (req, res) => {
+      this.app.get(/.*/, (req, res) => {
         res.sendFile(path.resolve(this.__dirname, "../frontend", "dist", "index.html"));
       });
     }
