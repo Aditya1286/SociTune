@@ -22,6 +22,10 @@ interface PLayerStore {
     togglePlay: () => void;
     playNext: () => void;
     playPrevious: () => void;
+    toggleShuffle: () => void;
+    toggleLoop: () => void;
+    isShuffled: boolean;
+    isLooping: boolean;
 }
 
 export const usePlayerStore = create<PLayerStore>((set,get) => ({
@@ -29,6 +33,8 @@ export const usePlayerStore = create<PLayerStore>((set,get) => ({
     isPlaying: false,
     queue: [],
     currentIndex: -1,
+    isShuffled: false,
+    isLooping: false,
     initializeQueue: (songs: Song[]) => {
         set({ queue: songs,
               currentSong: get().currentSong || songs[0],
@@ -64,9 +70,19 @@ export const usePlayerStore = create<PLayerStore>((set,get) => ({
             isPlaying:willStartPlaying,
         });
     },
+    toggleShuffle: () => {
+        set({ isShuffled: !get().isShuffled });
+    },
+    toggleLoop: () => {
+        set({ isLooping: !get().isLooping });
+    },
     playNext: () => {
-        const { currentIndex, queue } = get()
-        const nextIndex = currentIndex + 1;
+        const { currentIndex, queue, isShuffled } = get()
+        let nextIndex = currentIndex + 1;
+
+        if (isShuffled) {
+            nextIndex = Math.floor(Math.random() * queue.length);
+        }
 
         if(nextIndex < queue.length){
             const nextSong = queue[nextIndex];
@@ -82,9 +98,13 @@ export const usePlayerStore = create<PLayerStore>((set,get) => ({
         }
     },
     playPrevious: () => {
-        const { currentIndex, queue } = get()
-        const prevIndex = currentIndex - 1;
+        const { currentIndex, queue, isShuffled } = get()
+        let prevIndex = currentIndex - 1;
         
+        if (isShuffled) {
+            prevIndex = Math.floor(Math.random() * queue.length);
+        }
+
         if(prevIndex >= 0){
             const prevSong = queue[prevIndex];
             set({

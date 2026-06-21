@@ -58,10 +58,10 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 
 	return (
 		<div className={cn(
-            "flex flex-col h-full bg-zinc-950 transition-all duration-300",
-            isMainView ? "w-full" : "w-full sm:w-[350px] border-l border-zinc-800"
+            "flex flex-col h-full bg-[#0a0a0c]/60 backdrop-blur-md transition-all duration-300",
+            isMainView ? "w-full" : "w-full sm:w-[350px] border-l border-white/[0.04]"
         )}>
-			<div className="p-4 border-b border-white/5 flex items-center justify-between backdrop-blur-md bg-zinc-900/50 sticky top-0 z-10">
+			<div className="p-4 border-b border-white/[0.04] flex items-center justify-between backdrop-blur-md bg-transparent sticky top-0 z-10">
 				<div className="flex items-center gap-2">
 					{/* Show X (close/dismiss) when opened from Discover, ArrowLeft when from chat */}
 					{isMainView && profileSource === 'discover' ? (
@@ -69,12 +69,12 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 							variant="ghost"
 							size="icon"
 							onClick={() => setSelectedUser(null)}
-							className="mr-1 text-zinc-400 hover:text-white rounded-full"
+							className="mr-1 text-zinc-400 hover:text-white rounded-full hover:scale-105 active:scale-95 transition-all"
 						>
 							<X className="size-5" />
 						</Button>
 					) : (
-						<Button variant="ghost" size="icon" onClick={onClose} className="mr-1 text-zinc-400 hover:text-white rounded-full">
+						<Button variant="ghost" size="icon" onClick={onClose} className="mr-1 text-zinc-400 hover:text-white rounded-full hover:scale-105 active:scale-95 transition-all">
 							<ArrowLeft className="size-5" />
 						</Button>
 					)}
@@ -83,13 +83,13 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 					) : (
 						<>
 							<Info className="size-5 text-emerald-500" />
-							<h3 className="font-medium text-white">Profile Info</h3>
+							<h3 className="font-semibold text-white">Profile Info</h3>
 						</>
 					)}
 				</div>
 			</div>
 
-			<ScrollArea className="flex-1">
+			<ScrollArea className="flex-1 bg-transparent">
 				<div className={cn(
                     "flex flex-col items-center",
                     isMainView ? "p-8 md:p-12 max-w-4xl mx-auto" : "p-6"
@@ -99,7 +99,7 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 						{isMainView ? (
 							<div className="relative">
 								<div className="absolute -inset-2 bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-full blur-md opacity-50 group-hover:opacity-75 transition duration-500 animate-pulse" />
-								<Avatar className="relative size-40 md:size-48 border-4 border-zinc-950 shadow-2xl z-10">
+								<Avatar className="relative size-40 md:size-44 border-4 border-[#09090b] shadow-2xl z-10">
 									<AvatarImage src={user.imageUrl} className="object-cover" />
 									<AvatarFallback className="text-6xl font-bold bg-zinc-800 text-zinc-400">{user.fullName[0]}</AvatarFallback>
 								</Avatar>
@@ -125,7 +125,7 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                     </h2>
 					{user.username && (
                         <p className={cn(
-                            "text-zinc-400 mb-6 font-medium",
+                            "text-zinc-400 mb-6 font-semibold",
                             isMainView ? "text-lg" : "text-sm"
                         )}>
                             @{user.username}
@@ -139,13 +139,13 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                                 onClick={handleMessageClick}
                                 disabled={!user.isFriend}
                                 className={cn(
-                                    "flex-1 rounded-xl transition-all active:scale-95",
+                                    "flex-1 rounded-full transition-all hover:scale-105 active:scale-95 font-semibold text-xs",
                                     user.isFriend 
-                                        ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20" 
-                                        : "bg-zinc-800 text-zinc-500 cursor-not-allowed opacity-50"
+                                        ? "bg-emerald-500 hover:bg-emerald-400 text-white shadow-md shadow-emerald-500/10" 
+                                        : "bg-white/5 text-zinc-500 cursor-not-allowed opacity-50"
                                 )}
                             >
-                                <MessageCircle className="size-4 mr-2" />
+                                <MessageCircle className="size-4 mr-1.5" />
                                 Message
                             </Button>
                             <Button 
@@ -154,24 +154,24 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                                 onMouseLeave={() => setIsHoveringFollow(false)}
                                 variant={user.isFriend ? "outline" : "default"}
                                 className={cn(
-                                    "flex-1 rounded-xl transition-all active:scale-95",
+                                    "flex-1 rounded-full transition-all hover:scale-105 active:scale-95 font-semibold text-xs",
                                     user.isFriend 
-                                        ? (isHoveringFollow ? "bg-red-500/10 border-red-500/50 text-red-500 hover:bg-red-500/20" : "bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white")
-                                        : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-900/20"
+                                        ? (isHoveringFollow ? "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20" : "bg-transparent border-white/10 text-zinc-300 hover:bg-white/5 hover:text-white")
+                                        : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/10"
                                 )}
                             >
                                 {user.isFriend ? (
                                     isHoveringFollow ? (
-                                        <><UserMinus className="size-4 mr-2" /> Unfollow</>
+                                        <><UserMinus className="size-4 mr-1.5" /> Unfollow</>
                                     ) : (
-                                        <><UserCheck className="size-4 mr-2" /> Following</>
+                                        <><UserCheck className="size-4 mr-1.5" /> Following</>
                                     )
                                 ) : user.isSent ? (
                                     "Requested"
                                 ) : user.isPending ? (
                                     "Accept"
                                 ) : (
-                                    <><UserPlus className="size-4 mr-2" /> Follow</>
+                                    <><UserPlus className="size-4 mr-1.5" /> Follow</>
                                 )}
                             </Button>
                         </div>
@@ -179,7 +179,7 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 
 					{user.bio && (
 						<p className={cn(
-                            "text-center px-4 mb-8 leading-relaxed italic text-zinc-300/80",
+                            "text-center px-4 mb-8 leading-relaxed italic text-zinc-300/80 font-medium",
                             isMainView ? "text-base max-w-lg" : "text-sm"
                         )}>
 							"{user.bio}"
@@ -188,17 +188,17 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 
 					{/* Stats Grid */}
 					<div className={cn(
-                        "flex w-full justify-center border-y border-white/5",
+                        "flex w-full justify-center border-y border-white/[0.04] bg-white/[0.01]",
                         isMainView ? "gap-8 md:gap-16 mb-8 py-6 max-w-2xl" : "gap-4 sm:gap-6 mb-6 py-4 flex-wrap"
                     )}>
                         <Dialog open={isFollowersModalOpen} onOpenChange={setIsFollowersModalOpen}>
                             <DialogTrigger asChild>
                                 <div className="text-center cursor-pointer group min-w-[70px]">
                                     <p className={cn("font-bold text-white group-hover:text-emerald-400 transition-colors", isMainView ? "text-2xl" : "text-xl")}>{user.friends?.length || 0}</p>
-                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-medium">Followers</p>
+                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-semibold">Followers</p>
                                 </div>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-md bg-zinc-950 border-white/10 text-white shadow-2xl">
+                            <DialogContent className="sm:max-w-md bg-[#121215]/95 border-white/[0.08] text-white shadow-2xl backdrop-blur-xl rounded-2xl">
                                 <DialogHeader>
                                     <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
                                         <Users className="size-5 text-emerald-500" />
@@ -211,13 +211,13 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                                             <div className="size-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                                         </div>
                                     ) : userFriends.length === 0 ? (
-                                        <div className="py-8 bg-zinc-900/30 rounded-xl border border-white/5 text-center mt-2">
-                                            <p className="text-sm text-zinc-500">No followers</p>
+                                        <div className="py-8 bg-white/[0.02] rounded-xl border border-white/[0.04] text-center mt-2">
+                                            <p className="text-sm text-zinc-500 font-medium">No followers</p>
                                         </div>
                                     ) : (
                                         <div className="flex flex-col gap-2 pr-4 pb-4">
                                             {userFriends.map(friend => (
-                                                <div key={friend.clerkId} className="flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/50 transition-colors group">
+                                                <div key={friend.clerkId} className="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors group">
                                                     <div 
                                                         className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" 
                                                         onClick={() => { 
@@ -225,7 +225,7 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                                                             setSelectedUser(friend, 'profile'); 
                                                         }}
                                                     >
-                                                        <Avatar className="size-11 border border-zinc-800 shadow-sm group-hover:border-emerald-500/30 transition-colors">
+                                                        <Avatar className="size-11 border border-white/[0.08] shadow-sm group-hover:border-emerald-500/30 transition-colors">
                                                             <AvatarImage src={friend.imageUrl} />
                                                             <AvatarFallback className="bg-zinc-800 text-zinc-400 font-bold">{friend.fullName[0]}</AvatarFallback>
                                                         </Avatar>
@@ -249,10 +249,10 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                             <DialogTrigger asChild>
                                 <div className="text-center cursor-pointer group min-w-[70px]">
                                     <p className={cn("font-bold text-white group-hover:text-indigo-400 transition-colors", isMainView ? "text-2xl" : "text-xl")}>{user.friends?.length || 0}</p>
-                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-medium">Following</p>
+                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-semibold">Following</p>
                                 </div>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-md bg-zinc-950 border-white/10 text-white shadow-2xl">
+                            <DialogContent className="sm:max-w-md bg-[#121215]/95 border-white/[0.08] text-white shadow-2xl backdrop-blur-xl rounded-2xl">
                                 <DialogHeader>
                                     <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
                                         <Users className="size-5 text-indigo-500" />
@@ -265,13 +265,13 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                                             <div className="size-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
                                         </div>
                                     ) : userFriends.length === 0 ? (
-                                        <div className="py-8 bg-zinc-900/30 rounded-xl border border-white/5 text-center mt-2">
-                                            <p className="text-sm text-zinc-500">Not following anyone</p>
+                                        <div className="py-8 bg-white/[0.02] rounded-xl border border-white/[0.04] text-center mt-2">
+                                            <p className="text-sm text-zinc-500 font-medium">Not following anyone</p>
                                         </div>
                                     ) : (
                                         <div className="flex flex-col gap-2 pr-4 pb-4">
                                             {userFriends.map(friend => (
-                                                <div key={friend.clerkId} className="flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/50 transition-colors group">
+                                                <div key={friend.clerkId} className="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors group">
                                                     <div 
                                                         className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" 
                                                         onClick={() => { 
@@ -279,7 +279,7 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                                                             setSelectedUser(friend, 'profile'); 
                                                         }}
                                                     >
-                                                        <Avatar className="size-11 border border-zinc-800 shadow-sm group-hover:border-indigo-500/30 transition-colors">
+                                                        <Avatar className="size-11 border border-white/[0.08] shadow-sm group-hover:border-indigo-500/30 transition-colors">
                                                             <AvatarImage src={friend.imageUrl} />
                                                             <AvatarFallback className="bg-zinc-800 text-zinc-400 font-bold">{friend.fullName[0]}</AvatarFallback>
                                                         </Avatar>
@@ -305,10 +305,10 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                                     <p className={cn("font-bold text-white group-hover:text-amber-400 transition-colors", isMainView ? "text-2xl" : "text-xl")}>
                                         {user.mutualFriendsCount || mutualFriends.length}
                                     </p>
-                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-medium">Mutuals</p>
+                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-semibold">Mutuals</p>
                                 </div>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-md bg-zinc-950 border-white/10 text-white shadow-2xl">
+                            <DialogContent className="sm:max-w-md bg-[#121215]/95 border-white/[0.08] text-white shadow-2xl backdrop-blur-xl rounded-2xl">
                                 <DialogHeader>
                                     <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
                                         <Users className="size-5 text-emerald-500" />
@@ -321,13 +321,13 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                                             <div className="size-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                                         </div>
                                     ) : mutualFriends.length === 0 ? (
-                                        <div className="py-8 bg-zinc-900/30 rounded-xl border border-white/5 text-center mt-2">
-                                            <p className="text-sm text-zinc-500">No mutual followers</p>
+                                        <div className="py-8 bg-white/[0.02] rounded-xl border border-white/[0.04] text-center mt-2">
+                                            <p className="text-sm text-zinc-500 font-medium">No mutual followers</p>
                                         </div>
                                     ) : (
                                         <div className="flex flex-col gap-2 pr-4 pb-4">
                                             {mutualFriends.map(mutual => (
-                                                <div key={mutual.clerkId} className="flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/50 transition-colors group">
+                                                <div key={mutual.clerkId} className="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors group">
                                                     <div 
                                                         className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" 
                                                         onClick={() => { 
@@ -335,7 +335,7 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                                                             setSelectedUser(mutual, 'profile'); 
                                                         }}
                                                     >
-                                                        <Avatar className="size-11 border border-zinc-800 shadow-sm group-hover:border-emerald-500/30 transition-colors">
+                                                        <Avatar className="size-11 border border-white/[0.08] shadow-sm group-hover:border-emerald-500/30 transition-colors">
                                                             <AvatarImage src={mutual.imageUrl} />
                                                             <AvatarFallback className="bg-zinc-800 text-zinc-400 font-bold">{mutual.fullName[0]}</AvatarFallback>
                                                         </Avatar>
@@ -358,15 +358,15 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 
                     {/* Music Identity */}
                     {(user.favoriteSong || user.favoriteArtist) && (
-                        <div className="w-full max-w-2xl bg-zinc-900/50 rounded-2xl border border-white/5 p-6 mb-8 flex flex-col md:flex-row gap-6 justify-around">
+                        <div className="w-full max-w-2xl bg-white/[0.03] rounded-2xl border border-white/[0.06] p-6 mb-8 flex flex-col md:flex-row gap-6 justify-around">
                             {user.favoriteSong && (
                                 <div className="flex items-center gap-4">
                                     <div className="p-3 bg-emerald-500/10 rounded-xl">
                                         <Music2 className="size-6 text-emerald-400" />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1 font-medium">Favorite Song</p>
-                                        <p className="text-white font-medium">{user.favoriteSong}</p>
+                                        <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1 font-semibold">Favorite Song</p>
+                                        <p className="text-white font-semibold">{user.favoriteSong}</p>
                                     </div>
                                 </div>
                             )}
@@ -376,8 +376,8 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
                                         <Mic2 className="size-6 text-indigo-400" />
                                     </div>
                                     <div>
-                                        <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1 font-medium">Favorite Artist</p>
-                                        <p className="text-white font-medium">{user.favoriteArtist}</p>
+                                        <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1 font-semibold">Favorite Artist</p>
+                                        <p className="text-white font-semibold">{user.favoriteArtist}</p>
                                     </div>
                                 </div>
                             )}

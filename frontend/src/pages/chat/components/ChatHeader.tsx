@@ -29,20 +29,27 @@ const ChatHeader = () => {
 	if (!selectedUser) return null;
 
 	return (
-		<div className='p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50'>
+		<div className='p-4 border-b border-white/[0.04] flex justify-between items-center bg-[#0a0a0c]/60 backdrop-blur-md sticky top-0 z-20'>
 			<div className='flex items-center gap-3'>
-				<Avatar>
+				<Avatar className='size-10 border border-white/[0.08] shadow-sm'>
 					<AvatarImage src={selectedUser.imageUrl} />
 					<AvatarFallback>{selectedUser.fullName[0]}</AvatarFallback>
 				</Avatar>
 				<div>
-					<h2 className='font-medium'>{selectedUser.fullName}</h2>
-					<p className='text-sm text-zinc-400'>
-						{onlineUsers.has(selectedUser.clerkId) ? "Online" : formatLastSeen(selectedUser.lastSeen)}
-					</p>
+					<h2 className='font-semibold text-white/95 text-[15px]'>{selectedUser.fullName}</h2>
+					<div className='text-xs text-zinc-400 font-medium flex items-center gap-1.5 mt-0.5'>
+						{onlineUsers.has(selectedUser.clerkId) ? (
+							<>
+								<span className="size-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+								<span className="text-emerald-400 font-semibold">Online</span>
+							</>
+						) : (
+							<span>{formatLastSeen(selectedUser.lastSeen)}</span>
+						)}
+					</div>
 				</div>
 			</div>
-			<div className='flex items-center gap-2'>
+			<div className='flex items-center gap-1.5'>
 				<Button 
 					variant='ghost' 
 					size='icon' 
@@ -50,10 +57,16 @@ const ChatHeader = () => {
 						setViewState('profile');
 						useChatStore.setState({ profileSource: 'chat' });
 					}}
+					className="text-zinc-400 hover:text-emerald-400 hover:bg-white/5 rounded-full hover:scale-105 active:scale-95 transition-all size-9"
 				>
-					<Info className='size-5 text-emerald-500' />
+					<Info className='size-5' />
 				</Button>
-				<Button variant='ghost' size='icon' onClick={() => setSelectedUser(null)}>
+				<Button 
+					variant='ghost' 
+					size='icon' 
+					onClick={() => setSelectedUser(null)}
+					className="text-zinc-400 hover:text-white hover:bg-white/5 rounded-full hover:scale-105 active:scale-95 transition-all size-9"
+				>
 					<X className='size-5' />
 				</Button>
 			</div>

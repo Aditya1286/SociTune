@@ -1,17 +1,20 @@
-import { Server } from "socket.io";
+import { Server as SocketIOServer, Socket } from "socket.io";
+import { Server } from "http";
 import { Message } from "../models/message.model.js";
 import { User } from "../models/user.model.js";
+import { NODE_ENV } from "../config/index.js";
 
-export const initializeSocket = (server) => {
-	const io = new Server(server, {
+export let io: SocketIOServer;
+export const userSockets = new Map<string, string>(); // { userId: socketId} store karega, taaki hum kisi user ko message bhej sakein agar wo online hai to, nahi to uske next login pe message bhejenge
+export const userActivities = new Map<string, string>(); // {userId: activity} store karega
+
+export const initializeSocket = (server: Server) => {
+	io = new SocketIOServer(server, {
 		cors: {
-			origin: process.env.NODE_ENV === "production" ? true : ["http://localhost:3000"],
+			origin: NODE_ENV === "production" ? true : ["http://localhost:3000"],
 			credentials: true,
 		},
 	});
-
-	const userSockets = new Map(); // { userId: socketId} store karega, taaki hum kisi user ko message bhej sakein agar wo online hai to, nahi to uske next login pe message bhejenge
-	const userActivities = new Map(); // {userId: activity} store karega
 
 	io.on("connection", (socket) => {
 		socket.on("user_connected", (userId) => {
@@ -52,7 +55,7 @@ export const initializeSocket = (server) => {
 					return socket.emit("message_error", "You must be friends to send a message.");
 				}
 
-				let messageData = {
+				let messageData: any = {
 					senderId,
 					receiverId,
 					content: content || "",
@@ -154,7 +157,7 @@ export const initializeSocket = (server) => {
 				const now = new Date();
 				let finalActivity = "Offline";
 				if (lastAct && lastAct !== "Idle" && lastAct !== "Offline") {
-					const cleanedAct = lastAct.replace("Paused: ", "");
+					const cleanedAct = lastAct.replace("Paused: ", "").replace("Playing ", "").replace("Paused ", "");
 					finalActivity = cleanedAct.startsWith("Listening to ") 
 						? cleanedAct.replace("Listening to ", "Recently listened: ") 
 						: `Recently listened: ${cleanedAct}`;

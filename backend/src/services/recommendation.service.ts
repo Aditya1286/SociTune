@@ -61,11 +61,17 @@ function cosineSimilarity(vecA, vecB, weights) {
 }
 
 class MusicRecommender {
+    public similarityThreshold: number;
+    public users: Map<string, any>;
+    public songCatalog: Map<string, any>;
+    public similarityCache: Map<string, any>;
+    public isInitialized: boolean;
+
     constructor(similarityThreshold = 30) {
         this.similarityThreshold = similarityThreshold;
-        this.users = new Map();       
-        this.songCatalog = new Map(); 
-        this.similarityCache = new Map();
+        this.users = new Map<string, any>();       
+        this.songCatalog = new Map<string, any>(); 
+        this.similarityCache = new Map<string, any>();
         this.isInitialized = false;
     }
 
@@ -87,8 +93,20 @@ class MusicRecommender {
         }
         
         const users = await User.find({});
+        
+        // Fetch all history at once to prevent N+1 queries during startup
+        const allHistory = await PlayHistory.find({});
+        const historyByUser = new Map();
+        for (const h of allHistory) {
+            const uid = h.userId;
+            if (!historyByUser.has(uid)) {
+                historyByUser.set(uid, []);
+            }
+            historyByUser.get(uid).push(h);
+        }
+
         for (const user of users) {
-            await this.recalculateUser(user.clerkId);
+            await this.recalculateUser(user.clerkId, historyByUser.get(user.clerkId) || []);
         }
         
         this.isInitialized = true;
@@ -101,8 +119,8 @@ class MusicRecommender {
         this.songCatalog.set(id, { ...features, normTempo, macroCluster: mapToMacroCluster(features.genre) });
     }
 
-    async recalculateUser(userId) {
-        const history = await PlayHistory.find({ userId });
+    async recalculateUser(userId, precomputedHistory = null) {
+        const history = precomputedHistory !== null ? precomputedHistory : await PlayHistory.find({ userId });
         
         const playCounts = new Map();
         let morning = 0, afternoon = 0, evening = 0, night = 0;
@@ -295,7 +313,7 @@ class MusicRecommender {
         
         const commonSongsDetails = [];
         for (let songId of commonSongsSet) {
-            const song = this.songCatalog.get(songId);
+            const song = this.songCatalog.get(songId as string);
             commonSongsDetails.push({
                 id: songId,
                 title: song.title,
