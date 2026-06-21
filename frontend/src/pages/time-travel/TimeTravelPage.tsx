@@ -7,6 +7,7 @@ import { axiosInstance } from "@/lib/axios";
 import type { Song } from "@/types";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { toast } from "sonner";
+import { useAuth } from "@clerk/clerk-react";
 
 interface TimeTravelStats {
   topSong: Song | null;
@@ -45,6 +46,7 @@ export default function TimeTravelPage() {
   const pageRef = useRef<HTMLDivElement>(null);
 
   const { currentSong, isPlaying, setCurrentSong, togglePlay } = usePlayerStore();
+  const { isSignedIn } = useAuth();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -163,16 +165,24 @@ export default function TimeTravelPage() {
               <Sparkles className="w-5 h-5 animate-pulse" />
             </div>
             <div>
-              <h3 className="font-semibold text-white text-sm">Demo Wrap Preview</h3>
-              <p className="text-zinc-400 text-xs mt-0.5 font-light">You're viewing sample statistics. Connect your account to synchronize your real listening history.</p>
+              <h3 className="font-semibold text-white text-sm">
+                {isSignedIn ? "No Listening History" : "Demo Wrap Preview"}
+              </h3>
+              <p className="text-zinc-400 text-xs mt-0.5 font-light">
+                {isSignedIn 
+                  ? "Listen to some music to generate your real Time Travel stats!" 
+                  : "You're viewing sample statistics. Connect your account to synchronize your real listening history."}
+              </p>
             </div>
           </div>
-          <button 
-            onClick={() => toast("Log in to see your personalized wrap!")}
-            className="px-4 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-semibold tracking-wide transition-all shadow-md hover:shadow-emerald-500/20 hover:scale-105 shrink-0 z-10"
-          >
-            Connect Account
-          </button>
+          {!isSignedIn && (
+            <button 
+              onClick={() => toast("Log in to see your personalized wrap!")}
+              className="px-4 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-semibold tracking-wide transition-all shadow-md hover:shadow-emerald-500/20 hover:scale-105 shrink-0 z-10"
+            >
+              Connect Account
+            </button>
+          )}
         </div>
       )}
 

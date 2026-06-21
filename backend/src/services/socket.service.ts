@@ -157,7 +157,7 @@ export const initializeSocket = (server: Server) => {
 				const now = new Date();
 				let finalActivity = "Offline";
 				if (lastAct && lastAct !== "Idle" && lastAct !== "Offline") {
-					const cleanedAct = lastAct.replace("Paused: ", "");
+					const cleanedAct = lastAct.replace("Paused: ", "").replace("Playing ", "").replace("Paused ", "");
 					finalActivity = cleanedAct.startsWith("Listening to ") 
 						? cleanedAct.replace("Listening to ", "Recently listened: ") 
 						: `Recently listened: ${cleanedAct}`;
