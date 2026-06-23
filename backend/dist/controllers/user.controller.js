@@ -4,6 +4,7 @@ import { PlayHistory } from "../models/playHistory.model.js";
 import cloudinary from "../services/cloudinary.service.js";
 import { recommender } from "../services/recommendation.service.js";
 import { io, userSockets } from "../services/socket.service.js";
+import { socificationService } from "../services/socification.service.js";
 class UserController {
     async getAllUsers(req, res, next) {
         try {
@@ -78,6 +79,19 @@ class UserController {
             await User.updateOne({ clerkId: myId }, { $addToSet: { sentRequests: userId } });
             await User.updateOne({ clerkId: userId }, { $addToSet: { pendingRequests: myId } });
             const senderUser = await User.findOne({ clerkId: myId }).select("fullName imageUrl clerkId username");
+            // Create and store the notification in the database via socificationService
+            await socificationService.createNotification({
+                userId: userId,
+                senderId: myId,
+                senderName: senderUser.fullName,
+                senderAvatar: senderUser.imageUrl,
+                type: "social",
+                title: "New Friend Request",
+                message: `${senderUser.fullName} sent you a friend request.`,
+                metadata: {
+                    matchUserId: myId
+                }
+            });
             const receiverSocketId = userSockets.get(userId);
             if (receiverSocketId && io) {
                 io.to(receiverSocketId).emit("friend_request_received", senderUser);
@@ -101,6 +115,19 @@ class UserController {
                 $addToSet: { friends: myId },
             });
             const accepterUser = await User.findOne({ clerkId: myId }).select("fullName imageUrl clerkId username");
+            // Create and store the notification in the database via socificationService
+            await socificationService.createNotification({
+                userId: userId,
+                senderId: myId,
+                senderName: accepterUser.fullName,
+                senderAvatar: accepterUser.imageUrl,
+                type: "social",
+                title: "Friend Request Accepted",
+                message: `${accepterUser.fullName} accepted your friend request!`,
+                metadata: {
+                    matchUserId: myId
+                }
+            });
             const senderSocketId = userSockets.get(userId);
             if (senderSocketId && io) {
                 io.to(senderSocketId).emit("friend_request_accepted", accepterUser);

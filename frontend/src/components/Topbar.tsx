@@ -1,7 +1,8 @@
 import { SearchIcon } from "lucide-react";
 import { Link } from "react-router-dom";
-import { SignedOut, UserButton } from "@clerk/clerk-react";
+import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import SignInOAuthButtons from "./SignInOAuthButtons";
+import NotificationDropdown from "./NotificationDropdown";
 import { buttonVariants } from "./ui/button";
 import { cn } from "@/lib/utils";
 import { EditProfileDialog } from "./EditProfileDialog";
@@ -82,6 +83,10 @@ const Topbar = () => {
           <SignedOut>
             <SignInOAuthButtons />
           </SignedOut>
+
+          <SignedIn>
+            <NotificationDropdown />
+          </SignedIn>
 
           {/* Subtle ring around UserButton */}
           <div className="ring-1 ring-white/10 rounded-full transition-shadow duration-200 hover:ring-emerald-500/40 hover:shadow-lg hover:shadow-emerald-900/30">

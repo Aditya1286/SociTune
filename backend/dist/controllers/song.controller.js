@@ -1,4 +1,6 @@
 import { Song } from "../models/song.model.js";
+import Singleton from "../utils/Singleton.js";
+import LyricsService from "../services/lyrics.service.js";
 class SongController {
     async getAllSongs(req, res, next) {
         try {
@@ -32,7 +34,7 @@ class SongController {
     async getMadeForYouSongs(req, res, next) {
         try {
             const songs = await Song.aggregate([
-                { $sample: { size: 4 } },
+                { $sample: { size: 12 } },
                 {
                     $project: {
                         _id: 1,
@@ -52,7 +54,7 @@ class SongController {
     async getTrendingSongs(req, res, next) {
         try {
             const songs = await Song.aggregate([
-                { $sample: { size: 4 } },
+                { $sample: { size: 12 } },
                 {
                     $project: {
                         _id: 1,
@@ -93,11 +95,39 @@ class SongController {
             if (!song) {
                 return res.status(404).json({ message: "Song not found" });
             }
+            // If lyrics are not cached, or previously failed/empty, fetch and save them on-the-fly
+            if (song.lyrics === null || song.lyrics === "" || song.lyricsSource === "None") {
+                console.log(`[SongController] Lyrics not cached for "${song.title}". Fetching on-the-fly...`);
+                const lyricsService = Singleton.instance(LyricsService);
+                await lyricsService.fetchAndSaveLyrics(id);
+                // Reload the song document to get the newly generated lyrics
+                const updatedSong = await Song.findById(id);
+                if (updatedSong) {
+                    return res.json({
+                        lyrics: updatedSong.lyrics || null,
+                        lyricsSource: updatedSong.lyricsSource || null,
+                        lyricsFetchedAt: updatedSong.lyricsFetchedAt || null
+                    });
+                }
+            }
             res.json({
                 lyrics: song.lyrics || null,
                 lyricsSource: song.lyricsSource || null,
                 lyricsFetchedAt: song.lyricsFetchedAt || null
             });
+        }
+        catch (error) {
+            next(error);
+        }
+    }
+    async getSongById(req, res, next) {
+        try {
+            const { id } = req.params;
+            const song = await Song.findById(id);
+            if (!song) {
+                return res.status(404).json({ message: "Song not found" });
+            }
+            res.json(song);
         }
         catch (error) {
             next(error);

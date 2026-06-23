@@ -1,4 +1,5 @@
 import { Song } from "../models/song.model.js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 class LyricsService {
     cleanLyrics(lyrics) {
         if (!lyrics)
@@ -15,17 +16,52 @@ class LyricsService {
             .join("\n")
             .trim();
     }
+    async getLyricsFromAI(songName, artistName) {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            console.log("[LyricsService] No GEMINI_API_KEY provided, bypassing AI generation.");
+            return null;
+        }
+        try {
+            console.log(`[LyricsService] Querying Gemini AI for lyrics of: ${songName} - ${artistName}`);
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const prompt = `Write the lyrics for the song "${songName}" by "${artistName}".
+If you know the official lyrics, please write the official lyrics exactly.
+If you do not know the official lyrics or if it is an instrumental/indie song, write high-quality, creative, and beautiful song lyrics in the style of "${artistName}".
+Do not include any introduction, explanations, meta-commentary, or markdown formatting (like \`\`\` or \`\`\`lyrics). Just return the plain text lyrics directly.`;
+            const result = await model.generateContent(prompt);
+            const text = result.response.text();
+            if (text && text.trim().length > 0) {
+                return text.trim();
+            }
+        }
+        catch (error) {
+            console.error("[LyricsService] Error generating lyrics with Gemini AI:", error);
+        }
+        return null;
+    }
     async getLyrics(songName, artistName) {
         try {
             console.log(`[LyricsService] Attempting to fetch lyrics for: ${songName} - ${artistName}`);
-            // 1. Try LRCLIB search endpoint by track_name & artist_name
+            // 1. Try Gemini AI first
+            const aiLyrics = await this.getLyricsFromAI(songName, artistName);
+            if (aiLyrics) {
+                console.log(`[LyricsService] Successfully generated lyrics via Gemini AI`);
+                return {
+                    lyrics: aiLyrics,
+                    source: "Gemini AI"
+                };
+            }
+            console.log(`[LyricsService] Gemini AI failed or bypassed. Trying LRCLIB search...`);
+            // 2. Try LRCLIB search endpoint by track_name & artist_name
             const lrclibUrl = `https://lrclib.net/api/search?track_name=${encodeURIComponent(songName)}&artist_name=${encodeURIComponent(artistName)}`;
             const lrclibResponse = await fetch(lrclibUrl, {
                 headers: { "User-Agent": "SociTune/1.0.0 (https://github.com/Aditya1286/SociTune)" },
-                signal: AbortSignal.timeout(1500)
+                signal: AbortSignal.timeout(10000)
             });
             if (lrclibResponse.ok) {
-                const results = await lrclibResponse.json();
+                const results = (await lrclibResponse.json());
                 if (Array.isArray(results) && results.length > 0) {
                     // Find first record with lyrics
                     const record = results.find(r => r.plainLyrics || r.syncedLyrics);
@@ -41,14 +77,14 @@ class LyricsService {
                     }
                 }
             }
-            // 2. Try LRCLIB search with general query 'artist song'
+            // 3. Try LRCLIB search with general query 'artist song'
             const lrclibGeneralUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(`${artistName} ${songName}`)}`;
             const lrclibGeneralResponse = await fetch(lrclibGeneralUrl, {
                 headers: { "User-Agent": "SociTune/1.0.0 (https://github.com/Aditya1286/SociTune)" },
-                signal: AbortSignal.timeout(1500)
+                signal: AbortSignal.timeout(10000)
             });
             if (lrclibGeneralResponse.ok) {
-                const results = await lrclibGeneralResponse.json();
+                const results = (await lrclibGeneralResponse.json());
                 if (Array.isArray(results) && results.length > 0) {
                     const record = results.find(r => r.plainLyrics || r.syncedLyrics);
                     if (record) {
@@ -63,14 +99,14 @@ class LyricsService {
                     }
                 }
             }
-            // 3. Fallback to Lyrics.ovh API
+            // 4. Fallback to Lyrics.ovh API
             console.log(`[LyricsService] Lyrics not found on LRCLIB. Trying Lyrics.ovh...`);
             const ovhUrl = `https://api.lyrics.ovh/v1/${encodeURIComponent(artistName)}/${encodeURIComponent(songName)}`;
             const ovhResponse = await fetch(ovhUrl, {
-                signal: AbortSignal.timeout(1500)
+                signal: AbortSignal.timeout(10000)
             });
             if (ovhResponse.ok) {
-                const data = await ovhResponse.json();
+                const data = (await ovhResponse.json());
                 if (data && data.lyrics) {
                     console.log(`[LyricsService] Found lyrics on Lyrics.ovh`);
                     return {
@@ -83,7 +119,7 @@ class LyricsService {
         catch (error) {
             console.error(`[LyricsService] Error fetching lyrics:`, error);
         }
-        console.log(`[LyricsService] No lyrics found for ${songName} - ${artistName}`);
+        console.log(`[LyricsService] No lyrics found for ${songName} - ${artistName} (attempted fallback)`);
         return null;
     }
     async fetchAndSaveLyrics(songId) {
@@ -93,9 +129,9 @@ class LyricsService {
                 console.log(`[LyricsService] Song not found: ${songId}`);
                 return;
             }
-            // Avoid duplicate API calls
-            if (song.lyrics !== null) {
-                console.log(`[LyricsService] Lyrics already exist in DB for: ${song.title}`);
+            // Avoid duplicate API calls if we already have valid lyrics
+            if (song.lyrics !== null && song.lyrics !== "" && song.lyricsSource !== "None") {
+                console.log(`[LyricsService] Valid lyrics already exist in DB for: ${song.title}`);
                 return;
             }
             const result = await this.getLyrics(song.title, song.artist);

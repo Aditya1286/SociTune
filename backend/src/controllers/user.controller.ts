@@ -5,6 +5,7 @@ import { PlayHistory } from "../models/playHistory.model.js";
 import cloudinary from "../services/cloudinary.service.js";
 import { recommender } from "../services/recommendation.service.js";
 import { io, userSockets } from "../services/socket.service.js";
+import { socificationService } from "../services/socification.service.js";
 
 class UserController {
 public async getAllUsers(req: Request, res: Response, next: NextFunction) {
@@ -95,6 +96,21 @@ public async sendFriendRequest(req: Request, res: Response, next: NextFunction) 
 		await User.updateOne({ clerkId: userId }, { $addToSet: { pendingRequests: myId } });
 
 		const senderUser = await User.findOne({ clerkId: myId }).select("fullName imageUrl clerkId username");
+		
+		// Create and store the notification in the database via socificationService
+		await socificationService.createNotification({
+			userId: userId as string,
+			senderId: myId,
+			senderName: senderUser.fullName,
+			senderAvatar: senderUser.imageUrl,
+			type: "social",
+			title: "New Friend Request",
+			message: `${senderUser.fullName} sent you a friend request.`,
+			metadata: {
+				matchUserId: myId
+			}
+		});
+
 		const receiverSocketId = userSockets.get(userId as string);
 		if (receiverSocketId && io) {
 			io.to(receiverSocketId).emit("friend_request_received", senderUser);
@@ -128,6 +144,21 @@ public async acceptFriendRequest(req: Request, res: Response, next: NextFunction
 		);
 
 		const accepterUser = await User.findOne({ clerkId: myId }).select("fullName imageUrl clerkId username");
+
+		// Create and store the notification in the database via socificationService
+		await socificationService.createNotification({
+			userId: userId as string,
+			senderId: myId,
+			senderName: accepterUser.fullName,
+			senderAvatar: accepterUser.imageUrl,
+			type: "social",
+			title: "Friend Request Accepted",
+			message: `${accepterUser.fullName} accepted your friend request!`,
+			metadata: {
+				matchUserId: myId
+			}
+		});
+
 		const senderSocketId = userSockets.get(userId as string);
 		if (senderSocketId && io) {
 			io.to(senderSocketId).emit("friend_request_accepted", accepterUser);

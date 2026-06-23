@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
 import { useMusicStore } from "@/stores/useMusicStore"
 import { useChatStore } from "@/stores/useChatStore"
+import { useNotificationStore } from "@/stores/useNotificationStore"
 import { SignedIn } from "@clerk/clerk-react"
 import { 
   Home, 
@@ -15,7 +16,8 @@ import {
   Gem, 
   History, 
   Heart, 
-  Activity 
+  Activity,
+  Bell
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import PlaylistSkeleton from "../../components/skeletons/PlaylistSkeleton"
@@ -23,6 +25,7 @@ import PlaylistSkeleton from "../../components/skeletons/PlaylistSkeleton"
 const LeftSidebar = () => {
     const { albums, fetchAlbums, isLoading } = useMusicStore();
     const { unreadMessages } = useChatStore();
+    const { unreadCount: notifUnread } = useNotificationStore();
     const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
     const location = useLocation();
 
@@ -37,6 +40,7 @@ const LeftSidebar = () => {
     const navItems = [
       { path: "/", label: "Home", icon: Home, hoverColorClass: "text-zinc-400 group-hover:text-white" },
       { path: "/chat", label: "Messages", icon: MessageSquare, hoverColorClass: "text-zinc-400 group-hover:text-white" },
+      { path: "/notifications", label: "Notifications", icon: Bell, hoverColorClass: "text-zinc-400 group-hover:text-emerald-400" },
       { path: "/premium", label: "Premium", icon: Gem, hoverColorClass: "text-zinc-400 group-hover:text-emerald-400" },
       { path: "/founder", label: "Founders", icon: Cpu, hoverColorClass: "text-zinc-400 group-hover:text-white" },
       { path: "/time-travel", label: "Time Travel", icon: History, hoverColorClass: "text-zinc-400 group-hover:text-indigo-400" },
@@ -74,6 +78,7 @@ const LeftSidebar = () => {
                         item.path === "/premium" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" :
                         item.path === "/time-travel" ? "bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" :
                         item.path === "/matches" ? "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]" :
+                        item.path === "/notifications" ? "bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]" :
                         "bg-white shadow-[0_0_8px_rgba(255,255,255,0.6)]"
                       )} />
                     )}
@@ -86,6 +91,7 @@ const LeftSidebar = () => {
                           item.path === "/premium" ? "text-emerald-400" :
                           item.path === "/time-travel" ? "text-indigo-400" :
                           item.path === "/matches" ? "text-cyan-400" :
+                          item.path === "/notifications" ? "text-purple-400" :
                           "text-white"
                         ) : item.hoverColorClass
                       )} 
@@ -97,6 +103,15 @@ const LeftSidebar = () => {
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-30"></span>
                         <span className="relative bg-emerald-500 text-white text-[10px] font-bold size-5 flex items-center justify-center rounded-full md:w-auto md:h-auto md:px-2 md:py-0.5 shadow-sm shadow-emerald-500/50">
                           {totalUnread}
+                        </span>
+                      </div>
+                    )}
+
+                    {item.path === "/notifications" && notifUnread > 0 && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-30"></span>
+                        <span className="relative bg-emerald-500 text-white text-[10px] font-bold size-5 flex items-center justify-center rounded-full md:w-auto md:h-auto md:px-2 md:py-0.5 shadow-sm shadow-emerald-500/50">
+                          {notifUnread}
                         </span>
                       </div>
                     )}
