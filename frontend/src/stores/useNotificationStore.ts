@@ -3,6 +3,7 @@ import { axiosInstance } from "@/lib/axios";
 import type { Notification } from "@/types";
 import { io } from "socket.io-client";
 import { toast } from "sonner";
+import { showNotificationToast } from "@/lib/toastHelpers";
 
 const socificationURL = import.meta.env.VITE_SOCIFICATION_URL || "https://socification.onrender.com";
 
@@ -127,22 +128,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 			get().addLocalNotification(data.notification);
 			set({ unreadCount: data.unreadCount });
 
-			// Sound feedback
-			try {
-				const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav");
-				audio.volume = 0.2;
-				audio.play().catch(() => {});
-			} catch (e) {}
-
-			toast(data.notification.title, {
-				description: data.notification.message,
-				action: {
-					label: "View",
-					onClick: () => {
-						window.location.href = "/notifications";
-					}
-				}
-			});
+			showNotificationToast(data.notification);
 		});
 
 		socket.on("notification:read", (data: { notificationId: string; unreadCount: number }) => {
@@ -169,22 +155,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 		socket.on("new_notification", (notification: Notification) => {
 			get().addLocalNotification(notification);
 
-			// Sound feedback
-			try {
-				const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav");
-				audio.volume = 0.2;
-				audio.play().catch(() => {});
-			} catch (e) {}
-
-			toast(notification.title, {
-				description: notification.message,
-				action: {
-					label: "View",
-					onClick: () => {
-						window.location.href = "/notifications";
-					}
-				}
-			});
+			showNotificationToast(notification);
 		});
 
 		set({ isListening: true });
