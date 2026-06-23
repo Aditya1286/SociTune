@@ -3,6 +3,7 @@ import { axiosInstance } from "@/lib/axios";
 import type { Notification } from "@/types";
 import { io } from "socket.io-client";
 import { toast } from "sonner";
+import { useChatStore } from "./useChatStore";
 import { showNotificationToast } from "@/lib/toastHelpers";
 
 const socificationURL = import.meta.env.VITE_SOCIFICATION_URL || "https://socification.onrender.com";
@@ -120,6 +121,10 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
 		notificationSocket.connect();
 
+		if (notificationSocket.connected) {
+			notificationSocket.emit("user_connected", userId);
+		}
+
 		const socket = notificationSocket;
 		if (!socket) return;
 
@@ -158,6 +163,24 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 			showNotificationToast(notification);
 		});
 
+		// Listen on chat socket for fallback events from the local backend
+		const chatSocket = useChatStore.getState().socket;
+		if (chatSocket) {
+			chatSocket.off("notification:new");
+			chatSocket.off("new_notification");
+			
+			chatSocket.on("notification:new", (data: { notification: Notification; unreadCount: number }) => {
+				get().addLocalNotification(data.notification);
+				set({ unreadCount: data.unreadCount });
+				showNotificationToast(data.notification);
+			});
+
+			chatSocket.on("new_notification", (notification: Notification) => {
+				get().addLocalNotification(notification);
+				showNotificationToast(notification);
+			});
+		}
+
 		set({ isListening: true });
 	},
 
@@ -170,6 +193,13 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 			notificationSocket.off("notification:count-updated");
 			notificationSocket.disconnect();
 		}
+
+		const chatSocket = useChatStore.getState().socket;
+		if (chatSocket) {
+			chatSocket.off("notification:new");
+			chatSocket.off("new_notification");
+		}
+
 		set({ isListening: false });
 	}
 }));

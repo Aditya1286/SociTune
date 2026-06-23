@@ -105,13 +105,13 @@ export const initializeSocket = (server: Server) => {
 				const senderAvatar = senderUser.imageUrl;
 				const notificationMsg = content || (imageUrl ? "Sent an image" : voiceNoteUrl ? "Sent a voice note" : "New message");
 
-				await socificationService.createMessageNotification({
+				socificationService.createMessageNotification({
 					senderId,
 					receiverId,
 					senderName,
 					senderAvatar,
 					message: notificationMsg
-				});
+				}).catch(console.error);
 
 				// send to receiver in realtime, if they're online
 				const receiverSocketId = userSockets.get(receiverId);
@@ -133,14 +133,14 @@ export const initializeSocket = (server: Server) => {
 					{ $set: { isRead: true } }
 				);
 
-				// Mark message notifications from this sender to this receiver as read via Service
-				await socificationService.markMessagesAsRead({ senderId, receiverId });
-
 				// Notify the original sender that their messages have been read
 				const originalSenderSocketId = userSockets.get(senderId);
 				if (originalSenderSocketId) {
 					io.to(originalSenderSocketId).emit("messages_marked_read", { receiverId });
 				}
+
+				// Mark message notifications from this sender to this receiver as read via Service
+				socificationService.markMessagesAsRead({ senderId, receiverId }).catch(console.error);
 			} catch (error) {
 				console.error("Error marking messages as read:", error);
 			}
