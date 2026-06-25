@@ -34,8 +34,20 @@ class SongRoutes implements Routes {
             asyncHandler(this.songController.getTrendingSongs)
         );
         this.router.get(
+            `${this.path}/artists/trending`,
+            asyncHandler(this.songController.getTrendingArtists)
+        );
+        this.router.get(
             `${this.path}/search`,
             asyncHandler(this.songController.searchSongs)
+        );
+        this.router.get(
+            `${this.path}/search/global`,
+            asyncHandler(this.songController.globalSearch)
+        );
+        this.router.get(
+            `${this.path}/artist/:artistName`,
+            asyncHandler(this.songController.getArtistDetails)
         );
         this.router.get(
             `${this.path}/:id`,

@@ -13,6 +13,8 @@ import TimeTravelPage from "./pages/time-travel/TimeTravelPage.tsx";
 import LikedSongsPage from "./pages/liked-songs/LikedSongsPage.tsx";
 import MatchesPage from "./pages/matches/MatchesPage.tsx";
 import NotificationsPage from "./pages/notifications/NotificationsPage.tsx";
+import SearchPage from "./pages/search/SearchPage.tsx";
+import ArtistPage from "./pages/artist/ArtistPage.tsx";
 
 import { useChatStore } from "./stores/useChatStore.ts";
 import { usePlayerStore } from "./stores/usePlayerStore.ts";
@@ -57,6 +59,8 @@ const App = () => {
         <Route path='/liked-songs' element={<LikedSongsPage/>} />
         <Route path='/matches' element={<MatchesPage/>} />
         <Route path='/notifications' element={<NotificationsPage/>} />
+        <Route path='/search' element={<SearchPage/>} />
+        <Route path='/artists/:artistName' element={<ArtistPage/>} />
         <Route path='*' element={<NotFoundPage/>} />
       </Route>
     </Routes>

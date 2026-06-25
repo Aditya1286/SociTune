@@ -4,9 +4,33 @@ import { Loader2, Flame, Mic2, Activity, Music2, Network } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FriendButton } from "@/components/FriendButton";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 export default function MatchesPage() {
   const { recommendations, fetchRecommendations, isLoading, setSelectedUser, onlineUsers } = useChatStore();
+  const navigate = useNavigate();
+
+  const renderArtistLinks = (artistString: string) => {
+    const names = artistString.split(",").map(n => n.trim());
+    return (
+      <>
+        {names.map((name, i) => (
+          <span key={name}>
+            <span 
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/artists/${encodeURIComponent(name)}`);
+              }}
+              className="hover:underline hover:text-white cursor-pointer transition-colors"
+            >
+              {name}
+            </span>
+            {i < names.length - 1 && ", "}
+          </span>
+        ))}
+      </>
+    );
+  };
 
   useEffect(() => {
     fetchRecommendations();
@@ -132,7 +156,7 @@ export default function MatchesPage() {
                                 <p className="text-xs font-semibold text-white group-hover/song:text-emerald-400 transition-colors truncate">
                                   {song.title}
                                 </p>
-                                <p className="text-[10px] text-zinc-500 truncate">{song.artist}</p>
+                                <p className="text-[10px] text-zinc-500 truncate">{renderArtistLinks(song.artist)}</p>
                               </div>
                               <div className="text-[10px] text-zinc-500 font-mono text-right flex-shrink-0">
                                 {song.playsA}x vs {song.playsB}x

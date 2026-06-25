@@ -7,6 +7,7 @@ import { useNotificationStore } from "@/stores/useNotificationStore"
 import { SignedIn } from "@clerk/clerk-react"
 import { 
   Home, 
+  Search,
   Library, 
   MessageSquare, 
   LayoutGrid, 
@@ -39,6 +40,7 @@ const LeftSidebar = () => {
 
     const navItems = [
       { path: "/", label: "Home", icon: Home, hoverColorClass: "text-zinc-400 group-hover:text-white" },
+      { path: "/search", label: "Search", icon: Search, hoverColorClass: "text-zinc-400 group-hover:text-white" },
       { path: "/chat", label: "Messages", icon: MessageSquare, hoverColorClass: "text-zinc-400 group-hover:text-white" },
       { path: "/notifications", label: "Notifications", icon: Bell, hoverColorClass: "text-zinc-400 group-hover:text-emerald-400" },
       { path: "/premium", label: "Premium", icon: Gem, hoverColorClass: "text-zinc-400 group-hover:text-emerald-400" },
@@ -58,8 +60,8 @@ const LeftSidebar = () => {
           {navItems.map((item) => {
             const active = isLinkActive(item.path);
             
-            // Only render SignedIn links for non-Home pages
-            if (item.path !== "/") {
+            // Only render SignedIn links for non-Home/Search pages
+            if (item.path !== "/" && item.path !== "/search") {
               return (
                 <SignedIn key={item.path}>
                   <Link

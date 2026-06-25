@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Song } from "@/types";
+import { useNavigate } from "react-router-dom";
 import SectionGridSkeleton from "@/components/skeletons/SectionGridSkeleton";
 import { Button } from "@/components/ui/button";
 import { usePlayerStore } from "@/stores/usePlayerStore";
@@ -14,6 +15,29 @@ type SectionGridProps = {
 const SectionGrid = ({ title, songs, isLoading }: SectionGridProps) => {
   const { currentSong, isPlaying, setCurrentSong, togglePlay } = usePlayerStore();
   const [showAll, setShowAll] = useState(false);
+  const navigate = useNavigate();
+
+  const renderArtistLinks = (artistString: string) => {
+    const names = artistString.split(",").map(n => n.trim());
+    return (
+      <>
+        {names.map((name, i) => (
+          <span key={name}>
+            <span 
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/artists/${encodeURIComponent(name)}`);
+              }}
+              className="hover:underline hover:text-white cursor-pointer transition-colors"
+            >
+              {name}
+            </span>
+            {i < names.length - 1 && ", "}
+          </span>
+        ))}
+      </>
+    );
+  };
 
   if (isLoading) return <SectionGridSkeleton />;
 
@@ -76,7 +100,7 @@ const SectionGrid = ({ title, songs, isLoading }: SectionGridProps) => {
                 {song.title}
               </h3>
               <p className="text-xs text-zinc-500 mt-0.5">
-                {song.artist}
+                {renderArtistLinks(song.artist)}
               </p>
             </div>
           );

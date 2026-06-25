@@ -1,5 +1,5 @@
 import { SearchIcon } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import SignInOAuthButtons from "./SignInOAuthButtons";
 import NotificationDropdown from "./NotificationDropdown";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { EditProfileDialog } from "./EditProfileDialog";
 
 const Topbar = () => {
+  const navigate = useNavigate();
   return (
     <>
       <EditProfileDialog />
@@ -53,7 +54,7 @@ const Topbar = () => {
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Search Trigger */}
           <button
-            onClick={() => document.dispatchEvent(new CustomEvent("open-search"))}
+            onClick={() => navigate("/search")}
             className={cn(
               buttonVariants({ variant: "outline" }),
               "relative flex items-center justify-between w-full sm:w-64 px-4 py-2 text-sm text-zinc-400 bg-zinc-900/50 border-white/10 hover:bg-zinc-800/80 hover:text-white transition-all rounded-full hidden sm:flex"
@@ -67,10 +68,10 @@ const Topbar = () => {
               <span className="text-xs">⌘</span>K
             </kbd>
           </button>
-
+ 
           {/* Mobile Search Icon */}
           <button
-            onClick={() => document.dispatchEvent(new CustomEvent("open-search"))}
+            onClick={() => navigate("/search")}
             className={cn(
               buttonVariants({ variant: "ghost", size: "icon" }),
               "sm:hidden text-zinc-400 hover:text-white"

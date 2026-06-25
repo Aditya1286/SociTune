@@ -4,7 +4,7 @@ import { useMusicStore } from "@/stores/useMusicStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { Clock, Pause, Play } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 export const formatDuration = (seconds: number) => {
   const minutes = Math.floor(seconds / 60);
@@ -14,7 +14,30 @@ export const formatDuration = (seconds: number) => {
 
 const AlbumPage = () => {
   const { albumId } = useParams();
+  const navigate = useNavigate();
   const { fetchAlbumById, currentAlbum, isLoading } = useMusicStore();
+
+  const renderArtistLinks = (artistString: string) => {
+    const names = artistString.split(",").map(n => n.trim());
+    return (
+      <>
+        {names.map((name, i) => (
+          <span key={name}>
+            <span 
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/artists/${encodeURIComponent(name)}`);
+              }}
+              className="hover:underline hover:text-white cursor-pointer transition-colors"
+            >
+              {name}
+            </span>
+            {i < names.length - 1 && ", "}
+          </span>
+        ))}
+      </>
+    );
+  };
   const { currentSong, isPlaying, playAlbum, togglePlay } = usePlayerStore();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -114,7 +137,7 @@ const AlbumPage = () => {
                 </h1>
 
                 <div className="flex items-center gap-2 text-sm text-zinc-400 mt-1">
-                  <span className="text-white font-medium">{currentAlbum?.artist}</span>
+                  <span className="text-white font-medium">{currentAlbum && renderArtistLinks(currentAlbum.artist)}</span>
                   <span className="text-zinc-600">·</span>
                   <span>{currentAlbum?.songs.length} songs</span>
                   <span className="text-zinc-600">·</span>
@@ -193,7 +216,7 @@ const AlbumPage = () => {
                           <p className={`text-sm font-medium truncate ${isCurrentSong ? "text-green-400" : "text-white"}`}>
                             {song.title}
                           </p>
-                          <p className="text-xs text-zinc-500 truncate">{song.artist}</p>
+                          <p className="text-xs text-zinc-500 truncate">{renderArtistLinks(song.artist)}</p>
                         </div>
                       </div>
 
