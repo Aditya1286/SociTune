@@ -36,7 +36,7 @@ class SongController {
     public async getMadeForYouSongs(req: Request, res: Response, next: NextFunction) {
         try {
             const songs = await Song.aggregate([
-                { $sample: { size: 4 } },
+                { $sample: { size: 12 } },
                 {
                     $project: {
                         _id: 1,
@@ -56,7 +56,7 @@ class SongController {
     public async getTrendingSongs(req: Request, res: Response, next: NextFunction) {
         try {
             const songs = await Song.aggregate([
-                { $sample: { size: 4 } },
+                { $sample: { size: 12 } },
                 {
                     $project: {
                         _id: 1,
@@ -120,6 +120,19 @@ class SongController {
                 lyricsSource: song.lyricsSource || null,
                 lyricsFetchedAt: song.lyricsFetchedAt || null
             });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    public async getSongById(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { id } = req.params;
+            const song = await Song.findById(id);
+            if (!song) {
+                return res.status(404).json({ message: "Song not found" });
+            }
+            res.json(song);
         } catch (error) {
             next(error);
         }

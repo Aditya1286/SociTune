@@ -4,15 +4,17 @@ import AuthRoutes from "./routes/auth.route.js";
 import SongRoutes from "./routes/song.route.js";
 import AlbumRoutes from "./routes/album.route.js";
 import StatRoutes from "./routes/stat.route.js";
-import AdminRoutes from "./routes/admin.route.js";
 import TestimonialRoutes from "./routes/testimonial.route.js";
+import NotificationRoutes from "./routes/notification.route.js";
+import InternalNotificationRoutes from "./routes/internalNotification.route.js";
 const app = new App([
     new UserRoutes(),
     new AuthRoutes(),
     new SongRoutes(),
     new AlbumRoutes(),
     new StatRoutes(),
-    new AdminRoutes(),
-    new TestimonialRoutes()
+    new TestimonialRoutes(),
+    new NotificationRoutes(),
+    new InternalNotificationRoutes()
 ]);
 await app.listen();

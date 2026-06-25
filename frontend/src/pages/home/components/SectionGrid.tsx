@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Song } from "@/types";
 import SectionGridSkeleton from "@/components/skeletons/SectionGridSkeleton";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ type SectionGridProps = {
 
 const SectionGrid = ({ title, songs, isLoading }: SectionGridProps) => {
   const { currentSong, isPlaying, setCurrentSong, togglePlay } = usePlayerStore();
+  const [showAll, setShowAll] = useState(false);
 
   if (isLoading) return <SectionGridSkeleton />;
 
@@ -24,17 +26,25 @@ const SectionGrid = ({ title, songs, isLoading }: SectionGridProps) => {
     }
   };
 
+  const displayedSongs = showAll ? songs : songs.slice(0, 4);
+
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">{title}</h2>
-        <Button variant="link" className="text-sm text-zinc-400 hover:text-white font-medium">
-          Show All
-        </Button>
+        {songs.length > 4 && (
+          <Button 
+            variant="link" 
+            className="text-sm text-zinc-400 hover:text-white font-medium"
+            onClick={() => setShowAll(!showAll)}
+          >
+            {showAll ? "Show Less" : "Show All"}
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {songs.map((song) => {
+        {displayedSongs.map((song) => {
           const isCurrent = currentSong?._id === song._id;
           const isSongPlaying = isCurrent && isPlaying;
 

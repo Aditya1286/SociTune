@@ -10,6 +10,8 @@ import { NODE_ENV, PORT } from "./config/index.js";
 import { connectWithMongo } from './databases/index.js';
 import { initializeSocket } from "./services/socket.service.js";
 import { recommender } from "./services/recommendation.service.js";
+import { seedDatabaseOnStartup } from "./services/seeder.service.js";
+import { migrateExistingNotifications } from "./databases/socification.db.js";
 class App {
     env;
     port;
@@ -31,6 +33,8 @@ class App {
     }
     async initialiseDatabases() {
         await connectWithMongo();
+        await seedDatabaseOnStartup();
+        await migrateExistingNotifications();
         await recommender.init();
     }
     initialiseSockets() {
@@ -38,7 +42,7 @@ class App {
     }
     initialiseMiddlewares() {
         this.app.use(cors({
-            origin: this.env === "production" ? true : ["http://localhost:3000"],
+            origin: this.env === "production" ? true : ["http://localhost:3000", "http://localhost:3001"],
             credentials: true
         }));
         this.app.use(express.json());

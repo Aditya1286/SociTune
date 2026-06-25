@@ -14,7 +14,6 @@ class TestimonialRoutes {
     initializeRoutes() {
         this.router.get(`${this.path}/`, asyncHandler(this.testimonialController.getTestimonials));
         this.router.post(`${this.path}/`, this.authMiddleware.protectRoute, asyncHandler(this.testimonialController.createTestimonial));
-        this.router.delete(`${this.path}/:id`, this.authMiddleware.protectRoute, this.authMiddleware.requireAdmin, asyncHandler(this.testimonialController.deleteTestimonial));
     }
 }
 export default TestimonialRoutes;

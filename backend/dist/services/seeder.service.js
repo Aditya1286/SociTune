@@ -1,21 +1,18 @@
-import mongoose from "mongoose";
 import { Song } from "../models/song.model.js";
 import { Album } from "../models/album.model.js";
-import { config } from "dotenv";
-config();
 const searchTerms = ["pop", "synthwave", "lofi", "hiphop", "electronic"];
-const seedDatabase = async () => {
+export async function seedDatabaseOnStartup() {
     try {
-        console.log("Connecting to MongoDB...");
-        await mongoose.connect(process.env.MONGO_URI);
-        console.log("Connected to MongoDB.");
-        // Clear existing data
-        console.log("Clearing existing songs and albums...");
+        console.log("[SeederService] Checking if database needs seeding...");
+        const hasItunesSongs = await Song.exists({ audioUrl: /itunes\.apple\.com/ });
+        if (hasItunesSongs) {
+            console.log("[SeederService] iTunes songs already seeded. Skipping auto-seeding.");
+            return;
+        }
+        console.log("[SeederService] No iTunes songs found. Clearing old database and starting iTunes Search API auto-seeding...");
         await Album.deleteMany({});
         await Song.deleteMany({});
-        console.log("Existing data cleared.");
         const allTracks = [];
-        console.log("Fetching tracks from iTunes Search API...");
         for (const term of searchTerms) {
             const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&media=music&limit=15`;
             try {
@@ -23,16 +20,16 @@ const seedDatabase = async () => {
                 if (response.ok) {
                     const data = (await response.json());
                     if (data.results && Array.isArray(data.results)) {
-                        console.log(`Fetched ${data.results.length} tracks for term "${term}"`);
+                        console.log(`[SeederService] Fetched ${data.results.length} tracks for term "${term}"`);
                         allTracks.push(...data.results);
                     }
                 }
                 else {
-                    console.error(`Failed to fetch for term "${term}": Status ${response.status}`);
+                    console.error(`[SeederService] Failed to fetch for term "${term}": Status ${response.status}`);
                 }
             }
             catch (err) {
-                console.error(`Error fetching for term "${term}":`, err);
+                console.error(`[SeederService] Error fetching for term "${term}":`, err);
             }
         }
         // Deduplicate and filter tracks
@@ -46,7 +43,7 @@ const seedDatabase = async () => {
             }
         }
         const uniqueTracks = Array.from(uniqueSongsMap.values());
-        console.log(`Deduplicated to ${uniqueTracks.length} unique tracks.`);
+        console.log(`[SeederService] Deduplicated to ${uniqueTracks.length} unique tracks.`);
         // Group tracks by collectionName (album)
         const albumsMap = new Map();
         for (const track of uniqueTracks) {
@@ -56,7 +53,7 @@ const seedDatabase = async () => {
             }
             albumsMap.get(albumName).push(track);
         }
-        console.log(`Grouping tracks into ${albumsMap.size} albums...`);
+        console.log(`[SeederService] Grouping tracks into ${albumsMap.size} albums...`);
         // Insert albums and songs
         for (const [albumName, tracks] of albumsMap.entries()) {
             const firstTrack = tracks[0];
@@ -104,14 +101,9 @@ const seedDatabase = async () => {
             albumDoc.songs = songIds;
             await albumDoc.save();
         }
-        console.log("Database seeded successfully with iTunes songs and albums!");
+        console.log("[SeederService] Auto-seeding completed successfully!");
     }
     catch (error) {
-        console.error("Error seeding database:", error);
+        console.error("[SeederService] Error during auto-seeding:", error);
     }
-    finally {
-        mongoose.connection.close();
-        console.log("Database connection closed.");
-    }
-};
-seedDatabase();
+}

@@ -12,6 +12,8 @@ import PremiumPage from "./pages/premium/PremiumPage.tsx";
 import TimeTravelPage from "./pages/time-travel/TimeTravelPage.tsx";
 import LikedSongsPage from "./pages/liked-songs/LikedSongsPage.tsx";
 import MatchesPage from "./pages/matches/MatchesPage.tsx";
+import NotificationsPage from "./pages/notifications/NotificationsPage.tsx";
+
 import { useChatStore } from "./stores/useChatStore.ts";
 import { usePlayerStore } from "./stores/usePlayerStore.ts";
 import { useEffect } from "react";
@@ -54,6 +56,7 @@ const App = () => {
         <Route path='/time-travel' element={<TimeTravelPage/>} />
         <Route path='/liked-songs' element={<LikedSongsPage/>} />
         <Route path='/matches' element={<MatchesPage/>} />
+        <Route path='/notifications' element={<NotificationsPage/>} />
         <Route path='*' element={<NotFoundPage/>} />
       </Route>
     </Routes>

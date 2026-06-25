@@ -2,22 +2,48 @@ import { Server as SocketIOServer, Socket } from "socket.io";
 import { Server } from "http";
 import { Message } from "../models/message.model.js";
 import { User } from "../models/user.model.js";
+import { Notification } from "../models/notification.model.js";
 import { NODE_ENV } from "../config/index.js";
+import { socificationService } from "./socification.service.js";
 
 export let io: SocketIOServer;
-export const userSockets = new Map<string, string>(); // { userId: socketId} store karega, taaki hum kisi user ko message bhej sakein agar wo online hai to, nahi to uske next login pe message bhejenge
+export const userSockets = new Map<string, string>(); // { userId: socketId} store karega
 export const userActivities = new Map<string, string>(); // {userId: activity} store karega
+
+export const sendRealtimeNotification = (userId: string, notification: any) => {
+	if (io) {
+		// Emit to user room user:{userId} and fallback directly to socketId
+		io.to(`user:${userId}`).emit("new_notification", notification);
+		
+		const socketId = userSockets.get(userId);
+		if (socketId) {
+			io.to(socketId).emit("new_notification", notification);
+		}
+	}
+};
 
 export const initializeSocket = (server: Server) => {
 	io = new SocketIOServer(server, {
+		connectionStateRecovery: {
+			maxDisconnectionDuration: 2 * 60 * 1000, // 2 minutes backup for connection recovery
+			skipMiddlewares: true,
+		},
 		cors: {
-			origin: NODE_ENV === "production" ? true : ["http://localhost:3000"],
+			origin: NODE_ENV === "production" ? true : ["http://localhost:3000", "http://localhost:3001"],
 			credentials: true,
 		},
 	});
 
 	io.on("connection", (socket) => {
+		// If auth contains userId on initial handshake, auto-join room
+		const userId = socket.handshake.auth?.userId || (socket as any).auth?.userId;
+		if (userId) {
+			socket.join(`user:${userId}`);
+			userSockets.set(userId, socket.id);
+		}
+
 		socket.on("user_connected", (userId) => {
+			socket.join(`user:${userId}`);
 			userSockets.set(userId, socket.id);
 			userActivities.set(userId, "Idle");
 
@@ -74,6 +100,19 @@ export const initializeSocket = (server: Server) => {
 					message = await message.populate("replyTo", "content senderId");
 				}
 
+				// Create/update an unread messages notification for the receiver via HTTP/Service
+				const senderName = senderUser.fullName;
+				const senderAvatar = senderUser.imageUrl;
+				const notificationMsg = content || (imageUrl ? "Sent an image" : voiceNoteUrl ? "Sent a voice note" : "New message");
+
+				socificationService.createMessageNotification({
+					senderId,
+					receiverId,
+					senderName,
+					senderAvatar,
+					message: notificationMsg
+				}).catch(console.error);
+
 				// send to receiver in realtime, if they're online
 				const receiverSocketId = userSockets.get(receiverId);
 				if (receiverSocketId) {
@@ -83,7 +122,7 @@ export const initializeSocket = (server: Server) => {
 				socket.emit("message_sent", message);
 			} catch (error) {
 				console.error("Message error:", error);
-				socket.emit("message_error", error.message);
+				socket.emit("message_error", (error as any).message);
 			}
 		});
 
@@ -99,6 +138,9 @@ export const initializeSocket = (server: Server) => {
 				if (originalSenderSocketId) {
 					io.to(originalSenderSocketId).emit("messages_marked_read", { receiverId });
 				}
+
+				// Mark message notifications from this sender to this receiver as read via Service
+				socificationService.markMessagesAsRead({ senderId, receiverId }).catch(console.error);
 			} catch (error) {
 				console.error("Error marking messages as read:", error);
 			}
