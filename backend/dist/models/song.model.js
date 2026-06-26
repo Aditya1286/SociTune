@@ -49,6 +49,10 @@ const songSchema = new mongoose.Schema({
         ref: 'Album',
         required: false,
     },
+    artists: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Artist'
+        }],
     lyrics: {
         type: String,
         default: null

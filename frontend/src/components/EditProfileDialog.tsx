@@ -106,8 +106,8 @@ export const EditProfileDialog = () => {
 		<Dialog open={isOpen} onOpenChange={setIsOpen}>
 			<DialogContent className="sm:max-w-[450px] bg-zinc-950 border-zinc-800 text-white p-0 overflow-hidden shadow-2xl rounded-2xl">
 				{/* Aesthetic Header background */}
-				<div className="h-32 bg-gradient-to-br from-emerald-500/20 via-zinc-900 to-indigo-500/20 relative border-b border-white/5">
-					<div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+				<div className="h-28 bg-[#0a0a0c] relative border-b border-zinc-900">
+					<div className="absolute inset-0 bg-gradient-to-b from-zinc-900/10 to-transparent" />
 				</div>
 
 				<form onSubmit={handleSubmit} className="px-6 pb-6 -mt-16 space-y-5 relative z-10">
@@ -142,23 +142,23 @@ export const EditProfileDialog = () => {
 					<div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
 						<div className="grid grid-cols-2 gap-4">
 							<div className="space-y-2">
-								<Label htmlFor="fullName" className="text-zinc-400 text-xs uppercase tracking-wider">Full Name</Label>
+								<Label htmlFor="fullName" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Full Name</Label>
 								<Input 
 									id="fullName" 
 									value={fullName}
 									onChange={(e) => setFullName(e.target.value)}
-									className="bg-zinc-900/50 border-zinc-800 focus:border-emerald-500/50 transition-colors"
+									className="bg-zinc-900/40 border-zinc-800 focus:border-zinc-700 transition-colors rounded-lg"
 									required
 								/>
 							</div>
 							<div className="space-y-2 relative">
-								<Label htmlFor="username" className="text-zinc-400 text-xs uppercase tracking-wider">Username</Label>
+								<Label htmlFor="username" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Username</Label>
 								<div className="relative">
 									<Input 
 										id="username" 
 										value={username}
 										onChange={(e) => setUsername(e.target.value)}
-										className={`bg-zinc-900/50 border-zinc-800 focus:border-emerald-500/50 transition-colors pr-8
+										className={`bg-zinc-900/40 border-zinc-800 focus:border-zinc-700 transition-colors pr-8 rounded-lg
 											${usernameAvailable === false && username !== initialUsername ? 'border-red-500/50 focus:border-red-500/50' : ''}
 										`}
 										required
@@ -176,11 +176,11 @@ export const EditProfileDialog = () => {
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="bio" className="text-zinc-400 text-xs uppercase tracking-wider">Bio</Label>
+							<Label htmlFor="bio" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Bio</Label>
 							<Textarea 
 								id="bio" 
 								placeholder="Tell us about your music taste..." 
-								className="resize-none bg-zinc-900/50 border-zinc-800 focus:border-emerald-500/50 transition-colors h-20"
+								className="resize-none bg-zinc-900/40 border-zinc-800 focus:border-zinc-700 transition-colors h-20 rounded-lg"
 								value={bio}
 								onChange={(e) => setBio(e.target.value)}
 								maxLength={150}
@@ -192,36 +192,36 @@ export const EditProfileDialog = () => {
 
 						<div className="grid grid-cols-2 gap-4">
 							<div className="space-y-2">
-								<Label htmlFor="favoriteSong" className="text-zinc-400 text-xs uppercase tracking-wider">Favorite Song</Label>
+								<Label htmlFor="favoriteSong" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Favorite Song</Label>
 								<Input 
 									id="favoriteSong" 
 									placeholder="e.g. Starboy"
 									value={favoriteSong}
 									onChange={(e) => setFavoriteSong(e.target.value)}
-									className="bg-zinc-900/50 border-zinc-800 focus:border-emerald-500/50 transition-colors"
+									className="bg-zinc-900/40 border-zinc-800 focus:border-zinc-700 transition-colors rounded-lg"
 								/>
 							</div>
 							<div className="space-y-2">
-								<Label htmlFor="favoriteArtist" className="text-zinc-400 text-xs uppercase tracking-wider">Favorite Artist</Label>
+								<Label htmlFor="favoriteArtist" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Favorite Artist</Label>
 								<Input 
 									id="favoriteArtist" 
 									placeholder="e.g. The Weeknd"
 									value={favoriteArtist}
 									onChange={(e) => setFavoriteArtist(e.target.value)}
-									className="bg-zinc-900/50 border-zinc-800 focus:border-emerald-500/50 transition-colors"
+									className="bg-zinc-900/40 border-zinc-800 focus:border-zinc-700 transition-colors rounded-lg"
 								/>
 							</div>
 						</div>
 					</div>
 
-					<div className="flex justify-end gap-3 pt-4 border-t border-zinc-800/50 mt-4">
-						<Button type="button" variant="ghost" onClick={() => setIsOpen(false)} disabled={isSubmitting} className="hover:bg-zinc-800/50">
+					<div className="flex justify-end gap-2.5 pt-4 border-t border-zinc-900 mt-4">
+						<Button type="button" variant="ghost" onClick={() => setIsOpen(false)} disabled={isSubmitting} className="hover:bg-zinc-900 rounded-lg text-zinc-400 hover:text-white transition-colors">
 							Cancel
 						</Button>
 						<Button 
 							type="submit" 
 							disabled={isSubmitting || (usernameAvailable === false && username !== initialUsername)} 
-							className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20 transition-all active:scale-[0.98]"
+							className="bg-zinc-100 hover:bg-zinc-200 text-zinc-950 font-medium transition-all active:scale-[0.98] rounded-lg px-5 shadow-md"
 						>
 							{isSubmitting ? (
 								<>

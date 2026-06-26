@@ -25,7 +25,7 @@ class LyricsService {
         try {
             console.log(`[LyricsService] Querying Gemini AI for lyrics of: ${songName} - ${artistName}`);
             const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
             const prompt = `Write the lyrics for the song "${songName}" by "${artistName}".
 If you know the official lyrics, please write the official lyrics exactly.
 If you do not know the official lyrics or if it is an instrumental/indie song, write high-quality, creative, and beautiful song lyrics in the style of "${artistName}".
@@ -58,7 +58,7 @@ Do not include any introduction, explanations, meta-commentary, or markdown form
             const lrclibUrl = `https://lrclib.net/api/search?track_name=${encodeURIComponent(songName)}&artist_name=${encodeURIComponent(artistName)}`;
             const lrclibResponse = await fetch(lrclibUrl, {
                 headers: { "User-Agent": "SociTune/1.0.0 (https://github.com/Aditya1286/SociTune)" },
-                signal: AbortSignal.timeout(10000)
+                signal: AbortSignal.timeout(3000)
             });
             if (lrclibResponse.ok) {
                 const results = (await lrclibResponse.json());
@@ -81,7 +81,7 @@ Do not include any introduction, explanations, meta-commentary, or markdown form
             const lrclibGeneralUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(`${artistName} ${songName}`)}`;
             const lrclibGeneralResponse = await fetch(lrclibGeneralUrl, {
                 headers: { "User-Agent": "SociTune/1.0.0 (https://github.com/Aditya1286/SociTune)" },
-                signal: AbortSignal.timeout(10000)
+                signal: AbortSignal.timeout(3000)
             });
             if (lrclibGeneralResponse.ok) {
                 const results = (await lrclibGeneralResponse.json());
@@ -103,7 +103,7 @@ Do not include any introduction, explanations, meta-commentary, or markdown form
             console.log(`[LyricsService] Lyrics not found on LRCLIB. Trying Lyrics.ovh...`);
             const ovhUrl = `https://api.lyrics.ovh/v1/${encodeURIComponent(artistName)}/${encodeURIComponent(songName)}`;
             const ovhResponse = await fetch(ovhUrl, {
-                signal: AbortSignal.timeout(10000)
+                signal: AbortSignal.timeout(3000)
             });
             if (ovhResponse.ok) {
                 const data = (await ovhResponse.json());

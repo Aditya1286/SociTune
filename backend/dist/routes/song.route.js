@@ -16,7 +16,10 @@ class SongRoutes {
         this.router.get(`${this.path}/featured`, asyncHandler(this.songController.getFeaturedSongs));
         this.router.get(`${this.path}/made-for-you`, asyncHandler(this.songController.getMadeForYouSongs));
         this.router.get(`${this.path}/trending`, asyncHandler(this.songController.getTrendingSongs));
+        this.router.get(`${this.path}/artists/trending`, asyncHandler(this.songController.getTrendingArtists));
         this.router.get(`${this.path}/search`, asyncHandler(this.songController.searchSongs));
+        this.router.get(`${this.path}/search/global`, asyncHandler(this.songController.globalSearch));
+        this.router.get(`${this.path}/artist/:artistName`, asyncHandler(this.songController.getArtistDetails));
         this.router.get(`${this.path}/:id`, this.authMiddleware.protectRoute, asyncHandler(this.songController.getSongById));
         this.router.get(`${this.path}/:id/lyrics`, this.authMiddleware.protectRoute, asyncHandler(this.songController.getSongLyrics));
     }

@@ -3,12 +3,11 @@ import { useAuth } from "@clerk/clerk-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChatStore } from "@/stores/useChatStore";
 import type { User } from "@/types";
-import { Users, Info, ArrowLeft, MessageCircle, UserPlus, UserMinus, Music2, Mic2, X, UserCheck } from "lucide-react";
+import { Users, ArrowLeft, MessageCircle, UserPlus, UserMinus, Music2, Mic2, X, UserCheck, Flame, Network, Activity } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FriendButton } from "@/components/FriendButton";
-
 import { cn } from "@/lib/utils";
 
 interface UserProfilePanelProps {
@@ -27,8 +26,10 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 	const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
 	const [isFollowingModalOpen, setIsFollowingModalOpen] = useState(false);
 	const [isHoveringFollow, setIsHoveringFollow] = useState(false);
+	const [activeTab, setActiveTab] = useState<'vibe' | 'match'>('vibe');
 
 	const isOnline = onlineUsers.has(user.clerkId);
+	const hasMatchData = user.similarityScore !== undefined || !!user.matchDetails;
 
 	useEffect(() => {
 		const fetchFriendsData = async () => {
@@ -58,331 +59,724 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 
 	return (
 		<div className={cn(
-            "flex flex-col h-full bg-[#0a0a0c]/60 backdrop-blur-md transition-all duration-300",
-            isMainView ? "w-full" : "w-full sm:w-[350px] border-l border-white/[0.04]"
-        )}>
-			<div className="p-4 border-b border-white/[0.04] flex items-center justify-between backdrop-blur-md bg-transparent sticky top-0 z-10">
+			"flex flex-col h-full bg-[#030303]/45 backdrop-blur-md transition-all duration-300",
+			isMainView ? "w-full" : "w-full sm:w-[350px] border-l border-zinc-900"
+		)}>
+			{/* Top Bar Navigation */}
+			<div className="p-4 border-b border-zinc-900 flex items-center justify-between backdrop-blur-md bg-transparent sticky top-0 z-10">
 				<div className="flex items-center gap-2">
-					{/* Show X (close/dismiss) when opened from Discover, ArrowLeft when from chat */}
 					{isMainView && profileSource === 'discover' ? (
 						<Button
 							variant="ghost"
 							size="icon"
 							onClick={() => setSelectedUser(null)}
-							className="mr-1 text-zinc-400 hover:text-white rounded-full hover:scale-105 active:scale-95 transition-all"
+							className="mr-1 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-900 transition-colors"
 						>
-							<X className="size-5" />
+							<X className="size-4.5" />
 						</Button>
 					) : (
-						<Button variant="ghost" size="icon" onClick={onClose} className="mr-1 text-zinc-400 hover:text-white rounded-full hover:scale-105 active:scale-95 transition-all">
-							<ArrowLeft className="size-5" />
+						<Button 
+							variant="ghost" 
+							size="icon" 
+							onClick={onClose} 
+							className="mr-1 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-900 transition-colors"
+						>
+							<ArrowLeft className="size-4.5" />
 						</Button>
 					)}
-					{isMainView ? (
-						<h3 className="font-bold text-white text-lg tracking-tight">Profile Detail</h3>
-					) : (
-						<>
-							<Info className="size-5 text-emerald-500" />
-							<h3 className="font-semibold text-white">Profile Info</h3>
-						</>
-					)}
+					<h3 className="font-semibold text-zinc-200 text-sm tracking-wide uppercase text-[11px]">
+						{isMainView ? "Profile Detail" : "Profile Info"}
+					</h3>
 				</div>
 			</div>
 
 			<ScrollArea className="flex-1 bg-transparent">
 				<div className={cn(
-                    "flex flex-col items-center",
-                    isMainView ? "p-8 md:p-12 max-w-4xl mx-auto" : "p-6"
-                )}>
-					{/* Avatar Section */}
-					<div className={cn("relative mb-6 group flex items-center justify-center", isMainView ? "mb-8" : "mb-4")}>
-						{isMainView ? (
-							<div className="relative">
-								<div className="absolute -inset-2 bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-full blur-md opacity-50 group-hover:opacity-75 transition duration-500 animate-pulse" />
-								<Avatar className="relative size-40 md:size-44 border-4 border-[#09090b] shadow-2xl z-10">
-									<AvatarImage src={user.imageUrl} className="object-cover" />
-									<AvatarFallback className="text-6xl font-bold bg-zinc-800 text-zinc-400">{user.fullName[0]}</AvatarFallback>
-								</Avatar>
-							</div>
-						) : (
-							<Avatar className="size-32 border-4 border-zinc-900 shadow-xl">
-								<AvatarImage src={user.imageUrl} className="object-cover" />
-								<AvatarFallback className="text-4xl bg-zinc-800 text-zinc-400">{user.fullName[0]}</AvatarFallback>
-							</Avatar>
-						)}
-						<div
-							className={`absolute bottom-3 right-3 size-6 rounded-full border-4 border-zinc-950 shadow-sm transition-colors duration-500
-								${isOnline ? "bg-emerald-500" : "bg-zinc-500"}`}
-						/>
-					</div>
-
-					{/* Name and Bio */}
-					<h2 className={cn(
-                        "font-bold text-white tracking-tight mb-1 text-center",
-                        isMainView ? "text-3xl md:text-4xl" : "text-xl"
-                    )}>
-                        {user.fullName}
-                    </h2>
-					{user.username && (
-                        <p className={cn(
-                            "text-zinc-400 mb-6 font-semibold",
-                            isMainView ? "text-lg" : "text-sm"
-                        )}>
-                            @{user.username}
-                        </p>
-                    )}
+					"flex flex-col",
+					isMainView ? "p-8 md:p-12 max-w-4xl mx-auto items-stretch" : "p-5 items-center"
+				)}>
 					
-                    {/* Action Buttons */}
-                    {user.clerkId !== userId && (
-                        <div className="flex items-center gap-3 w-full max-w-xs justify-center mb-8">
-                            <Button 
-                                onClick={handleMessageClick}
-                                disabled={!user.isFriend}
-                                className={cn(
-                                    "flex-1 rounded-full transition-all hover:scale-105 active:scale-95 font-semibold text-xs",
-                                    user.isFriend 
-                                        ? "bg-emerald-500 hover:bg-emerald-400 text-white shadow-md shadow-emerald-500/10" 
-                                        : "bg-white/5 text-zinc-500 cursor-not-allowed opacity-50"
-                                )}
-                            >
-                                <MessageCircle className="size-4 mr-1.5" />
-                                Message
-                            </Button>
-                            <Button 
-                                onClick={handleFollowClick}
-                                onMouseEnter={() => setIsHoveringFollow(true)}
-                                onMouseLeave={() => setIsHoveringFollow(false)}
-                                variant={user.isFriend ? "outline" : "default"}
-                                className={cn(
-                                    "flex-1 rounded-full transition-all hover:scale-105 active:scale-95 font-semibold text-xs",
-                                    user.isFriend 
-                                        ? (isHoveringFollow ? "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20" : "bg-transparent border-white/10 text-zinc-300 hover:bg-white/5 hover:text-white")
-                                        : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/10"
-                                )}
-                            >
-                                {user.isFriend ? (
-                                    isHoveringFollow ? (
-                                        <><UserMinus className="size-4 mr-1.5" /> Unfollow</>
-                                    ) : (
-                                        <><UserCheck className="size-4 mr-1.5" /> Following</>
-                                    )
-                                ) : user.isSent ? (
-                                    "Requested"
-                                ) : user.isPending ? (
-                                    "Accept"
-                                ) : (
-                                    <><UserPlus className="size-4 mr-1.5" /> Follow</>
-                                )}
-                            </Button>
-                        </div>
-                    )}
+					{/* Header Section */}
+					{isMainView ? (
+						/* Horizontal Desktop Layout */
+						<div className="w-full flex flex-col md:flex-row gap-8 items-start mb-10 pb-10 border-b border-zinc-900">
+							{/* Large Avatar */}
+							<div className="relative shrink-0 mx-auto md:mx-0">
+								<div className="relative">
+									<div className="absolute -inset-1.5 bg-gradient-to-tr from-zinc-800 via-zinc-900 to-zinc-800 rounded-full border border-zinc-900" />
+									<Avatar className="relative size-32 md:size-36 border-4 border-zinc-955 shadow-2xl z-10">
+										<AvatarImage src={user.imageUrl} className="object-cover" />
+										<AvatarFallback className="text-5xl font-light bg-zinc-900 text-zinc-500">{user.fullName[0]}</AvatarFallback>
+									</Avatar>
+								</div>
+								<div className={cn(
+									"absolute bottom-2 right-2 size-4.5 rounded-full border-4 border-zinc-955 shadow-sm z-20",
+									isOnline ? "bg-emerald-500" : "bg-zinc-650"
+								)} />
+							</div>
 
-					{user.bio && (
-						<p className={cn(
-                            "text-center px-4 mb-8 leading-relaxed italic text-zinc-300/80 font-medium",
-                            isMainView ? "text-base max-w-lg" : "text-sm"
-                        )}>
-							"{user.bio}"
-						</p>
+							{/* User details and buttons */}
+							<div className="flex-1 flex flex-col gap-5 text-center md:text-left w-full">
+								<div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
+									<div>
+										<h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-100">{user.fullName}</h2>
+										{user.username && <p className="text-zinc-500 text-sm mt-0.5">@{user.username}</p>}
+									</div>
+									{user.clerkId !== userId && (
+										<div className="flex items-center gap-2 justify-center md:justify-start">
+											<Button 
+												onClick={handleFollowClick}
+												onMouseEnter={() => setIsHoveringFollow(true)}
+												onMouseLeave={() => setIsHoveringFollow(false)}
+												variant={user.isFriend ? "outline" : "default"}
+												className={cn(
+													"h-9 px-6 rounded-lg transition-all font-medium text-xs tracking-wide",
+													user.isFriend 
+														? (isHoveringFollow ? "bg-red-955/20 border-red-900/30 text-red-400 hover:bg-red-900/20" : "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-850")
+														: "bg-zinc-100 hover:bg-zinc-200 text-zinc-955 border-0"
+												)}
+											>
+												{user.isFriend ? (
+													isHoveringFollow ? <><UserMinus className="size-3.5 mr-1.5" /> Unfollow</> : <><UserCheck className="size-3.5 mr-1.5" /> Following</>
+												) : user.isSent ? (
+													"Requested"
+												) : user.isPending ? (
+													"Accept"
+												) : (
+													<><UserPlus className="size-3.5 mr-1.5" /> Follow</>
+												)}
+											</Button>
+											<Button 
+												onClick={handleMessageClick}
+												disabled={!user.isFriend}
+												variant="outline"
+												className={cn(
+													"h-9 px-6 rounded-lg transition-all font-medium text-xs tracking-wide",
+													user.isFriend 
+														? "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-850" 
+														: "bg-zinc-900/40 border border-zinc-950 text-zinc-655 cursor-not-allowed opacity-50"
+												)}
+											>
+												<MessageCircle className="size-3.5 mr-1.5" />
+												Message
+											</Button>
+										</div>
+									)}
+								</div>
+
+								{/* Stats row */}
+								<div className="flex justify-center md:justify-start gap-10 border-t border-zinc-900/60 pt-4">
+									<Dialog open={isFollowersModalOpen} onOpenChange={setIsFollowersModalOpen}>
+										<DialogTrigger asChild>
+											<div className="cursor-pointer group flex items-baseline gap-1.5">
+												<span className="font-semibold text-zinc-100 text-base group-hover:text-zinc-300 transition-colors">{user.friends?.length || 0}</span>
+												<span className="text-zinc-500 text-xs font-normal">followers</span>
+											</div>
+										</DialogTrigger>
+										{/* Followers Dialog Content */}
+										<DialogContent className="sm:max-w-md bg-[#09090b] border-zinc-900 text-white shadow-2xl backdrop-blur-xl rounded-2xl p-5">
+											<DialogHeader>
+												<DialogTitle className="flex items-center gap-2 text-md font-semibold tracking-wide uppercase text-[11px] text-zinc-400">
+													<Users className="size-4 text-zinc-500" />
+													Followers
+												</DialogTitle>
+											</DialogHeader>
+											<ScrollArea className="max-h-[60vh] mt-2">
+												{isLoading ? (
+													<div className="flex justify-center py-8">
+														<div className="size-5 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin" />
+													</div>
+												) : userFriends.length === 0 ? (
+													<div className="py-8 bg-zinc-900/20 rounded-xl border border-zinc-900 text-center mt-2">
+														<p className="text-xs text-zinc-500 font-medium">No followers</p>
+													</div>
+												) : (
+													<div className="flex flex-col gap-1 pr-4 pb-4">
+														{userFriends.map(friend => (
+															<div key={friend.clerkId} className="flex items-center justify-between p-2 rounded-lg hover:bg-zinc-900/60 transition-colors group">
+																<div 
+																	className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" 
+																	onClick={() => { 
+																		setIsFollowersModalOpen(false); 
+																		setSelectedUser(friend, 'profile'); 
+																	}}
+																>
+																	<Avatar className="size-10 border border-zinc-800 shadow-sm transition-colors group-hover:border-zinc-700">
+																		<AvatarImage src={friend.imageUrl} />
+																		<AvatarFallback className="bg-zinc-900 text-zinc-500 font-medium text-sm">{friend.fullName[0]}</AvatarFallback>
+																	</Avatar>
+																	<div className="flex-1 min-w-0">
+																		<p className="text-xs font-semibold text-zinc-200 truncate group-hover:text-zinc-100 transition-colors">{friend.fullName}</p>
+																		{friend.username && <p className="text-[10px] text-zinc-500 truncate">@{friend.username}</p>}
+																	</div>
+																</div>
+																<div className="shrink-0 ml-3">
+																	{friend.clerkId !== userId && <FriendButton user={friend} />}
+																</div>
+															</div>
+														))}
+													</div>
+												)}
+											</ScrollArea>
+										</DialogContent>
+									</Dialog>
+
+									<Dialog open={isFollowingModalOpen} onOpenChange={setIsFollowingModalOpen}>
+										<DialogTrigger asChild>
+											<div className="cursor-pointer group flex items-baseline gap-1.5">
+												<span className="font-semibold text-zinc-100 text-base group-hover:text-zinc-300 transition-colors">{user.friends?.length || 0}</span>
+												<span className="text-zinc-500 text-xs font-normal">following</span>
+											</div>
+										</DialogTrigger>
+										{/* Following Dialog Content */}
+										<DialogContent className="sm:max-w-md bg-[#09090b] border-zinc-900 text-white shadow-2xl backdrop-blur-xl rounded-2xl p-5">
+											<DialogHeader>
+												<DialogTitle className="flex items-center gap-2 text-md font-semibold tracking-wide uppercase text-[11px] text-zinc-400">
+													<Users className="size-4 text-zinc-500" />
+													Following
+												</DialogTitle>
+											</DialogHeader>
+											<ScrollArea className="max-h-[60vh] mt-2">
+												{isLoading ? (
+													<div className="flex justify-center py-8">
+														<div className="size-5 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin" />
+													</div>
+												) : userFriends.length === 0 ? (
+													<div className="py-8 bg-zinc-900/20 rounded-xl border border-zinc-900 text-center mt-2">
+														<p className="text-xs text-zinc-500 font-medium">Not following anyone</p>
+													</div>
+												) : (
+													<div className="flex flex-col gap-1 pr-4 pb-4">
+														{userFriends.map(friend => (
+															<div key={friend.clerkId} className="flex items-center justify-between p-2 rounded-lg hover:bg-zinc-900/60 transition-colors group">
+																<div 
+																	className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" 
+																	onClick={() => { 
+																		setIsFollowingModalOpen(false); 
+																		setSelectedUser(friend, 'profile'); 
+																	}}
+																>
+																	<Avatar className="size-10 border border-zinc-800 shadow-sm transition-colors group-hover:border-zinc-700">
+																		<AvatarImage src={friend.imageUrl} />
+																		<AvatarFallback className="bg-zinc-900 text-zinc-500 font-medium text-sm">{friend.fullName[0]}</AvatarFallback>
+																	</Avatar>
+																	<div className="flex-1 min-w-0">
+																		<p className="text-xs font-semibold text-zinc-200 truncate group-hover:text-zinc-100 transition-colors">{friend.fullName}</p>
+																		{friend.username && <p className="text-[10px] text-zinc-500 truncate">@{friend.username}</p>}
+																	</div>
+																</div>
+																<div className="shrink-0 ml-3">
+																	{friend.clerkId !== userId && <FriendButton user={friend} />}
+																</div>
+															</div>
+														))}
+													</div>
+												)}
+											</ScrollArea>
+										</DialogContent>
+									</Dialog>
+
+									<Dialog open={isMutualsModalOpen} onOpenChange={setIsMutualsModalOpen}>
+										<DialogTrigger asChild>
+											<div className="cursor-pointer group flex items-baseline gap-1.5">
+												<span className="font-semibold text-zinc-100 text-base group-hover:text-zinc-300 transition-colors">
+													{user.mutualFriendsCount || mutualFriends.length}
+												</span>
+												<span className="text-zinc-500 text-xs font-normal">mutuals</span>
+											</div>
+										</DialogTrigger>
+										{/* Mutuals Dialog Content */}
+										<DialogContent className="sm:max-w-md bg-[#09090b] border-zinc-900 text-white shadow-2xl backdrop-blur-xl rounded-2xl p-5">
+											<DialogHeader>
+												<DialogTitle className="flex items-center gap-2 text-md font-semibold tracking-wide uppercase text-[11px] text-zinc-400">
+													<Users className="size-4 text-zinc-500" />
+													Mutual Followers
+												</DialogTitle>
+											</DialogHeader>
+											<ScrollArea className="max-h-[60vh] mt-2">
+												{isLoading ? (
+													<div className="flex justify-center py-8">
+														<div className="size-5 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin" />
+													</div>
+												) : mutualFriends.length === 0 ? (
+													<div className="py-8 bg-zinc-900/20 rounded-xl border border-zinc-900 text-center mt-2">
+														<p className="text-xs text-zinc-500 font-medium">No mutual followers</p>
+													</div>
+												) : (
+													<div className="flex flex-col gap-1 pr-4 pb-4">
+														{mutualFriends.map(mutual => (
+															<div key={mutual.clerkId} className="flex items-center justify-between p-2 rounded-lg hover:bg-zinc-900/60 transition-colors group">
+																<div 
+																	className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" 
+																	onClick={() => { 
+																		setIsMutualsModalOpen(false); 
+																		setSelectedUser(mutual, 'profile'); 
+																	}}
+																>
+																	<Avatar className="size-10 border border-zinc-800 shadow-sm transition-colors group-hover:border-zinc-700">
+																		<AvatarImage src={mutual.imageUrl} />
+																		<AvatarFallback className="bg-zinc-900 text-zinc-500 font-medium text-sm">{mutual.fullName[0]}</AvatarFallback>
+																	</Avatar>
+																	<div className="flex-1 min-w-0">
+																		<p className="text-xs font-semibold text-zinc-200 truncate group-hover:text-zinc-100 transition-colors">{mutual.fullName}</p>
+																		{mutual.username && <p className="text-[10px] text-zinc-500 truncate">@{mutual.username}</p>}
+																	</div>
+																</div>
+																<div className="shrink-0 ml-3">
+																	{mutual.clerkId !== userId && <FriendButton user={mutual} />}
+																</div>
+															</div>
+														))}
+													</div>
+												)}
+											</ScrollArea>
+										</DialogContent>
+									</Dialog>
+								</div>
+
+								{/* Biography */}
+								{user.bio && (
+									<p className="text-zinc-300 text-sm leading-relaxed max-w-xl italic font-light">
+										"{user.bio}"
+									</p>
+								)}
+							</div>
+						</div>
+					) : (
+						/* Compact Sidebar Layout */
+						<div className="flex flex-col items-center w-full mb-6 pb-6 border-b border-zinc-900">
+							{/* Sidebar Avatar */}
+							<div className="relative mb-5 flex items-center justify-center">
+								<div className="relative">
+									<div className="absolute -inset-1 bg-gradient-to-tr from-zinc-800/40 via-zinc-900/20 to-zinc-800/40 rounded-full border border-zinc-900" />
+									<Avatar className="size-24 border-4 border-zinc-950 shadow-xl relative z-10">
+										<AvatarImage src={user.imageUrl} className="object-cover" />
+										<AvatarFallback className="text-3xl bg-zinc-900 text-zinc-500 font-light">{user.fullName[0]}</AvatarFallback>
+									</Avatar>
+								</div>
+								<div className={cn(
+									"absolute bottom-1 right-1 size-3.5 rounded-full border-2 border-zinc-955 shadow-sm z-20",
+									isOnline ? "bg-emerald-500" : "bg-zinc-650"
+								)} />
+							</div>
+
+							<h2 className="text-lg font-semibold text-zinc-100 text-center">{user.fullName}</h2>
+							{user.username && <p className="text-zinc-500 text-xs text-center mt-0.5">@{user.username}</p>}
+
+							{/* Sidebar action buttons */}
+							{user.clerkId !== userId && (
+								<div className="flex gap-2 w-full max-w-[260px] mx-auto mt-4">
+									<Button 
+										onClick={handleFollowClick}
+										onMouseEnter={() => setIsHoveringFollow(true)}
+										onMouseLeave={() => setIsHoveringFollow(false)}
+										variant={user.isFriend ? "outline" : "default"}
+										className={cn(
+											"flex-1 h-9 rounded-lg transition-all font-medium text-xs tracking-wide",
+											user.isFriend 
+												? (isHoveringFollow ? "bg-red-955/20 border-red-900/30 text-red-400 hover:bg-red-900/20" : "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-850")
+												: "bg-zinc-100 hover:bg-zinc-200 text-zinc-955 border-0"
+										)}
+									>
+										{user.isFriend ? (
+											isHoveringFollow ? <><UserMinus className="size-3.5 mr-1" /> Unfollow</> : <><UserCheck className="size-3.5 mr-1" /> Following</>
+										) : user.isSent ? (
+											"Requested"
+										) : user.isPending ? (
+											"Accept"
+										) : (
+											<><UserPlus className="size-3.5 mr-1" /> Follow</>
+										)}
+									</Button>
+									<Button 
+										onClick={handleMessageClick}
+										disabled={!user.isFriend}
+										variant="outline"
+										className={cn(
+											"flex-1 h-9 rounded-lg transition-all font-medium text-xs tracking-wide",
+											user.isFriend 
+												? "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-850" 
+												: "bg-zinc-900/40 border border-zinc-950 text-zinc-655 cursor-not-allowed opacity-50"
+										)}
+									>
+										<MessageCircle className="size-3.5 mr-1" />
+										Message
+									</Button>
+								</div>
+							)}
+
+							{user.bio && (
+								<p className="text-zinc-400 text-xs leading-relaxed text-center italic mt-4 px-2">
+									"{user.bio}"
+								</p>
+							)}
+
+							{/* Sidebar Stats Row */}
+							<div className="flex justify-center gap-6 border-y border-zinc-900 py-3.5 my-5 w-full bg-zinc-900/10">
+								<Dialog open={isFollowersModalOpen} onOpenChange={setIsFollowersModalOpen}>
+									<DialogTrigger asChild>
+										<div className="text-center cursor-pointer group min-w-[50px]">
+											<p className="font-semibold text-zinc-200 text-sm group-hover:text-zinc-100 transition-colors">{user.friends?.length || 0}</p>
+											<p className="text-[9px] text-zinc-500 uppercase tracking-widest mt-0.5">followers</p>
+										</div>
+									</DialogTrigger>
+									<DialogContent className="sm:max-w-md bg-[#09090b] border-zinc-900 text-white shadow-2xl backdrop-blur-xl rounded-2xl p-5">
+										<DialogHeader>
+											<DialogTitle className="flex items-center gap-2 text-md font-semibold tracking-wide uppercase text-[11px] text-zinc-400">
+												<Users className="size-4 text-zinc-500" />
+												Followers
+											</DialogTitle>
+										</DialogHeader>
+										<ScrollArea className="max-h-[60vh] mt-2">
+											{isLoading ? (
+												<div className="flex justify-center py-8">
+													<div className="size-5 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin" />
+												</div>
+											) : userFriends.length === 0 ? (
+												<div className="py-8 bg-zinc-900/20 rounded-xl border border-zinc-900 text-center mt-2">
+													<p className="text-xs text-zinc-500 font-medium">No followers</p>
+												</div>
+											) : (
+												<div className="flex flex-col gap-1 pr-4 pb-4">
+													{userFriends.map(friend => (
+														<div key={friend.clerkId} className="flex items-center justify-between p-2 rounded-lg hover:bg-zinc-900/60 transition-colors group">
+															<div 
+																className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" 
+																onClick={() => { 
+																	setIsFollowersModalOpen(false); 
+																	setSelectedUser(friend, 'profile'); 
+																}}
+															>
+																<Avatar className="size-10 border border-zinc-800 shadow-sm transition-colors group-hover:border-zinc-700">
+																	<AvatarImage src={friend.imageUrl} />
+																	<AvatarFallback className="bg-zinc-900 text-zinc-500 font-medium text-sm">{friend.fullName[0]}</AvatarFallback>
+																</Avatar>
+																<div className="flex-1 min-w-0">
+																	<p className="text-xs font-semibold text-zinc-200 truncate group-hover:text-zinc-100 transition-colors">{friend.fullName}</p>
+																	{friend.username && <p className="text-[10px] text-zinc-500 truncate">@{friend.username}</p>}
+																</div>
+															</div>
+															<div className="shrink-0 ml-3">
+																{friend.clerkId !== userId && <FriendButton user={friend} />}
+															</div>
+														</div>
+													))}
+												</div>
+											)}
+										</ScrollArea>
+									</DialogContent>
+								</Dialog>
+
+								<Dialog open={isFollowingModalOpen} onOpenChange={setIsFollowingModalOpen}>
+									<DialogTrigger asChild>
+										<div className="text-center cursor-pointer group min-w-[50px]">
+											<p className="font-semibold text-zinc-200 text-sm group-hover:text-zinc-100 transition-colors">{user.friends?.length || 0}</p>
+											<p className="text-[9px] text-zinc-500 uppercase tracking-widest mt-0.5">following</p>
+										</div>
+									</DialogTrigger>
+									<DialogContent className="sm:max-w-md bg-[#09090b] border-zinc-900 text-white shadow-2xl backdrop-blur-xl rounded-2xl p-5">
+										<DialogHeader>
+											<DialogTitle className="flex items-center gap-2 text-md font-semibold tracking-wide uppercase text-[11px] text-zinc-400">
+												<Users className="size-4 text-zinc-500" />
+												Following
+											</DialogTitle>
+										</DialogHeader>
+										<ScrollArea className="max-h-[60vh] mt-2">
+											{isLoading ? (
+												<div className="flex justify-center py-8">
+													<div className="size-5 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin" />
+												</div>
+											) : userFriends.length === 0 ? (
+												<div className="py-8 bg-zinc-900/20 rounded-xl border border-zinc-900 text-center mt-2">
+													<p className="text-xs text-zinc-500 font-medium">Not following anyone</p>
+												</div>
+											) : (
+												<div className="flex flex-col gap-1 pr-4 pb-4">
+													{userFriends.map(friend => (
+														<div key={friend.clerkId} className="flex items-center justify-between p-2 rounded-lg hover:bg-zinc-900/60 transition-colors group">
+															<div 
+																className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" 
+																onClick={() => { 
+																	setIsFollowingModalOpen(false); 
+																	setSelectedUser(friend, 'profile'); 
+																}}
+															>
+																<Avatar className="size-10 border border-zinc-800 shadow-sm transition-colors group-hover:border-zinc-700">
+																	<AvatarImage src={friend.imageUrl} />
+																	<AvatarFallback className="bg-zinc-900 text-zinc-500 font-medium text-sm">{friend.fullName[0]}</AvatarFallback>
+																</Avatar>
+																<div className="flex-1 min-w-0">
+																	<p className="text-xs font-semibold text-zinc-200 truncate group-hover:text-zinc-100 transition-colors">{friend.fullName}</p>
+																	{friend.username && <p className="text-[10px] text-zinc-500 truncate">@{friend.username}</p>}
+																</div>
+															</div>
+															<div className="shrink-0 ml-3">
+																{friend.clerkId !== userId && <FriendButton user={friend} />}
+															</div>
+														</div>
+													))}
+												</div>
+											)}
+										</ScrollArea>
+									</DialogContent>
+								</Dialog>
+
+								<Dialog open={isMutualsModalOpen} onOpenChange={setIsMutualsModalOpen}>
+									<DialogTrigger asChild>
+										<div className="text-center cursor-pointer group min-w-[50px]">
+											<p className="font-semibold text-zinc-200 text-sm group-hover:text-zinc-100 transition-colors">{user.mutualFriendsCount || mutualFriends.length}</p>
+											<p className="text-[9px] text-zinc-500 uppercase tracking-widest mt-0.5">mutuals</p>
+										</div>
+									</DialogTrigger>
+									<DialogContent className="sm:max-w-md bg-[#09090b] border-zinc-900 text-white shadow-2xl backdrop-blur-xl rounded-2xl p-5">
+										<DialogHeader>
+											<DialogTitle className="flex items-center gap-2 text-md font-semibold tracking-wide uppercase text-[11px] text-zinc-400">
+												<Users className="size-4 text-zinc-500" />
+												Mutual Followers
+											</DialogTitle>
+										</DialogHeader>
+										<ScrollArea className="max-h-[60vh] mt-2">
+											{isLoading ? (
+												<div className="flex justify-center py-8">
+													<div className="size-5 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin" />
+												</div>
+											) : mutualFriends.length === 0 ? (
+												<div className="py-8 bg-zinc-900/20 rounded-xl border border-zinc-900 text-center mt-2">
+													<p className="text-xs text-zinc-500 font-medium">No mutual followers</p>
+												</div>
+											) : (
+												<div className="flex flex-col gap-1 pr-4 pb-4">
+													{mutualFriends.map(mutual => (
+														<div key={mutual.clerkId} className="flex items-center justify-between p-2 rounded-lg hover:bg-zinc-900/60 transition-colors group">
+															<div 
+																className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" 
+																onClick={() => { 
+																	setIsMutualsModalOpen(false); 
+																	setSelectedUser(mutual, 'profile'); 
+																}}
+															>
+																<Avatar className="size-10 border border-zinc-800 shadow-sm transition-colors group-hover:border-zinc-700">
+																	<AvatarImage src={mutual.imageUrl} />
+																	<AvatarFallback className="bg-zinc-900 text-zinc-500 font-medium text-sm">{mutual.fullName[0]}</AvatarFallback>
+																</Avatar>
+																<div className="flex-1 min-w-0">
+																	<p className="text-xs font-semibold text-zinc-200 truncate group-hover:text-zinc-100 transition-colors">{mutual.fullName}</p>
+																	{mutual.username && <p className="text-[10px] text-zinc-500 truncate">@{mutual.username}</p>}
+																</div>
+															</div>
+															<div className="shrink-0 ml-3">
+																{mutual.clerkId !== userId && <FriendButton user={mutual} />}
+															</div>
+														</div>
+													))}
+												</div>
+											)}
+										</ScrollArea>
+									</DialogContent>
+								</Dialog>
+							</div>
+						</div>
 					)}
 
-					{/* Stats Grid */}
-					<div className={cn(
-                        "flex w-full justify-center border-y border-white/[0.04] bg-white/[0.01]",
-                        isMainView ? "gap-8 md:gap-16 mb-8 py-6 max-w-2xl" : "gap-4 sm:gap-6 mb-6 py-4 flex-wrap"
-                    )}>
-                        <Dialog open={isFollowersModalOpen} onOpenChange={setIsFollowersModalOpen}>
-                            <DialogTrigger asChild>
-                                <div className="text-center cursor-pointer group min-w-[70px]">
-                                    <p className={cn("font-bold text-white group-hover:text-emerald-400 transition-colors", isMainView ? "text-2xl" : "text-xl")}>{user.friends?.length || 0}</p>
-                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-semibold">Followers</p>
-                                </div>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-md bg-[#121215]/95 border-white/[0.08] text-white shadow-2xl backdrop-blur-xl rounded-2xl">
-                                <DialogHeader>
-                                    <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
-                                        <Users className="size-5 text-emerald-500" />
-                                        Followers
-                                    </DialogTitle>
-                                </DialogHeader>
-                                <ScrollArea className="max-h-[60vh] mt-2">
-                                    {isLoading ? (
-                                        <div className="flex justify-center py-8">
-                                            <div className="size-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                                        </div>
-                                    ) : userFriends.length === 0 ? (
-                                        <div className="py-8 bg-white/[0.02] rounded-xl border border-white/[0.04] text-center mt-2">
-                                            <p className="text-sm text-zinc-500 font-medium">No followers</p>
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col gap-2 pr-4 pb-4">
-                                            {userFriends.map(friend => (
-                                                <div key={friend.clerkId} className="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors group">
-                                                    <div 
-                                                        className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" 
-                                                        onClick={() => { 
-                                                            setIsFollowersModalOpen(false); 
-                                                            setSelectedUser(friend, 'profile'); 
-                                                        }}
-                                                    >
-                                                        <Avatar className="size-11 border border-white/[0.08] shadow-sm group-hover:border-emerald-500/30 transition-colors">
-                                                            <AvatarImage src={friend.imageUrl} />
-                                                            <AvatarFallback className="bg-zinc-800 text-zinc-400 font-bold">{friend.fullName[0]}</AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-semibold text-white truncate group-hover:text-emerald-400 transition-colors">{friend.fullName}</p>
-                                                            {friend.username && <p className="text-[11px] text-zinc-500 truncate">@{friend.username}</p>}
-                                                        </div>
-                                                    </div>
-                                                    <div className="shrink-0 ml-3">
-                                                        {friend.clerkId !== userId && <FriendButton user={friend} />}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </ScrollArea>
-                            </DialogContent>
-                        </Dialog>
+					{/* Tab Navigation selectors */}
+					{hasMatchData && (
+						<div className="w-full border-t border-zinc-900/60 flex justify-center gap-10 mb-6">
+							<button 
+								onClick={() => setActiveTab('vibe')}
+								className={cn(
+									"flex items-center gap-1.5 py-3 text-[10px] font-semibold uppercase tracking-widest border-t-2 -mt-[1px] transition-all",
+									activeTab === 'vibe' ? "border-zinc-200 text-zinc-100" : "border-transparent text-zinc-500 hover:text-zinc-300"
+								)}
+							>
+								<Music2 className="size-3.5" />
+								Music Vibe
+							</button>
+							<button 
+								onClick={() => setActiveTab('match')}
+								className={cn(
+									"flex items-center gap-1.5 py-3 text-[10px] font-semibold uppercase tracking-widest border-t-2 -mt-[1px] transition-all",
+									activeTab === 'match' ? "border-zinc-200 text-zinc-100" : "border-transparent text-zinc-500 hover:text-zinc-300"
+								)}
+							>
+								<Users className="size-3.5" />
+								Taste Match
+							</button>
+						</div>
+					)}
 
-                        <Dialog open={isFollowingModalOpen} onOpenChange={setIsFollowingModalOpen}>
-                            <DialogTrigger asChild>
-                                <div className="text-center cursor-pointer group min-w-[70px]">
-                                    <p className={cn("font-bold text-white group-hover:text-indigo-400 transition-colors", isMainView ? "text-2xl" : "text-xl")}>{user.friends?.length || 0}</p>
-                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-semibold">Following</p>
-                                </div>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-md bg-[#121215]/95 border-white/[0.08] text-white shadow-2xl backdrop-blur-xl rounded-2xl">
-                                <DialogHeader>
-                                    <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
-                                        <Users className="size-5 text-indigo-500" />
-                                        Following
-                                    </DialogTitle>
-                                </DialogHeader>
-                                <ScrollArea className="max-h-[60vh] mt-2">
-                                    {isLoading ? (
-                                        <div className="flex justify-center py-8">
-                                            <div className="size-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                                        </div>
-                                    ) : userFriends.length === 0 ? (
-                                        <div className="py-8 bg-white/[0.02] rounded-xl border border-white/[0.04] text-center mt-2">
-                                            <p className="text-sm text-zinc-500 font-medium">Not following anyone</p>
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col gap-2 pr-4 pb-4">
-                                            {userFriends.map(friend => (
-                                                <div key={friend.clerkId} className="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors group">
-                                                    <div 
-                                                        className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" 
-                                                        onClick={() => { 
-                                                            setIsFollowingModalOpen(false); 
-                                                            setSelectedUser(friend, 'profile'); 
-                                                        }}
-                                                    >
-                                                        <Avatar className="size-11 border border-white/[0.08] shadow-sm group-hover:border-indigo-500/30 transition-colors">
-                                                            <AvatarImage src={friend.imageUrl} />
-                                                            <AvatarFallback className="bg-zinc-800 text-zinc-400 font-bold">{friend.fullName[0]}</AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-semibold text-white truncate group-hover:text-indigo-400 transition-colors">{friend.fullName}</p>
-                                                            {friend.username && <p className="text-[11px] text-zinc-500 truncate">@{friend.username}</p>}
-                                                        </div>
-                                                    </div>
-                                                    <div className="shrink-0 ml-3">
-                                                        {friend.clerkId !== userId && <FriendButton user={friend} />}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </ScrollArea>
-                            </DialogContent>
-                        </Dialog>
-                        
-                        <Dialog open={isMutualsModalOpen} onOpenChange={setIsMutualsModalOpen}>
-                            <DialogTrigger asChild>
-                                <div className="text-center cursor-pointer group min-w-[70px]">
-                                    <p className={cn("font-bold text-white group-hover:text-amber-400 transition-colors", isMainView ? "text-2xl" : "text-xl")}>
-                                        {user.mutualFriendsCount || mutualFriends.length}
-                                    </p>
-                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1 font-semibold">Mutuals</p>
-                                </div>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-md bg-[#121215]/95 border-white/[0.08] text-white shadow-2xl backdrop-blur-xl rounded-2xl">
-                                <DialogHeader>
-                                    <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
-                                        <Users className="size-5 text-emerald-500" />
-                                        Mutual Followers
-                                    </DialogTitle>
-                                </DialogHeader>
-                                <ScrollArea className="max-h-[60vh] mt-2">
-                                    {isLoading ? (
-                                        <div className="flex justify-center py-8">
-                                            <div className="size-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                                        </div>
-                                    ) : mutualFriends.length === 0 ? (
-                                        <div className="py-8 bg-white/[0.02] rounded-xl border border-white/[0.04] text-center mt-2">
-                                            <p className="text-sm text-zinc-500 font-medium">No mutual followers</p>
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col gap-2 pr-4 pb-4">
-                                            {mutualFriends.map(mutual => (
-                                                <div key={mutual.clerkId} className="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors group">
-                                                    <div 
-                                                        className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" 
-                                                        onClick={() => { 
-                                                            setIsMutualsModalOpen(false); 
-                                                            setSelectedUser(mutual, 'profile'); 
-                                                        }}
-                                                    >
-                                                        <Avatar className="size-11 border border-white/[0.08] shadow-sm group-hover:border-emerald-500/30 transition-colors">
-                                                            <AvatarImage src={mutual.imageUrl} />
-                                                            <AvatarFallback className="bg-zinc-800 text-zinc-400 font-bold">{mutual.fullName[0]}</AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-semibold text-white truncate group-hover:text-emerald-400 transition-colors">{mutual.fullName}</p>
-                                                            {mutual.username && <p className="text-[11px] text-zinc-500 truncate">@{mutual.username}</p>}
-                                                        </div>
-                                                    </div>
-                                                    <div className="shrink-0 ml-3">
-                                                        {mutual.clerkId !== userId && <FriendButton user={mutual} />}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </ScrollArea>
-                            </DialogContent>
-                        </Dialog>
-					</div>
+					{/* Tab Contents */}
+					{activeTab === 'vibe' ? (
+						/* Music Vibe Content */
+						<div className={cn(
+							"grid gap-4 w-full",
+							isMainView ? "grid-cols-1 md:grid-cols-2 max-w-2xl mx-auto" : "grid-cols-1 px-1"
+						)}>
+							{user.favoriteSong ? (
+								<div className="bg-zinc-900/20 border border-zinc-900 hover:border-zinc-800/80 rounded-xl p-4 flex items-center gap-4 transition-all">
+									<div className="size-12 bg-zinc-950 border border-zinc-800/40 rounded-lg flex items-center justify-center shrink-0">
+										<Music2 className="size-5 text-zinc-400" />
+									</div>
+									<div className="min-w-0 flex-1">
+										<p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold mb-0.5">Favorite Track</p>
+										<p className="text-zinc-200 font-medium text-xs truncate">{user.favoriteSong.split(' - ')[0] || user.favoriteSong}</p>
+										{user.favoriteSong.split(' - ')[1] && (
+											<p className="text-zinc-500 text-[10px] truncate mt-0.5">{user.favoriteSong.split(' - ')[1]}</p>
+										)}
+									</div>
+								</div>
+							) : (
+								<div className="bg-zinc-900/10 border border-dashed border-zinc-800 rounded-xl p-4 flex items-center justify-center text-center">
+									<p className="text-[10px] text-zinc-500 uppercase tracking-widest">No Favorite Track</p>
+								</div>
+							)}
 
-                    {/* Music Identity */}
-                    {(user.favoriteSong || user.favoriteArtist) && (
-                        <div className="w-full max-w-2xl bg-white/[0.03] rounded-2xl border border-white/[0.06] p-6 mb-8 flex flex-col md:flex-row gap-6 justify-around">
-                            {user.favoriteSong && (
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-emerald-500/10 rounded-xl">
-                                        <Music2 className="size-6 text-emerald-400" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1 font-semibold">Favorite Song</p>
-                                        <p className="text-white font-semibold">{user.favoriteSong}</p>
-                                    </div>
-                                </div>
-                            )}
-                            {user.favoriteArtist && (
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-indigo-500/10 rounded-xl">
-                                        <Mic2 className="size-6 text-indigo-400" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1 font-semibold">Favorite Artist</p>
-                                        <p className="text-white font-semibold">{user.favoriteArtist}</p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
+							{user.favoriteArtist ? (
+								<div className="bg-zinc-900/20 border border-zinc-900 hover:border-zinc-800/80 rounded-xl p-4 flex items-center gap-4 transition-all">
+									<div className="size-12 bg-zinc-950 border border-zinc-800/40 rounded-lg flex items-center justify-center shrink-0">
+										<Mic2 className="size-5 text-zinc-400" />
+									</div>
+									<div className="min-w-0 flex-1">
+										<p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold mb-0.5">Favorite Artist</p>
+										<p className="text-zinc-200 font-medium text-xs truncate">{user.favoriteArtist}</p>
+										<p className="text-zinc-500 text-[10px] mt-0.5 truncate">Taste Match aligned</p>
+									</div>
+								</div>
+							) : (
+								<div className="bg-zinc-900/10 border border-dashed border-zinc-800 rounded-xl p-4 flex items-center justify-center text-center">
+									<p className="text-[10px] text-zinc-500 uppercase tracking-widest">No Favorite Artist</p>
+								</div>
+							)}
+						</div>
+					) : (
+						/* Taste Match Tab Content */
+						<div className="w-full flex flex-col gap-5">
+							{/* Compatibility score percentage */}
+							<div className="flex flex-col items-center justify-center p-5 bg-zinc-900/10 border border-zinc-900 rounded-xl max-w-2xl mx-auto w-full text-center">
+								<span className="text-[9px] text-zinc-500 uppercase tracking-widest font-semibold mb-1">Acoustic Compatibility</span>
+								<div className="text-3xl md:text-4xl font-extrabold text-zinc-200 tracking-tighter">
+									{Math.round(user.similarityScore || 0)}%
+								</div>
+								<span className="text-zinc-400 text-[10px] mt-0.5">Music taste similarity</span>
+							</div>
+
+							{/* Narrative Quote block */}
+							{user.matchDetails?.narrative_summary && (
+								<div className="p-4 border-l border-zinc-700 bg-zinc-900/10 rounded-r-xl max-w-2xl mx-auto w-full">
+									<p className="text-zinc-300 text-xs italic font-normal leading-relaxed">
+										"{user.matchDetails.narrative_summary}"
+									</p>
+								</div>
+							)}
+
+							{/* Progress Bar Grid */}
+							<div className={cn(
+								"grid gap-4 w-full",
+								isMainView ? "grid-cols-1 md:grid-cols-2 max-w-2xl mx-auto" : "grid-cols-1 px-1"
+							)}>
+								{/* Sync Breakdown */}
+								{user.matchDetails?.signal_breakdown && (
+									<div className="bg-zinc-900/20 border border-zinc-900 rounded-xl p-4 space-y-3.5">
+										<div className="flex items-center gap-1.5 text-[9px] text-zinc-400 font-semibold uppercase tracking-widest border-b border-zinc-900 pb-2">
+											<Network size={12} className="text-zinc-500" />
+											Sync Breakdown
+										</div>
+										{[
+											{ label: 'Genre Sync', val: user.matchDetails.signal_breakdown.genre_overlap },
+											{ label: 'Audio Sync', val: user.matchDetails.signal_breakdown.audio_similarity },
+											{ label: 'Mood Alignment', val: user.matchDetails.signal_breakdown.mood_alignment }
+										].map(signal => {
+											if (signal.val === undefined) return null;
+											return (
+												<div key={signal.label} className="space-y-1">
+													<div className="flex justify-between text-[10px]">
+														<span className="text-zinc-500">{signal.label}</span>
+														<span className="text-zinc-300 font-semibold">{Math.round(signal.val * 100)}%</span>
+													</div>
+													<div className="w-full h-1 bg-zinc-950 rounded-full overflow-hidden">
+														<div className="h-full bg-zinc-300 rounded-full" style={{ width: `${signal.val * 100}%` }} />
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								)}
+
+								{/* Audio DNA */}
+								{user.matchDetails?.audioMatch && (
+									<div className="bg-zinc-900/20 border border-zinc-900 rounded-xl p-4 space-y-3.5">
+										<div className="flex items-center gap-1.5 text-[9px] text-zinc-400 font-semibold uppercase tracking-widest border-b border-zinc-900 pb-2">
+											<Activity size={12} className="text-zinc-500" />
+											Audio DNA Sync
+										</div>
+										{[
+											{ label: 'Energy Sync', val: user.matchDetails.audioMatch.energy },
+											{ label: 'Vibe Sync', val: user.matchDetails.audioMatch.valence },
+											{ label: 'Acoustic Sync', val: user.matchDetails.audioMatch.acousticness }
+										].map(feature => {
+											if (feature.val === undefined) return null;
+											return (
+												<div key={feature.label} className="space-y-1">
+													<div className="flex justify-between text-[10px]">
+														<span className="text-zinc-500">{feature.label}</span>
+														<span className="text-zinc-300 font-semibold">{feature.val}%</span>
+													</div>
+													<div className="w-full h-1 bg-zinc-950 rounded-full overflow-hidden">
+														<div className="h-full bg-zinc-300 rounded-full" style={{ width: `${feature.val}%` }} />
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								)}
+							</div>
+
+							{/* Anthems & Artists */}
+							<div className={cn(
+								"grid gap-4 w-full",
+								isMainView ? "grid-cols-1 md:grid-cols-2 max-w-2xl mx-auto" : "grid-cols-1 px-1"
+							)}>
+								{/* Shared Anthems */}
+								{user.matchDetails?.topSongs && user.matchDetails.topSongs.length > 0 && (
+									<div className="bg-zinc-900/20 border border-zinc-900 rounded-xl p-4 space-y-3">
+										<div className="flex items-center gap-1.5 text-[9px] text-zinc-400 font-semibold uppercase tracking-widest border-b border-zinc-900 pb-2">
+											<Flame size={12} className="text-zinc-500" />
+											Shared Anthems
+										</div>
+										<div className="space-y-2.5 max-h-[150px] overflow-y-auto pr-1 custom-scrollbar">
+											{user.matchDetails.topSongs.slice(0, 3).map((song) => (
+												<div key={song.id} className="flex justify-between items-center text-[11px]">
+													<div className="min-w-0 flex-1">
+														<p className="font-medium text-zinc-200 truncate">{song.title}</p>
+														<p className="text-[9px] text-zinc-500 truncate">{song.artist}</p>
+													</div>
+													<span className="text-[9px] font-mono text-zinc-500 shrink-0 ml-2">
+														{song.playsA}x vs {song.playsB}x
+													</span>
+												</div>
+											))}
+										</div>
+									</div>
+								)}
+
+								{/* Shared Artists */}
+								{user.matchDetails?.topArtists && user.matchDetails.topArtists.length > 0 && (
+									<div className="bg-zinc-900/20 border border-zinc-900 rounded-xl p-4 space-y-3">
+										<div className="flex items-center gap-1.5 text-[9px] text-zinc-400 font-semibold uppercase tracking-widest border-b border-zinc-900 pb-2">
+											<Mic2 size={12} className="text-zinc-500" />
+											Shared Artists
+										</div>
+										<div className="flex flex-wrap gap-1.5">
+											{user.matchDetails.topArtists.slice(0, 6).map((artist, idx) => (
+												<span key={idx} className="text-[9px] font-medium bg-zinc-900 border border-zinc-800 text-zinc-300 px-2 py-0.5 rounded">
+													{artist.name}
+												</span>
+											))}
+										</div>
+									</div>
+								)}
+							</div>
+						</div>
+					)}
 				</div>
 			</ScrollArea>
 		</div>

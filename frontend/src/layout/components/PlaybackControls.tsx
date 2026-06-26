@@ -19,6 +19,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { LikeButton } from "@/components/LikeButton";
 import { useUser } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
 
 const formatTime = (seconds: number) => {
 	const minutes = Math.floor(seconds / 60);
@@ -42,6 +43,30 @@ export const PlaybackControls = () => {
 		fetchLyrics
 	} = usePlayerStore();
 	const { user } = useUser();
+	const navigate = useNavigate();
+
+	const renderArtistLinks = (artistString: string, classNames?: string) => {
+		const names = artistString.split(",").map(n => n.trim());
+		return (
+			<span className={classNames}>
+				{names.map((name, i) => (
+					<span key={name}>
+						<span 
+							onClick={(e) => {
+								e.stopPropagation();
+								setIsPreviewOpen(false);
+								navigate(`/artists/${encodeURIComponent(name)}`);
+							}}
+							className="hover:underline hover:text-white cursor-pointer transition-colors"
+						>
+							{name}
+						</span>
+						{i < names.length - 1 && ", "}
+					</span>
+				))}
+			</span>
+		);
+	};
 
 	const [volume, setVolume] = useState(75);
 	const [currentTime, setCurrentTime] = useState(0);
@@ -158,8 +183,8 @@ export const PlaybackControls = () => {
 									<div className='font-semibold text-[14px] text-white/90 truncate hover:text-emerald-400 hover:underline transition-colors leading-snug'>
 										{currentSong.title}
 									</div>
-									<div className='text-xs text-zinc-400 truncate hover:text-zinc-300 hover:underline transition-colors mt-0.5'>
-										{currentSong.artist}
+									<div className='text-xs text-zinc-400 truncate mt-0.5'>
+										{renderArtistLinks(currentSong.artist)}
 									</div>
 								</div>
 								<div className="like-btn-container transition-transform hover:scale-105 active:scale-95">
@@ -385,7 +410,7 @@ export const PlaybackControls = () => {
 											{currentSong.title}
 										</h3>
 										<p className="text-zinc-400 font-semibold text-sm mt-1 truncate">
-											{currentSong.artist}
+											{renderArtistLinks(currentSong.artist)}
 										</p>
 									</div>
 								</div>
@@ -434,7 +459,7 @@ export const PlaybackControls = () => {
 										{currentSong.title}
 									</h2>
 									<p className="text-sm sm:text-base text-zinc-400 font-semibold truncate">
-										{currentSong.artist}
+										{renderArtistLinks(currentSong.artist)}
 									</p>
 								</div>
 								<div className="like-btn-container flex-shrink-0 scale-125">

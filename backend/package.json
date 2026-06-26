@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "seed:songs": "node --loader ts-node/esm src/seeds/songs.ts",
-    "seed:album": "node --loader ts-node/esm src/seeds/album.ts"
+    "seed:album": "node --loader ts-node/esm src/seeds/album.ts",
+    "seed:spotify": "node --loader ts-node/esm src/seeds/spotify-seed.ts"
   },
   "keywords": [],
   "author": "",
