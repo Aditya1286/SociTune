@@ -8,6 +8,7 @@ import AlbumsTabContent from "./components/AlbumsTabContent";
 import { useEffect } from "react";
 import { useMusicStore } from "@/stores/useMusicStore";
 
+//When will this be shown?? 
 const AdminPage = () => {
 	const { isAdmin, isLoading } = useAuthStore();
 

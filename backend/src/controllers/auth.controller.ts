@@ -3,6 +3,8 @@ import { User } from "../models/user.model.js";
 
 class AuthController {
     public async authCallback(req: Request, res: Response, next: NextFunction) {
+        //Default username generation 
+        //Fine but we can make username/email based login, FINE for now
         try {
             const { id, firstName, lastName, imageUrl, username } = req.body;
             const generatedUsername = username || `user_${Math.random().toString(36).substring(2, 8)}${Math.floor(Math.random() * 1000)}`;

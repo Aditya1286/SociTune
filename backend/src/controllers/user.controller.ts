@@ -8,8 +8,11 @@ import { io, userSockets } from "../services/socket.service.js";
 import { socificationService } from "../services/socification.service.js";
 
 class UserController {
+
+	//Ok
 public async getAllUsers(req: Request, res: Response, next: NextFunction) {
 	try {
+		
 		const currentUserId = (req as any).auth.userId;
 		const currentUser = await User.findOne({ clerkId: currentUserId });
 		

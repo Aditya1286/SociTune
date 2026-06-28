@@ -26,6 +26,7 @@ class SpotifyService {
         }
     }
 
+   //No embed music for playing 
     public async getArtistDetails(artistName: string): Promise<{
         imageUrl?: string;
         spotifyUrl?: string;

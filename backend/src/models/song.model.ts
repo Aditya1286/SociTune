@@ -8,6 +8,10 @@ const songSchema = new mongoose.Schema({
         type:String,
         required:true,
     },
+    song_id:{ //This will be generated based on -> Normalization of song_artist and song_title: Check Normalize function in helpers 
+        type:String,
+        required:true
+    },
     imageUrl:{
         type:String,
         required:true,
@@ -26,7 +30,7 @@ const songSchema = new mongoose.Schema({
     },
     energy: {
         type: Number,
-        default: () => Math.random()
+        default: () => Math.random() //Random objects -> Destory for future compatibility
     },
     valence: {
         type: Number,

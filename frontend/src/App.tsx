@@ -20,6 +20,8 @@ import { useChatStore } from "./stores/useChatStore.ts";
 import { usePlayerStore } from "./stores/usePlayerStore.ts";
 import { useEffect } from "react";
 import { SearchCommand } from "./components/SearchCommand.tsx";
+import AdminPage from "./pages/admin/AdminPage.tsx";
+import SpotifyPlayerPage, { SpotifyCallback } from "./Features/SpotifyPlayer/components/SpotifyPlayer.tsx";
 
 const App = () => {
   const { userId } = useAuth();
@@ -49,8 +51,9 @@ const App = () => {
       element={<AuthenticateWithRedirectCallback signUpForceRedirectUrl={"/auth-callback"}/>} 
       />
       <Route path='/auth-callback' element={<AuthCallbackPage/>} />
+      <Route path='/player' element={<SpotifyPlayerPage/>} />
       <Route element={<MainLayout />}>
-        <Route path='/' element={<HomePage/>} />
+        {/* <Route path='/' element={<HomePage/>} /> */}
         <Route path='/chat' element={<ChatPage/>} />
         <Route path='/albums/:albumId' element={<AlbumPage/>} />
         <Route path='/founder' element={<FounderPage/>} />
@@ -60,6 +63,7 @@ const App = () => {
         <Route path='/matches' element={<MatchesPage/>} />
         <Route path='/notifications' element={<NotificationsPage/>} />
         <Route path='/search' element={<SearchPage/>} />
+        <Route path='/callback' element={<SpotifyCallback/>} />
         <Route path='/artists/:artistName' element={<ArtistPage/>} />
         <Route path='*' element={<NotFoundPage/>} />
       </Route>

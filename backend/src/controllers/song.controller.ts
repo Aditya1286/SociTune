@@ -9,6 +9,7 @@ import LyricsService from "../services/lyrics.service.js";
 class SongController {
     public async getAllSongs(req: Request, res: Response, next: NextFunction) {
         try {
+            //Valid
             const songs = await Song.find().sort({ createdAt: -1 });
             res.json(songs);
         } catch (error) {
@@ -19,7 +20,7 @@ class SongController {
     public async getFeaturedSongs(req: Request, res: Response, next: NextFunction) {
         try {
             const songs = await Song.aggregate([
-                { $sample: { size: 6 } },
+                { $sample: { size: 6 } }, 
                 {
                     $project: {
                         _id: 1,
@@ -40,7 +41,7 @@ class SongController {
     public async getMadeForYouSongs(req: Request, res: Response, next: NextFunction) {
         try {
             const songs = await Song.aggregate([
-                { $sample: { size: 12 } },
+                { $sample: { size: 12 } }, //NAAHH -> Invalidate this logic, fine for you even you know it ADI
                 {
                     $project: {
                         _id: 1,
@@ -60,7 +61,7 @@ class SongController {
 
     public async getTrendingSongs(req: Request, res: Response, next: NextFunction) {
         try {
-            const songs = await Song.aggregate([
+            const songs = await Song.aggregate([ //These api's will be improved
                 { $sample: { size: 12 } },
                 {
                     $project: {
@@ -81,7 +82,7 @@ class SongController {
 
     public async searchSongs(req: Request, res: Response, next: NextFunction) {
         try {
-            const { q } = req.query;
+            const { q } = req.query; 
             if (!q) return res.json([]);
             
             const songs = await Song.find({
@@ -133,6 +134,7 @@ class SongController {
 
     public async getSongById(req: Request, res: Response, next: NextFunction) {
         try {
+            //Again, how are you gettinig songs by id -> is the frontend sending us music id? 
             const { id } = req.params;
             const song = await Song.findById(id);
             if (!song) {
@@ -174,7 +176,8 @@ class SongController {
                 name: searchRegex
             }).limit(10);
 
-            // 4. Mock Playlists
+            // 4. Mock Playlists 
+            //Okish for now
             const playlists = [
                 { id: "liked-songs", title: "Liked Songs", imageUrl: "https://images.unsplash.com/photo-1513829096960-ef04324d32f4?w=500", artist: "You" },
                 { id: "ihh-essentials", title: "IHH Essentials", imageUrl: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500", artist: "SociTune" },
@@ -264,6 +267,7 @@ class SongController {
         }
     }
 
+    //Not of our use case for the time being
     public async getTrendingArtists(req: Request, res: Response, next: NextFunction) {
         try {
             // Find artists in database, sorted by monthly listeners or followers
