@@ -1,3 +1,4 @@
+//Redundant -> Remove everything related to this schema
 import mongoose from "mongoose";
 
 const playHistorySchema = new mongoose.Schema({

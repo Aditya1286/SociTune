@@ -4,6 +4,7 @@ import { Album } from "../models/album.model.js";
 import cloudinary from "../services/cloudinary.service.js";
 import Singleton from "../utils/Singleton.js";
 import LyricsService from "../services/lyrics.service.js";
+import { generateSongId } from "../helpers/generateSongId.js";
 
 // helper function for cloudinary uploads
 const uploadToCloudinary = async (file: any) => {
@@ -19,6 +20,9 @@ const uploadToCloudinary = async (file: any) => {
 };
 
 class AdminController {
+
+    //Controller -> Services -> DAO CALL Architecture
+    //Adding generic songId function
     public async createSong(req: Request, res: Response, next: NextFunction) {
         try {
             if (!req.files || !req.files.audioFile || !req.files.imageFile) {
@@ -26,8 +30,12 @@ class AdminController {
             }
 
             const { title, artist, albumId, duration } = req.body;
+            //Need to test this parameter , despite the fact the route won't be used
+            const song_id = generateSongId(title,artist);
             const audioFile = req.files.audioFile;
             const imageFile = req.files.imageFile;
+
+            console.log("songId",song_id)
 
             const audioUrl = await uploadToCloudinary(audioFile);
             const imageUrl = await uploadToCloudinary(imageFile);
@@ -35,6 +43,7 @@ class AdminController {
             const song = new Song({
                 title,
                 artist,
+                song_id,
                 audioUrl,
                 imageUrl,
                 duration,
@@ -52,7 +61,7 @@ class AdminController {
 
             // Asynchronously fetch and save lyrics in the background (do not await)
             const lyricsService = Singleton.instance<LyricsService>(LyricsService);
-            lyricsService.fetchAndSaveLyrics(song._id.toString()).catch(err => {
+            lyricsService.fetchAndSaveLyrics(song._id.toString()).catch(err => { 
                 console.error("Error fetching lyrics in background:", err);
             });
 
@@ -65,6 +74,7 @@ class AdminController {
 
     public async deleteSong(req: Request, res: Response, next: NextFunction) {
         try {
+            //How are you getting this id from req.params? 
             const { id } = req.params;
 
             const song = await Song.findById(id);
@@ -86,6 +96,7 @@ class AdminController {
 
     public async createAlbum(req: Request, res: Response, next: NextFunction) {
         try {
+            //Okish
             const { title, artist, releaseYear } = req.body;
             const { imageFile } = req.files as any;
 

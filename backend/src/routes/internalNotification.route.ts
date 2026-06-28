@@ -26,7 +26,7 @@ class InternalNotificationRoutes implements Routes {
             this.authMiddleware.verifyServiceToken,
             asyncHandler(this.internalController.createMessageNotification)
         );
-        this.router.post(
+        this.router.post( 
             `${this.path}/read-messages`,
             this.authMiddleware.verifyServiceToken,
             asyncHandler(this.internalController.readMessagesNotification)

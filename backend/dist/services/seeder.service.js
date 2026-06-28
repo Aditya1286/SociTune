@@ -213,6 +213,8 @@ export async function seedDatabaseOnStartup() {
         console.error("[SeederService] Error during auto-seeding:", error);
     }
 }
+
+//Lets think of something else rather than this show everything logic , it's clutterd
 export async function migrateArtists() {
     try {
         console.log("[Migration] Running artist relationship migration...");

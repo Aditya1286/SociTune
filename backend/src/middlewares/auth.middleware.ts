@@ -25,7 +25,8 @@ class AuthMiddleware {
         return res.status(401).json({ message: "Unauthorized - you must be logged in" });
       }
       const currentUser = await clerkClient.users.getUser(auth.userId);
-      const isAdmin = ADMIN_EMAIL === currentUser.primaryEmailAddress?.emailAddress;
+      console.log("EMAIL",currentUser)
+      const isAdmin = ADMIN_EMAIL === currentUser.primaryEmailAddress?.emailAddress; //Need to improve admin logic, can provide user object with a role's array.
       if (!isAdmin) {
         return res.status(403).json({ message: "Unauthorized - you must be admin " });
       }

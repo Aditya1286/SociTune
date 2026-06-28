@@ -48,6 +48,7 @@ class UserRoutes implements Routes {
         );
         this.router.get(
             `${this.path}/`,
+            //This route should only be for admin, and it should be even as base api -> OKISH FOR TESTING
             this.authMiddleware.protectRoute,
             asyncHandler(this.userController.getAllUsers)
         );
