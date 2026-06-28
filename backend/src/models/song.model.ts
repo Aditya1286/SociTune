@@ -1,74 +1,82 @@
 import mongoose from "mongoose";
-const songSchema = new mongoose.Schema({
-    title:{
-        type:String,
-        required:true
+const songSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true,
     },
-    artist:{
-        type:String,
-        required:true,
+    artist: {
+      type: String,
+      required: true,
     },
-    song_id:{ //This will be generated based on -> Normalization of song_artist and song_title: Check Normalize function in helpers 
-        type:String,
-        required:true
+    external_ids: {
+      isrc_id: String,
+      spotify_id: String,
+      yt_id: String,
+      fuzzy_id: {
+        //This is my system generated id -> check in helper/genenrateSongID. Last Fallback
+        type: String,
+        required: true,
+      },
     },
-    imageUrl:{
-        type:String,
-        required:true,
+    imageUrl: {
+      type: String,
+      required: true,
     },
-    audioUrl:{
-        type:String,
-        required:true,
+    audioUrl: {
+      type: String,
+      required: false,
     },
-    duration:{
-        type:Number,
-        required:true,
+    duration: {
+      type: Number,
+      required: true,
     },
-    tempo: {
+    audio_details: {
+      tempo: {
         type: Number,
-        default: () => Math.floor(Math.random() * (180 - 60 + 1) + 60) // Random default 60-180 BPM
-    },
-    energy: {
+      },
+      energy: {
         type: Number,
-        default: () => Math.random() //Random objects -> Destory for future compatibility
-    },
-    valence: {
+      },
+      valence: {
         type: Number,
-        default: () => Math.random()
-    },
-    acousticness: {
+      },
+      acousticness: {
         type: Number,
-        default: () => Math.random()
-    },
-    danceability: {
+      },
+      danceability: {
         type: Number,
-        default: () => Math.random()
+      },
     },
     genre: {
-        type: String,
-        default: "Pop"
+      type: String,
+      default: "unknown",
     },
-    albumId:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:'Album',
-        required:false,
+    albumId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Album",
+      required: false,
     },
-    artists: [{
+    artists: [
+      {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Artist'
-    }],
+        ref: "Artist",
+      },
+    ],
     lyrics: {
-        type: String,
-        default: null
+      type: String,
+      default: null,
     },
     lyricsSource: {
-        type: String,
-        default: null
+      type: String,
+      default: null,
     },
     lyricsFetchedAt: {
-        type: Date,
-        default: null
-    }
-},{timestamps:true});
+      type: Date,
+      default: null,
+    },
+  },
+  { timestamps: true },
+);
 
-export const Song = mongoose.model('Song',songSchema);
+export const Song = mongoose.model("Song", songSchema);

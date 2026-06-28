@@ -1,6 +1,6 @@
 import crypto from "crypto";
 
-function normalize(str) {
+function normalize(str:string) {
   return str
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -15,7 +15,7 @@ function normalize(str) {
 }
 
 // Strip common title suffixes that don't change song identity
-function stripTitleSuffixes(title) {
+function stripTitleSuffixes(title:string) {
   return title
     // Remove feat/with clauses in parens or after dash: "(feat. X)", "- ft. X"
     .replace(/[\(\[]\s*(feat|ft|featuring|with)\.?\s+[^\)\]]+[\)\]]/gi, "")
@@ -25,7 +25,7 @@ function stripTitleSuffixes(title) {
     .trim();
 }
 
-function primaryArtist(artist) {
+function primaryArtist(artist:string) {
   return normalize(
     artist
       // Handle parenthetical feat: "Artist (feat. Other)"
@@ -35,13 +35,19 @@ function primaryArtist(artist) {
   );
 }
 
-function canonicalSongKey(title, artist) {
+function canonicalSongKey(title:string, artist:string) {
   return `${primaryArtist(artist)}|${normalize(stripTitleSuffixes(title))}`;
 }
 
-export const generateSongId = (title, artist) => {
+export const generateSongId = (title:string, artist:string) => {
   return crypto
     .createHash("sha256")
     .update(canonicalSongKey(title, artist))
     .digest("hex");
 }
+
+export function TEST(){
+  console.log("ID: ",generateSongId("505","Arctic monkeys"))
+  process.exit(0)
+}
+TEST()

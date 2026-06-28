@@ -7,6 +7,7 @@ import StatRoutes from "./routes/stat.route.js";
 import TestimonialRoutes from "./routes/testimonial.route.js";
 import NotificationRoutes from "./routes/notification.route.js";
 import InternalNotificationRoutes from "./routes/internalNotification.route.js";
+import { TEST } from "./helpers/generateSongId.js";
 
 const app = new App([
     new UserRoutes(),
@@ -20,3 +21,5 @@ const app = new App([
 ]);
 
 await app.listen();
+
+TEST()
