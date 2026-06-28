@@ -10,9 +10,9 @@ import {
 } from "./Icons";
 import { useStore } from "../Index";
 import { useEffect,useRef} from "react";
-import { getStoredToken,getValidToken } from "../api/Auth";
+import { getStoredToken,getValidToken } from "../services/Auth";
 import type { RepeatMode,WebPlaybackState } from "../Index";
-import { api } from "../api/services";
+import { api } from "../services/spotifyApi";
 import { GREEN } from "./UI";
 
 

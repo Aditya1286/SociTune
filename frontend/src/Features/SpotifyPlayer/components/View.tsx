@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useStore } from "../store/PlayerStore";
-import { api } from "../api/services";
+import { api } from "../services/spotifyApi";
 import { TrackRow, Section } from "../atom/UI";
 import type { SpotifyTrack, SpotifyPlaylist } from "../utils/types";
 

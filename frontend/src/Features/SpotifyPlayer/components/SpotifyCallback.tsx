@@ -1,6 +1,6 @@
 
 import React, { useEffect } from "react";
-import { exchangeCode } from "../api/Auth";
+import { exchangeCode } from "../services/Auth";
 
 export const SpotifyCallback: React.FC = () => {
   useEffect(() => {

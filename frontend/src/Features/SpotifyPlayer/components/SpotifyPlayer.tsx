@@ -1,7 +1,7 @@
 import React from "react";
 import { useStore } from "../store/PlayerStore";
-import { api } from "../api/services";
-import { getStoredToken, redirectToSpotify } from "../api/Auth";
+import { api } from "../services/spotifyApi";
+import { getStoredToken, redirectToSpotify } from "../services/Auth";
 import {
   SidebarItem,
   GREEN,

@@ -43,7 +43,7 @@ async function spotifyFetch<T = unknown>(
 
 // ─── API surface ──────────────────────────────────────────────────────────────
 
-const SONG_SEARCH_LIMIT=5
+const SONG_SEARCH_LIMIT=10
 
 export const api = {
   // User
