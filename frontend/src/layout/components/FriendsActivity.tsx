@@ -2,8 +2,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChatStore } from "@/stores/useChatStore";
 import { useUser } from "@clerk/clerk-react";
-import { HeadphonesIcon, Users, Music } from "lucide-react";
+import { HeadphonesIcon, Users } from "lucide-react";
 import { useEffect } from "react";
+
+const PlayingEqualizer = () => (
+  <div className="flex items-end gap-[2px] h-3 w-3 shrink-0 mb-[2px]">
+    <span className="w-[1.5px] bg-emerald-400 animate-[eq-bar-1_0.8s_ease-in-out_infinite]" />
+    <span className="w-[1.5px] bg-emerald-400 animate-[eq-bar-2_0.5s_ease-in-out_infinite]" />
+    <span className="w-[1.5px] bg-emerald-400 animate-[eq-bar-3_0.7s_ease-in-out_infinite]" />
+  </div>
+);
 
 const FriendsActivity = () => {
 	const { users, fetchUsers, onlineUsers, userActivities } = useChatStore();
@@ -14,74 +22,91 @@ const FriendsActivity = () => {
 	}, [fetchUsers, user]);
 
 	return (
-		<div className='h-full bg-white/5 backdrop-blur-xl border-l border-white/10 flex flex-col relative overflow-hidden'>
-			{/* Subtle background glow */}
-			<div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
+		<div className="h-full pl-1 pr-2 pb-2 flex flex-col font-sans select-none relative">
+			{/* CSS Keyframes for Micro-Equalizer */}
+			<style dangerouslySetInnerHTML={{__html: `
+				@keyframes eq-bar-1 {
+					0%, 100% { height: 3px; }
+					50% { height: 11px; }
+				}
+				@keyframes eq-bar-2 {
+					0%, 100% { height: 11px; }
+					50% { height: 4px; }
+				}
+				@keyframes eq-bar-3 {
+					0%, 100% { height: 5px; }
+					50% { height: 10px; }
+				}
+			`}} />
 
-			<div className='p-6 flex justify-between items-center border-b border-white/5 relative z-10'>
-				<div className='flex items-center gap-3'>
-					<div className="p-2 bg-emerald-500/10 rounded-lg">
-						<Users className='size-5 text-emerald-400 shrink-0' />
+			{/* Main glass card */}
+			<div className="flex-1 rounded-xl bg-[#09090b]/80 backdrop-blur-sm p-4 border border-white/5 flex flex-col overflow-hidden relative shadow-2xl shadow-black/40">
+				{/* Ambient Glow */}
+				<div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+
+				{/* Header */}
+				<div className="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.04] relative z-10">
+					<div className="flex items-center text-zinc-400 gap-3">
+						<Users className="size-5 text-zinc-400 shrink-0" />
+						<span className="font-semibold text-sm tracking-widest text-zinc-300 uppercase">Friend Activity</span>
 					</div>
-					<h2 className='font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 tracking-tight'>
-						Friend Activity
-					</h2>
 				</div>
-			</div>
 
-			{!user && <LoginPrompt />}
+				{!user && <LoginPrompt />}
 
-			<ScrollArea className='flex-1 min-h-0 relative z-10'>
-				<div className='p-4 space-y-3'>
-					{users.filter((u:any) => u.isFriend).length === 0 ? (
-						<div className="text-center py-8 text-zinc-500 text-sm">
-							You haven't added any friends yet. Add friends to see what they're listening to!
-						</div>
-					) : (
-					users.filter((u:any) => u.isFriend).map((user:any) => {
-						const isOnline = onlineUsers.has(user.clerkId);
-						let activity = userActivities.get(user.clerkId) || user.lastActivity || "Offline";
-						
-						if (activity === "Idle" && !isOnline) {
-							activity = "Offline";
-						}
-						
-						const isPlaying = isOnline && activity !== "Offline" && activity !== "Idle";
-						const isLastListened = !isOnline && activity.startsWith("Recently");
+				{/* Friends List */}
+				<ScrollArea className="flex-1 min-h-0 -mx-2 px-2 relative z-10">
+					<div className="space-y-1.5 pb-4">
+						{users.filter((u:any) => u.isFriend).length === 0 ? (
+							<div className="text-center py-12 text-zinc-500 text-xs font-light">
+								No friends active yet.
+							</div>
+						) : (
+							users.filter((u:any) => u.isFriend).map((friend:any) => {
+								const isOnline = onlineUsers.has(friend.clerkId);
+								let activity = userActivities.get(friend.clerkId) || friend.lastActivity || "Offline";
+								
+								if (activity === "Idle" && !isOnline) {
+									activity = "Offline";
+								}
+								
+								const isPlaying = isOnline && activity !== "Offline" && activity !== "Idle";
+								const isLastListened = !isOnline && activity.startsWith("Recently");
 
-						return (
-							<div
-								key={user._id}
-								className='cursor-pointer bg-white/5 hover:bg-white/10 p-3 rounded-xl border border-transparent hover:border-white/10 transition-all duration-300 group hover:-translate-y-0.5'
-							>
-								<div className='flex items-start gap-3'>
-									<div className='relative shrink-0'>
-										<Avatar className='size-12 border border-zinc-800 group-hover:border-emerald-500/50 transition-colors'>
-											<AvatarImage src={user.imageUrl} alt={user.fullName} />
-											<AvatarFallback>{user.fullName[0]}</AvatarFallback>
-										</Avatar>
-										<div
-											className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-zinc-900 shadow-sm
-												${isOnline ? "bg-emerald-500 shadow-emerald-500/50" : "bg-zinc-500"}
-											`}
-											aria-hidden='true'
-										/>
-									</div>
+								// Clean names of trailing "null" or "undefined"
+								const cleanName = friend.fullName.replace(/\s+null$/, "").replace(/\s+undefined$/, "");
 
-									<div className='flex-1 min-w-0 py-1 overflow-hidden'>
-										<div className='flex items-center gap-2'>
-											<span className='font-semibold text-sm text-white/90 group-hover:text-white transition-colors truncate block'>
-												{user.fullName}
-											</span>
+								return (
+									<div
+										key={friend._id}
+										className="group flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/[0.04] transition-all duration-200 cursor-pointer"
+									>
+										{/* Avatar */}
+										<div className={`relative shrink-0 transition-opacity duration-300 ${!isOnline ? 'opacity-55' : 'opacity-100'}`}>
+											<Avatar className="size-10 border border-white/10 group-hover:border-zinc-400 transition-colors shadow-sm">
+												<AvatarImage src={friend.imageUrl} alt={cleanName} />
+												<AvatarFallback className="bg-zinc-900 text-zinc-400 text-xs font-medium">{cleanName[0]}</AvatarFallback>
+											</Avatar>
+											{isOnline && (
+												<div
+													className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-black bg-emerald-500"
+													aria-hidden="true"
+												/>
+											)}
 										</div>
 
-										{isLastListened ? (
-											<div className='mt-1.5 flex flex-col gap-1 w-full'>
-												<div className='flex items-center gap-1.5'>
-													<HeadphonesIcon className="size-3 text-zinc-500 shrink-0" />
-													<span className='text-[10px] text-zinc-500 uppercase tracking-wider font-medium'>Recently listened</span>
-												</div>
-												<div className="pl-4 w-full">
+										{/* Content */}
+										<div className="flex-1 min-w-0 py-0.5 overflow-hidden">
+											<p className="font-semibold text-xs text-white/90 truncate group-hover:text-white transition-colors">
+												{cleanName}
+											</p>
+
+											{isLastListened ? (
+												<div className="mt-1 flex flex-col gap-0.5">
+													<div className="flex items-center gap-1 text-zinc-500 mb-0.5">
+														<HeadphonesIcon className="size-3 text-zinc-500 shrink-0" />
+														<span className="text-[8px] uppercase tracking-wider font-semibold">Recently Played</span>
+													</div>
 													{(() => {
 														const cleanActivity = activity.replace("Recently listened: ", "").replace("Paused: ", "").replace("Paused ", "");
 														let songName = cleanActivity;
@@ -93,26 +118,21 @@ const FriendsActivity = () => {
 														}
 
 														return (
-															<div className="flex flex-col gap-0.5">
-																<p className='text-xs text-zinc-300 font-medium truncate block w-full'>
+															<>
+																<p className="text-[11px] text-zinc-300 font-medium truncate">
 																	{songName}
 																</p>
 																{artistName && (
-																	<p className='text-[10px] text-zinc-500 truncate block w-full'>
+																	<p className="text-[9px] text-zinc-500 truncate font-light">
 																		by {artistName}
 																	</p>
 																)}
-															</div>
+															</>
 														);
 													})()}
 												</div>
-											</div>
-										) : (
-											<div className='mt-1.5 flex items-start gap-1.5 w-full'>
-												{isPlaying && (
-													<Music className="size-3 text-emerald-400 animate-pulse shrink-0 mt-0.5" />
-												)}
-												<div className="flex-1 min-w-0">
+											) : isPlaying ? (
+												<div className="mt-1.5 flex flex-col gap-0.5">
 													{(() => {
 														const cleanActivity = activity.replace("Playing ", "").replace("Paused ", "");
 														let songName = cleanActivity;
@@ -124,29 +144,35 @@ const FriendsActivity = () => {
 														}
 
 														return (
-															<div className="flex flex-col gap-0.5 w-full">
-																<p className={`text-xs truncate block w-full transition-colors ${isPlaying ? 'text-emerald-400/90 font-medium' : 'text-zinc-400'}`}>
-																	{songName}
-																</p>
+															<>
+																<div className="flex items-center gap-1.5">
+																	<p className="text-[11px] text-emerald-400 font-medium truncate">
+																		{songName}
+																	</p>
+																	<PlayingEqualizer />
+																</div>
 																{artistName && (
-																	<p className='text-[10px] text-zinc-500 truncate block w-full'>
+																	<p className="text-[9px] text-zinc-500 truncate font-light">
 																		by {artistName}
 																	</p>
 																)}
-															</div>
+															</>
 														);
 													})()}
 												</div>
-											</div>
-										)}
+											) : (
+												<p className="text-[10px] text-zinc-600 font-light mt-1.5">
+													Offline
+												</p>
+											)}
+										</div>
 									</div>
-								</div>
-							</div>
-						);
-					})
-					)}
-				</div>
-			</ScrollArea>
+								);
+							})
+						)}
+					</div>
+				</ScrollArea>
+			</div>
 		</div>
 	);
 };
@@ -166,8 +192,8 @@ const LoginPrompt = () => (
 		</div>
 
 		<div className='space-y-2 max-w-[250px]'>
-			<h3 className='text-xl font-bold text-white tracking-tight'>See What Friends Are Playing</h3>
-			<p className='text-sm text-zinc-400/80 leading-relaxed'>Login to discover what music your friends are enjoying right now</p>
+			<h3 className='text-base font-bold text-white tracking-tight'>See What Friends Are Playing</h3>
+			<p className='text-xs text-zinc-500 leading-relaxed'>Login to discover what music your friends are enjoying right now</p>
 		</div>
 	</div>
 );

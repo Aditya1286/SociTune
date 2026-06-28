@@ -1,15 +1,14 @@
-import { LayoutDashboardIcon, SearchIcon } from "lucide-react";
-import { Link } from "react-router-dom";
-import { SignedOut, UserButton } from "@clerk/clerk-react";
+import { SearchIcon } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import SignInOAuthButtons from "./SignInOAuthButtons";
-import { useAuthStore } from "@/stores/useAuthStore";
+import NotificationDropdown from "./NotificationDropdown";
 import { buttonVariants } from "./ui/button";
 import { cn } from "@/lib/utils";
 import { EditProfileDialog } from "./EditProfileDialog";
 
 const Topbar = () => {
-  const { isAdmin } = useAuthStore();
-
+  const navigate = useNavigate();
   return (
     <>
       <EditProfileDialog />
@@ -55,7 +54,7 @@ const Topbar = () => {
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Search Trigger */}
           <button
-            onClick={() => document.dispatchEvent(new CustomEvent("open-search"))}
+            onClick={() => navigate("/search")}
             className={cn(
               buttonVariants({ variant: "outline" }),
               "relative flex items-center justify-between w-full sm:w-64 px-4 py-2 text-sm text-zinc-400 bg-zinc-900/50 border-white/10 hover:bg-zinc-800/80 hover:text-white transition-all rounded-full hidden sm:flex"
@@ -69,10 +68,10 @@ const Topbar = () => {
               <span className="text-xs">⌘</span>K
             </kbd>
           </button>
-
+ 
           {/* Mobile Search Icon */}
           <button
-            onClick={() => document.dispatchEvent(new CustomEvent("open-search"))}
+            onClick={() => navigate("/search")}
             className={cn(
               buttonVariants({ variant: "ghost", size: "icon" }),
               "sm:hidden text-zinc-400 hover:text-white"
@@ -82,41 +81,13 @@ const Topbar = () => {
           </button>
 
 
-          {isAdmin && (
-            <Link
-              to="/admin"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "relative overflow-hidden border-zinc-700/80 bg-zinc-900/60 text-zinc-300",
-                "hover:text-white hover:border-emerald-500/60 hover:bg-emerald-950/40",
-                "transition-all duration-200 gap-1.5 text-xs font-medium tracking-wide",
-                "hidden sm:flex"
-              )}
-            >
-              <LayoutDashboardIcon className="size-3.5 shrink-0" />
-              <span>Admin</span>
-            </Link>
-          )}
-
-          {/* Mobile admin icon only */}
-          {isAdmin && (
-            <Link
-              to="/admin"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "icon" }),
-                "sm:hidden w-8 h-8 border-zinc-700/80 bg-zinc-900/60 text-zinc-300",
-                "hover:text-white hover:border-emerald-500/60 hover:bg-emerald-950/40",
-                "transition-all duration-200"
-              )}
-              aria-label="Admin Dashboard"
-            >
-              <LayoutDashboardIcon className="size-3.5" />
-            </Link>
-          )}
-
           <SignedOut>
             <SignInOAuthButtons />
           </SignedOut>
+
+          <SignedIn>
+            <NotificationDropdown />
+          </SignedIn>
 
           {/* Subtle ring around UserButton */}
           <div className="ring-1 ring-white/10 rounded-full transition-shadow duration-200 hover:ring-emerald-500/40 hover:shadow-lg hover:shadow-emerald-900/30">

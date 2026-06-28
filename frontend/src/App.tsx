@@ -1,17 +1,21 @@
 import {Route,Routes} from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
 import HomePage from "./pages/home/HomePage.tsx"
 import MainLayout from "./layout/MainLayout.tsx";
 import AuthCallbackPage from "./pages/auth-callback/AuthCallbackPage.tsx"
 import { AuthenticateWithRedirectCallback, useAuth } from "@clerk/clerk-react";
 import ChatPage from "./pages/chat/ChatPage.tsx";
 import AlbumPage from "./pages/album/AlbumPage.tsx";
-import AdminPage from "./pages/admin/AdminPage.tsx";
 import NotFoundPage from "./pages/404/NotFoundPage.tsx";
 import FounderPage from "./pages/founder/FounderPage.tsx";
 import PremiumPage from "./pages/premium/PremiumPage.tsx";
 import TimeTravelPage from "./pages/time-travel/TimeTravelPage.tsx";
 import LikedSongsPage from "./pages/liked-songs/LikedSongsPage.tsx";
 import MatchesPage from "./pages/matches/MatchesPage.tsx";
+import NotificationsPage from "./pages/notifications/NotificationsPage.tsx";
+import SearchPage from "./pages/search/SearchPage.tsx";
+import ArtistPage from "./pages/artist/ArtistPage.tsx";
+
 import { useChatStore } from "./stores/useChatStore.ts";
 import { usePlayerStore } from "./stores/usePlayerStore.ts";
 import { useEffect } from "react";
@@ -38,12 +42,12 @@ const App = () => {
     
     <>
     <SearchCommand />
+    <Toaster theme="dark" position="top-center" />
     <Routes>
       
       <Route path='/sso-callback' 
       element={<AuthenticateWithRedirectCallback signUpForceRedirectUrl={"/auth-callback"}/>} 
       />
-       <Route path='/admin' element={<AdminPage />} />
       <Route path='/auth-callback' element={<AuthCallbackPage/>} />
       <Route element={<MainLayout />}>
         <Route path='/' element={<HomePage/>} />
@@ -54,6 +58,9 @@ const App = () => {
         <Route path='/time-travel' element={<TimeTravelPage/>} />
         <Route path='/liked-songs' element={<LikedSongsPage/>} />
         <Route path='/matches' element={<MatchesPage/>} />
+        <Route path='/notifications' element={<NotificationsPage/>} />
+        <Route path='/search' element={<SearchPage/>} />
+        <Route path='/artists/:artistName' element={<ArtistPage/>} />
         <Route path='*' element={<NotFoundPage/>} />
       </Route>
     </Routes>

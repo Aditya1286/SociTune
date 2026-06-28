@@ -39,21 +39,25 @@ export const FriendButton = ({ user }: { user: any }) => {
 	if (user.isFriend) {
 		return (
 			<Button 
-				variant="ghost" 
+				variant="outline" 
 				size="sm" 
 				onClick={handleRemoveRequest}
 				disabled={isLoading}
 				onMouseEnter={() => setIsHovering(true)}
 				onMouseLeave={() => setIsHovering(false)}
-				className={`transition-colors ${isHovering ? "text-red-400 bg-red-500/10 hover:bg-red-500/20" : "text-emerald-500"}`}
+				className={`rounded-lg px-4 h-9 transition-colors font-medium border-zinc-800 text-xs ${
+					isHovering 
+						? "text-red-400 bg-red-950/20 border-red-900/30 hover:bg-red-900/20" 
+						: "text-zinc-300 bg-zinc-900/40 hover:bg-zinc-850 hover:text-white"
+				}`}
 			>
 				{isHovering ? (
 					<>
-						<X className="size-4 mr-2" /> Remove
+						<X className="size-3.5 mr-1.5" /> Remove
 					</>
 				) : (
 					<>
-						<UserCheck className="size-4 mr-2" /> Friends
+						<UserCheck className="size-3.5 mr-1.5" /> Friends
 					</>
 				)}
 			</Button>
@@ -62,30 +66,30 @@ export const FriendButton = ({ user }: { user: any }) => {
 
 	if (user.isSent) {
 		return (
-			<Button variant="outline" size="sm" disabled className="text-zinc-400 border-zinc-700 bg-zinc-800/50">
-				<Clock className="size-3 mr-2" /> Pending
+			<Button variant="outline" size="sm" disabled className="text-zinc-500 border-zinc-800 bg-zinc-900/20 rounded-lg px-4 h-9 font-medium text-xs">
+				<Clock className="size-3.5 mr-1.5" /> Pending
 			</Button>
 		);
 	}
 
 	if (user.isPending) {
 		return (
-			<div className="flex gap-2">
+			<div className="flex gap-1.5">
 				<Button 
 					variant="default" 
 					size="sm" 
 					onClick={handleAcceptRequest} 
 					disabled={isLoading}
-					className="bg-emerald-600 hover:bg-emerald-500"
+					className="bg-zinc-100 hover:bg-zinc-200 text-zinc-950 font-medium rounded-lg px-4 h-9 text-xs"
 				>
-					<Check className="size-4 mr-1" /> Accept
+					<Check className="size-3.5 mr-1" /> Accept
 				</Button>
 				<Button 
 					variant="ghost" 
 					size="icon" 
 					onClick={handleRejectRequest} 
 					disabled={isLoading}
-					className="hover:bg-red-500/20 hover:text-red-400 text-zinc-400"
+					className="hover:bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-lg h-9 w-9"
 				>
 					<X className="size-4" />
 				</Button>
@@ -95,13 +99,13 @@ export const FriendButton = ({ user }: { user: any }) => {
 
 	return (
 		<Button 
-			variant="outline" 
+			variant="default" 
 			size="sm" 
 			onClick={handleSendRequest} 
 			disabled={isLoading}
-			className="hover:bg-emerald-500/20 hover:text-emerald-400 border-zinc-700 hover:border-emerald-500/50"
+			className="bg-zinc-100 hover:bg-zinc-200 text-zinc-950 font-medium rounded-lg px-4 h-9 text-xs border-0 shadow-sm"
 		>
-			<UserPlus className="size-4 mr-2" /> Add Friend
+			<UserPlus className="size-3.5 mr-1.5" /> Add Friend
 		</Button>
 	);
 };

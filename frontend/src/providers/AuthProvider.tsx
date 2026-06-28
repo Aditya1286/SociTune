@@ -5,6 +5,7 @@ import { Loader } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useChatStore } from "@/stores/useChatStore";
 import { useMusicStore } from "@/stores/useMusicStore";
+import { useNotificationStore } from "@/stores/useNotificationStore";
 
 const updateApiToken = (token: string | null) => {
   if (token) {
@@ -33,7 +34,13 @@ const updateApiToken = (token: string | null) => {
             fetchLikedSongs()
           ]);
           // init socket
-          if (userId) initSocket(userId);
+          if (userId) {
+            initSocket(userId);
+            // Fetch notifications and start listening
+            const notifStore = useNotificationStore.getState();
+            notifStore.fetchNotifications();
+            notifStore.listenToNotifications(userId);
+          }
         }
       } catch (error: any) {
         updateApiToken(null);
@@ -45,8 +52,11 @@ const updateApiToken = (token: string | null) => {
 
     initAuth();
 
-    // clean up socket
-    return () => disconnectSocket();
+    // clean up socket and listeners
+    return () => {
+      disconnectSocket();
+      useNotificationStore.getState().stopListeningToNotifications();
+    };
   }, [getToken, userId, initSocket, disconnectSocket]);
 
   if (loading)

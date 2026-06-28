@@ -1,0 +1,605 @@
+{
+  "info": {
+    "name": "SociTune API Collection",
+    "description": "Complete API contract for the SociTune platform. Includes all Auth, Users, Songs, Albums, Admin, and Social endpoints. Import this into Postman to test the backend API.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "clerkToken",
+      "value": "YOUR_CLERK_JWT_TOKEN_HERE",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "description": "Authentication related endpoints.",
+      "item": [
+        {
+          "name": "Auth Callback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"user_2abcdefg\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"imageUrl\": \"https://example.com/avatar.png\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/callback",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "callback"]
+            },
+            "description": "Syncs Clerk user data with our MongoDB database. Usually called via webhooks or immediately after login."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Users & Social",
+      "description": "Endpoints for user profiles, friends, messaging, and listening history.",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Retrieves a list of all users in the system."
+          }
+        },
+        {
+          "name": "Get Chat Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/messages/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "messages", ":userId"],
+              "variable": [{ "key": "userId", "value": "user_2aBcDeFgHiJkLmNoP" }]
+            },
+            "description": "Gets all chat messages between the current user and the specified user."
+          }
+        },
+        {
+          "name": "Upload Message Media",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": [], "description": "The image or audio file to send in the chat" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/messages/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "messages", "upload"]
+            },
+            "description": "Uploads media files (images, audio) to be sent as part of a chat message."
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"music_lover_99\",\n  \"bio\": \"Living life one song at a time. Indie rock enthusiast.\",\n  \"favoriteSong\": \"Fluorescent Adolescent\",\n  \"favoriteArtist\": \"Arctic Monkeys\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile"]
+            },
+            "description": "Updates the current user's profile information."
+          }
+        },
+        {
+          "name": "Send Friend Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/request/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "request", ":userId"],
+              "variable": [{ "key": "userId", "value": "user_2aBcDeFgHiJkLmNoP" }]
+            },
+            "description": "Sends a friend request to another user."
+          }
+        },
+        {
+          "name": "Accept Friend Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/accept/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "accept", ":userId"],
+              "variable": [{ "key": "userId", "value": "user_2aBcDeFgHiJkLmNoP" }]
+            },
+            "description": "Accepts an incoming friend request."
+          }
+        },
+        {
+          "name": "Reject Friend Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/reject/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "reject", ":userId"],
+              "variable": [{ "key": "userId", "value": "user_2aBcDeFgHiJkLmNoP" }]
+            },
+            "description": "Rejects an incoming friend request."
+          }
+        },
+        {
+          "name": "Remove Friend",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/remove/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "remove", ":userId"],
+              "variable": [{ "key": "userId", "value": "user_2aBcDeFgHiJkLmNoP" }]
+            },
+            "description": "Removes a user from the friend list."
+          }
+        },
+        {
+          "name": "Get User Friends",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/profile/:userId/friends",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile", ":userId", "friends"],
+              "variable": [{ "key": "userId", "value": "user_2aBcDeFgHiJkLmNoP" }]
+            },
+            "description": "Retrieves the list of friends for a specific user."
+          }
+        },
+        {
+          "name": "Get Mutual Friends",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/profile/:userId/mutual",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile", ":userId", "mutual"],
+              "variable": [{ "key": "userId", "value": "user_2aBcDeFgHiJkLmNoP" }]
+            },
+            "description": "Retrieves the mutual friends between the current user and the specified user."
+          }
+        },
+        {
+          "name": "Check Username",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/check-username?username=music_lover_99",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "check-username"],
+              "query": [{ "key": "username", "value": "music_lover_99", "description": "The username to check availability for" }]
+            },
+            "description": "Checks if a specific username is available for registration or update."
+          }
+        },
+        {
+          "name": "Toggle Like Song",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/like/:songId",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "like", ":songId"],
+              "variable": [{ "key": "songId", "value": "60d5ecb8b392d7001f3e4a5b" }]
+            },
+            "description": "Toggles the liked status of a song for the current user."
+          }
+        },
+        {
+          "name": "Get Liked Songs",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/liked-songs",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "liked-songs"]
+            },
+            "description": "Retrieves the current user's liked songs."
+          }
+        },
+        {
+          "name": "Record Play History",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"songId\": \"60d5ecb8b392d7001f3e4a5b\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/play-history",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "play-history"]
+            },
+            "description": "Records that the user played a specific song. Used for generating recommendations and stats."
+          }
+        },
+        {
+          "name": "Get Time Travel Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/time-travel",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "time-travel"]
+            },
+            "description": "Retrieves the user's historical listening stats (e.g. SociTune Rewind)."
+          }
+        },
+        {
+          "name": "Get AI Recommendations",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/recommendations",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "recommendations"]
+            },
+            "description": "Retrieves AI-generated song recommendations based on the user's play history and liked songs."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Songs",
+      "description": "Endpoints to fetch and search for songs.",
+      "item": [
+        {
+          "name": "Get All Songs (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/songs",
+              "host": ["{{baseUrl}}"],
+              "path": ["songs"]
+            },
+            "description": "Retrieves all songs. Requires admin privileges."
+          }
+        },
+        {
+          "name": "Get Featured Songs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/songs/featured",
+              "host": ["{{baseUrl}}"],
+              "path": ["songs", "featured"]
+            },
+            "description": "Retrieves a curated list of featured songs."
+          }
+        },
+        {
+          "name": "Get Made For You Songs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/songs/made-for-you",
+              "host": ["{{baseUrl}}"],
+              "path": ["songs", "made-for-you"]
+            },
+            "description": "Retrieves a personalized playlist based on general user trends."
+          }
+        },
+        {
+          "name": "Get Trending Songs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/songs/trending",
+              "host": ["{{baseUrl}}"],
+              "path": ["songs", "trending"]
+            },
+            "description": "Retrieves currently trending songs."
+          }
+        },
+        {
+          "name": "Search Songs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/songs/search?q=rock",
+              "host": ["{{baseUrl}}"],
+              "path": ["songs", "search"],
+              "query": [{ "key": "q", "value": "rock", "description": "The search query (title, artist, etc.)" }]
+            },
+            "description": "Searches for songs matching the provided query."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Albums",
+      "description": "Endpoints to fetch albums and album details.",
+      "item": [
+        {
+          "name": "Get All Albums",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/albums",
+              "host": ["{{baseUrl}}"],
+              "path": ["albums"]
+            },
+            "description": "Retrieves a list of all albums."
+          }
+        },
+        {
+          "name": "Get Album By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/albums/:albumId",
+              "host": ["{{baseUrl}}"],
+              "path": ["albums", ":albumId"],
+              "variable": [{ "key": "albumId", "value": "60d5ecb8b392d7001f3e4a5c" }]
+            },
+            "description": "Retrieves details of a specific album, including its songs."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Admin",
+      "description": "Administrative endpoints for managing content.",
+      "item": [
+        {
+          "name": "Check Admin Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/check",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "check"]
+            },
+            "description": "Verifies if the current user has administrative privileges."
+          }
+        },
+        {
+          "name": "Create Song",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Midnight City", "type": "text" },
+                { "key": "artist", "value": "M83", "type": "text" },
+                { "key": "albumId", "value": "60d5ecb8b392d7001f3e4a5c", "type": "text" },
+                { "key": "audioFile", "type": "file", "src": [], "description": "The MP3 or audio file" },
+                { "key": "imageFile", "type": "file", "src": [], "description": "The song's cover image" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/songs",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "songs"]
+            },
+            "description": "Uploads a new song. Requires admin privileges."
+          }
+        },
+        {
+          "name": "Delete Song",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/songs/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "songs", ":id"],
+              "variable": [{ "key": "id", "value": "60d5ecb8b392d7001f3e4a5b" }]
+            },
+            "description": "Deletes a specific song. Requires admin privileges."
+          }
+        },
+        {
+          "name": "Create Album",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Hurry Up, We're Dreaming", "type": "text" },
+                { "key": "artist", "value": "M83", "type": "text" },
+                { "key": "releaseYear", "value": "2011", "type": "text" },
+                { "key": "imageFile", "type": "file", "src": [], "description": "The album's cover image" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/albums",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "albums"]
+            },
+            "description": "Creates a new album. Requires admin privileges."
+          }
+        },
+        {
+          "name": "Delete Album",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/albums/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "albums", ":id"],
+              "variable": [{ "key": "id", "value": "60d5ecb8b392d7001f3e4a5c" }]
+            },
+            "description": "Deletes a specific album. Requires admin privileges."
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Stats",
+      "description": "Endpoints for platform statistics (Admin Dashboard).",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["stats"]
+            },
+            "description": "Retrieves high-level statistics about users, songs, albums, etc. for the admin dashboard."
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Testimonials",
+      "description": "Endpoints to manage platform testimonials.",
+      "item": [
+        {
+          "name": "Get All Testimonials",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/testimonials",
+              "host": ["{{baseUrl}}"],
+              "path": ["testimonials"]
+            },
+            "description": "Retrieves a list of all user testimonials."
+          }
+        },
+        {
+          "name": "Create Testimonial",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"content\": \"SociTune has completely revolutionized the way I interact with music. Finding nearby listeners is the best feature!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/testimonials",
+              "host": ["{{baseUrl}}"],
+              "path": ["testimonials"]
+            },
+            "description": "Submits a new user testimonial."
+          }
+        },
+        {
+          "name": "Delete Testimonial",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{clerkToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/testimonials/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["testimonials", ":id"],
+              "variable": [{ "key": "id", "value": "60d5ecb8b392d7001f3e4a5d" }]
+            },
+            "description": "Deletes a testimonial. Requires admin privileges."
+          }
+        }
+      ]
+    }
+  ]
+}

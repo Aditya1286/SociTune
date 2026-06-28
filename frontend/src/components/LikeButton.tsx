@@ -2,6 +2,7 @@ import { Heart } from "lucide-react";
 import { useMusicStore } from "@/stores/useMusicStore";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface LikeButtonProps {
     songId: string;
@@ -20,6 +21,22 @@ export const LikeButton = ({ songId, className }: LikeButtonProps) => {
     const handleLike = async (e: React.MouseEvent) => {
         e.stopPropagation(); // prevent triggering parent clicks
         await toggleLikeSong(songId);
+        
+        if (isLiked) {
+            toast("Removed from Liked Songs", {
+                action: {
+                    label: "Undo",
+                    onClick: () => toggleLikeSong(songId)
+                }
+            });
+        } else {
+            toast("Added to Liked Songs", {
+                action: {
+                    label: "Undo",
+                    onClick: () => toggleLikeSong(songId)
+                }
+            });
+        }
     };
 
     return (

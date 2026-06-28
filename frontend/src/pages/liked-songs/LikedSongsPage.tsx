@@ -5,6 +5,7 @@ import { usePlayerStore } from "@/stores/usePlayerStore";
 import { Clock, Pause, Play, Heart } from "lucide-react";
 import { useState } from "react";
 import { LikeButton } from "@/components/LikeButton";
+import { useNavigate } from "react-router-dom";
 
 export const formatDuration = (seconds: number) => {
   const minutes = Math.floor(seconds / 60);
@@ -14,6 +15,29 @@ export const formatDuration = (seconds: number) => {
 
 const LikedSongsPage = () => {
   const { likedSongs, isLoading } = useMusicStore();
+  const navigate = useNavigate();
+
+  const renderArtistLinks = (artistString: string) => {
+    const names = artistString.split(",").map(n => n.trim());
+    return (
+      <>
+        {names.map((name, i) => (
+          <span key={name}>
+            <span 
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/artists/${encodeURIComponent(name)}`);
+              }}
+              className="hover:underline hover:text-white cursor-pointer transition-colors"
+            >
+              {name}
+            </span>
+            {i < names.length - 1 && ", "}
+          </span>
+        ))}
+      </>
+    );
+  };
   const { currentSong, isPlaying, playAlbum, togglePlay } = usePlayerStore();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -195,7 +219,7 @@ const LikedSongsPage = () => {
                                 <p className={`text-sm font-medium truncate cursor-pointer hover:underline ${isCurrentSong ? "text-purple-400" : "text-white"}`} onClick={() => handlePlaySong(index)}>
                                     {song.title}
                                 </p>
-                                <p className="text-xs text-zinc-500 truncate">{song.artist}</p>
+                                <p className="text-xs text-zinc-500 truncate">{renderArtistLinks(song.artist)}</p>
                             </div>
                         </div>
 

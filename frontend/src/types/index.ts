@@ -8,6 +8,9 @@ export interface Song {
 	duration: number;
 	createdAt: string;
 	updatedAt: string;
+	lyrics?: string;
+	lyricsSource?: string;
+	lyricsFetchedAt?: string;
 }
 
 export interface Album {
@@ -85,4 +88,38 @@ export interface User {
 	mutualFriendsCount?: number;
 	similarityScore?: number;
 	matchDetails?: MatchDetails | null;
+}
+
+export interface Notification {
+	_id: string;
+	userId: string;
+	senderId?: string;
+	senderName?: string;
+	senderAvatar?: string;
+	type: "social" | "messages" | "music" | "ai" | "system";
+	title: string;
+	message: string;
+	isRead: boolean;
+	createdAt: string;
+	updatedAt: string;
+	metadata?: {
+		matchPercentage?: number;
+		sharedArtists?: string[];
+		matchUserId?: string;
+
+		playlistCoverUrl?: string;
+		genreBadge?: string;
+		playlistId?: string;
+
+		songId?: string;
+		songTitle?: string;
+		songArtist?: string;
+		songArtwork?: string;
+		artistImage?: string;
+		listeningStatus?: "playing" | "paused" | "listened";
+
+		musicPersonality?: string;
+		moodTrend?: string[];
+		recommendations?: string[];
+	};
 }

@@ -1,9 +1,33 @@
 import { useMusicStore } from "@/stores/useMusicStore";
 import FeaturedGridSkeleton from "@/components/skeletons/FeaturedGridSkeleton";
+import { useNavigate } from "react-router-dom";
 import PlayButton from "./PlayButton";
 
 const FeaturedSection = () => {
 	const { isLoading, featuredSongs, error } = useMusicStore();
+	const navigate = useNavigate();
+
+	const renderArtistLinks = (artistString: string) => {
+		const names = artistString.split(",").map(n => n.trim());
+		return (
+			<>
+				{names.map((name, i) => (
+					<span key={name}>
+						<span 
+							onClick={(e) => {
+								e.stopPropagation();
+								navigate(`/artists/${encodeURIComponent(name)}`);
+							}}
+							className="hover:underline hover:text-white cursor-pointer transition-colors"
+						>
+							{name}
+						</span>
+						{i < names.length - 1 && ", "}
+					</span>
+				))}
+			</>
+		);
+	};
 
 	if (isLoading) return <FeaturedGridSkeleton />;
 
@@ -27,7 +51,7 @@ const FeaturedSection = () => {
 					</div>
 					<div className='flex-1 p-4'>
 						<p className='font-semibold text-white/90 group-hover:text-white transition-colors truncate'>{song.title}</p>
-						<p className='text-sm text-zinc-400/80 group-hover:text-zinc-300 transition-colors truncate'>{song.artist}</p>
+						<p className='text-sm text-zinc-400/80 group-hover:text-zinc-300 transition-colors truncate'>{renderArtistLinks(song.artist)}</p>
 					</div>
 					<PlayButton song={song} />
 				</div>
