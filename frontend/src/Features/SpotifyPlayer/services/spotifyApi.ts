@@ -30,6 +30,7 @@ async function spotifyFetch<T = unknown>(
     });
   
     const data = await res.json()
+    console.log("data: ",data)
   
     if(!data) {
       throw new Error("Invalid Response") 

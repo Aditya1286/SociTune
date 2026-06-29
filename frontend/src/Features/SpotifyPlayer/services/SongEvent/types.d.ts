@@ -1,3 +1,4 @@
+
 //For localhost
 export type songAnalyzeInputType = {
   song_id: string; //can be isrc,spotify,yt,fuzzy,
@@ -45,4 +46,31 @@ export type songAnalyzeInputType = {
     model_version: string;
     force_refresh: boolean;
   };
+};
+
+
+export type saveSongEventPayload = {
+  title: string;
+  artist: string;
+  external_ids: {
+    isrc_id?: string;
+    spotify_id?: string;
+    yt_id?: string;
+    fuzzy_id: string;
+  };
+  primary_genre: string;
+  duration: string;
+  audio_details?: {
+    tempo: number;
+    energy: number;
+    valence: number;
+    acousticness: number;
+    danceability: number;
+  };
+  lyrics_details?: {
+    lyrics: string ;
+    lyricsSource: string ;
+    lyricsFetchedAt: Date;
+  };
+  image_url: string;
 };

@@ -169,6 +169,7 @@ export const TrackRow: React.FC<TrackRowProps> = ({ track, onPlay, onQueue, isAc
   const [hovered, setHovered] = useState(false);
   const img = track?.album?.images?.[2]?.url ?? track?.album?.images?.[0]?.url;
 
+
   return (
     <div
       onMouseEnter={() => setHovered(true)}

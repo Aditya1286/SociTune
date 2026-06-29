@@ -1,8 +1,8 @@
-import {Route,Routes} from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
-import HomePage from "./pages/home/HomePage.tsx"
+import HomePage from "./pages/home/HomePage.tsx";
 import MainLayout from "./layout/MainLayout.tsx";
-import AuthCallbackPage from "./pages/auth-callback/AuthCallbackPage.tsx"
+import AuthCallbackPage from "./pages/auth-callback/AuthCallbackPage.tsx";
 import { AuthenticateWithRedirectCallback, useAuth } from "@clerk/clerk-react";
 import ChatPage from "./pages/chat/ChatPage.tsx";
 import AlbumPage from "./pages/album/AlbumPage.tsx";
@@ -21,7 +21,9 @@ import { usePlayerStore } from "./stores/usePlayerStore.ts";
 import { useEffect } from "react";
 import { SearchCommand } from "./components/SearchCommand.tsx";
 import AdminPage from "./pages/admin/AdminPage.tsx";
-import SpotifyPlayerPage, { SpotifyCallback } from "./Features/SpotifyPlayer/components/SpotifyPlayer.tsx";
+import SpotifyPlayerPage, {
+  SpotifyCallback,
+} from "./Features/SpotifyPlayer/components/SpotifyPlayer.tsx";
 
 const App = () => {
   const { userId } = useAuth();
@@ -41,35 +43,34 @@ const App = () => {
   }, [socket, userId, currentSong, isPlaying]);
 
   return (
-    
     <>
-    <SearchCommand />
-    <Toaster theme="dark" position="top-center" />
-    <Routes>
-      
-      <Route path='/sso-callback' 
-      element={<AuthenticateWithRedirectCallback signUpForceRedirectUrl={"/auth-callback"}/>} 
-      />
-      <Route path='/auth-callback' element={<AuthCallbackPage/>} />
-      <Route path='/player' element={<SpotifyPlayerPage/>} />
-      <Route element={<MainLayout />}>
-        {/* <Route path='/' element={<HomePage/>} /> */}
-        <Route path='/chat' element={<ChatPage/>} />
-        <Route path='/albums/:albumId' element={<AlbumPage/>} />
-        <Route path='/founder' element={<FounderPage/>} />
-        <Route path='/premium' element={<PremiumPage/>} />
-        <Route path='/time-travel' element={<TimeTravelPage/>} />
-        <Route path='/liked-songs' element={<LikedSongsPage/>} />
-        <Route path='/matches' element={<MatchesPage/>} />
-        <Route path='/notifications' element={<NotificationsPage/>} />
-        <Route path='/search' element={<SearchPage/>} />
-        <Route path='/callback' element={<SpotifyCallback/>} />
-        <Route path='/artists/:artistName' element={<ArtistPage/>} />
-        <Route path='*' element={<NotFoundPage/>} />
-      </Route>
-    </Routes>
+      <SearchCommand />
+      <Toaster theme="dark" position="top-center" />
+      <Routes>
+        <Route
+          path="/sso-callback"
+          element={<AuthenticateWithRedirectCallback signUpForceRedirectUrl={"/auth-callback"} />}
+        />
+        <Route path="/auth-callback" element={<AuthCallbackPage />} />
+        <Route path="/player" element={<SpotifyPlayerPage />} />
+        <Route path="/callback" element={<SpotifyCallback />} />
+        <Route element={<MainLayout />}>
+          {/* <Route path='/' element={<HomePage/>} /> */}
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/albums/:albumId" element={<AlbumPage />} />
+          <Route path="/founder" element={<FounderPage />} />
+          <Route path="/premium" element={<PremiumPage />} />
+          <Route path="/time-travel" element={<TimeTravelPage />} />
+          <Route path="/liked-songs" element={<LikedSongsPage />} />
+          <Route path="/matches" element={<MatchesPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/artists/:artistName" element={<ArtistPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
     </>
-  )
-}
+  );
+};
 
-export default App
+export default App;
