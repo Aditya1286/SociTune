@@ -10,5 +10,6 @@ export const sendSongEvent = async (
       payload:songPayload
     }
   );
+  console.log("Response data" , response)
   return response.data
 };
