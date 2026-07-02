@@ -1,28 +1,29 @@
-import { AlbumArt, ProgressBar, VolumeSlider, btnReset, fmt } from "./UI";
-import {
-  PlayIcon,
-  PauseIcon,
-  SkipBackIcon,
-  SkipFwdIcon,
-  ShuffleIcon,
-  RepeatIcon,
-  HeartIcon,
-} from "./Icons";
+import { useEffect, useRef } from "react";
+import { AlbumArt, ProgressBar, fmt } from "./UI";
 import { useStore } from "../Index";
-import { useEffect,useRef} from "react";
-import { getStoredToken,getValidToken } from "../services/Auth";
-import type { RepeatMode,WebPlaybackState } from "../Index";
+import { getStoredToken, getValidToken } from "../services/Auth";
+import type { RepeatMode, WebPlaybackState } from "../Index";
 import { api } from "../services/spotifyApi";
-import { GREEN } from "./UI";
-
+import { useMusicStore } from "@/stores/useMusicStore";
+import { 
+  Play, 
+  Pause, 
+  SkipBack, 
+  SkipForward, 
+  Shuffle, 
+  Repeat, 
+  Heart, 
+  Laptop2
+} from "lucide-react";
 
 const REPEAT_CYCLE: RepeatMode[] = ["off", "context", "track"];
 
 const NowPlayingPanel = () => {
   const store = useStore();
+  const { likedSongs, toggleLikeSong, fetchLikedSongs } = useMusicStore();
   const positionTimer = useRef<ReturnType<typeof setInterval>>(0);
 
- // ── Load Spotify SDK script ──
+  // ── Load Spotify SDK script ──
   useEffect(() => {
     if (document.getElementById("spotify-sdk")) return;
     const script = document.createElement("script");
@@ -38,7 +39,7 @@ const NowPlayingPanel = () => {
 
     const initPlayer = () => {
       const player = new window.Spotify.Player({
-        name: "SociTune",
+        name: "SociTune Player",
         getOAuthToken: async (cb) => {
           const t = await getValidToken();
           if (t) cb(t);
@@ -59,24 +60,27 @@ const NowPlayingPanel = () => {
         const state = raw as WebPlaybackState | null;
         if (!state) return;
 
+        const isSpotifyPlaying = !state.paused;
+        if (isSpotifyPlaying) {
+          import("@/stores/usePlayerStore").then(({ usePlayerStore }) => {
+            const localState = usePlayerStore.getState();
+            if (localState.isPlaying) {
+              usePlayerStore.setState({ isPlaying: false });
+            }
+          });
+        }
+
         const track = state.track_window.current_track;
         const repeat = REPEAT_CYCLE[state.repeat_mode] ?? "off";
 
         store.setPlaybackState({
           track,
-          isPlaying: !state.paused,
+          isPlaying: isSpotifyPlaying,
           position: state.position,
           duration: state.duration,
           shuffle: state.shuffle,
           repeat,
         });
-
-        //This Api is Deprecated , Not check whether track is liked or not
-        // if (track?.id) {
-        //   api
-        //     .isTrackLiked([track.id])
-        //     .then((d) => store.setIsLiked(d?.[0] ?? false));
-        // }
       });
       player.connect();
     };
@@ -88,6 +92,98 @@ const NowPlayingPanel = () => {
       if (u) store.setUser(u);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+
+
+  const pollState = async () => {
+    try {
+      const data = await api.player() as any;
+      if (!data || !data.item) return;
+
+      // Skip updating if playing on the local Web SDK device to avoid race conditions
+      if (store.deviceId && data.device?.id === store.deviceId) {
+        return;
+      }
+
+      const item = data.item;
+      store.setPlaybackState({
+        track: {
+          id: item.id,
+          name: item.name,
+          uri: item.uri,
+          album: {
+            uri: item.album.uri,
+            name: item.album.name,
+            images: item.album.images,
+          },
+          artists: item.artists,
+          type: "track",
+          media_type: "audio",
+          is_playable: true,
+        },
+        isPlaying: data.is_playing,
+        position: data.progress_ms,
+        duration: item.duration_ms,
+        shuffle: data.shuffle_state,
+        repeat: data.repeat_state === "track" ? "track" : data.repeat_state === "context" ? "context" : "off",
+      });
+    } catch (e) {
+      // Ignore fetch/empty-state errors
+    }
+  };
+
+  // ── Polling playback state for external devices ──
+  useEffect(() => {
+    const token = getStoredToken();
+    if (!token) return;
+
+    pollState();
+    const interval = setInterval(pollState, 4000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [store.deviceId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Sync track saved/liked status ──
+  useEffect(() => {
+    if (!store.track?.id) return;
+
+    // Check Spotify liked status
+    api.isTrackLiked([store.track.id])
+      .then((res) => {
+        if (res && res.length > 0) {
+          store.setIsLiked(res[0]);
+        }
+      })
+      .catch((e) => console.error("Error checking Spotify like state:", e));
+  }, [store.track?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Log Spotify track play history to backend ──
+  useEffect(() => {
+    if (!store.track?.id) return;
+
+    const logSpotifyPlay = async () => {
+      try {
+        const { axiosInstance } = await import("@/lib/axios");
+        await axiosInstance.post("/users/play-history", {
+          spotifyId: store.track?.id,
+          title: store.track?.name,
+          artist: fmt.artists(store.track?.artists),
+          imageUrl: store.track?.album?.images?.[0]?.url || "",
+          duration: Math.round(store.duration / 1000)
+        });
+      } catch (err) {
+        console.error("Failed to log Spotify play history:", err);
+      }
+    };
+
+    logSpotifyPlay();
+  }, [store.track?.id]);
+
+  // ── Fetch local liked songs on mount ──
+  useEffect(() => {
+    fetchLikedSongs().catch(() => {});
+  }, [fetchLikedSongs]);
 
   // ── Position ticker ──
   useEffect(() => {
@@ -101,111 +197,145 @@ const NowPlayingPanel = () => {
   }, [store.isPlaying, store.position, store.duration]);
 
   // ── Playback controls ──
-  const togglePlay = () => store.player?.togglePlay();
-  const skipNext = () => store.player?.nextTrack();
-  const skipPrev = () => store.player?.previousTrack();
+  const togglePlay = async () => {
+    try {
+      if (store.isPlaying) {
+        await api.pause();
+        store.setPlaybackState({ isPlaying: false });
+      } else {
+        await api.play();
+        store.setPlaybackState({ isPlaying: true });
+      }
+      setTimeout(pollState, 500);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const skipNext = async () => {
+    try {
+      await api.next();
+      setTimeout(pollState, 500);
+      setTimeout(pollState, 1500);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const skipPrev = async () => {
+    try {
+      await api.prev();
+      setTimeout(pollState, 500);
+      setTimeout(pollState, 1500);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const seek = (ms: number) => {
     store.setPosition(ms);
-    api.seek(ms);
+    api.seek(ms).catch(() => {});
   };
 
-  const setVolume = (v: number) => {
-    store.setPlaybackState({ volume: v });
-    store.player?.setVolume(v / 100);
-    api.volume(v);
-  };
 
-  const toggleShuffle = () => {
+
+  const toggleShuffle = async () => {
     const next = !store.shuffle;
     store.setPlaybackState({ shuffle: next });
-    api.shuffle(next);
+    try {
+      await api.shuffle(next);
+      setTimeout(pollState, 500);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const cycleRepeat = () => {
+  const cycleRepeat = async () => {
     const next =
       REPEAT_CYCLE[
         (REPEAT_CYCLE.indexOf(store.repeat) + 1) % REPEAT_CYCLE.length
       ];
     store.setPlaybackState({ repeat: next });
-    api.repeat(next);
+    try {
+      await api.repeat(next);
+      setTimeout(pollState, 500);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const toggleLike = async () => {
     if (!store.track?.id) return;
-    if (store.isLiked) {
-      await api.unlikeTrack(store.track.id);
-      store.setIsLiked(false);
-    } else {
-      await api.likeTrack(store.track.id);
-      store.setIsLiked(true);
+    const nextLiked = !store.isLiked;
+
+    try {
+      if (nextLiked) {
+        await api.likeTrack(store.track.id);
+        store.setIsLiked(true);
+      } else {
+        await api.unlikeTrack(store.track.id);
+        store.setIsLiked(false);
+      }
+
+      // Synchronize to SociTune database
+      const matchedLocalSong = likedSongs.find(
+        (s: any) =>
+          s.external_ids?.spotify_id === store.track?.id ||
+          (s.title?.toLowerCase() === store.track?.name?.toLowerCase() &&
+           s.artist?.toLowerCase() === fmt.artists(store.track?.artists)?.toLowerCase())
+      );
+
+      if (nextLiked && !matchedLocalSong) {
+        await toggleLikeSong(store.track.id, {
+          title: store.track.name,
+          artist: fmt.artists(store.track.artists),
+          imageUrl: store.track.album?.images?.[0]?.url || "",
+          duration: store.duration / 1000,
+        });
+      } else if (!nextLiked && matchedLocalSong) {
+        await toggleLikeSong(matchedLocalSong._id);
+      }
+    } catch (e) {
+      console.error("Error in toggleLike:", e);
     }
   };
+
   return (
-    <div
-      style={{
-        width: 272,
-        borderLeft: "1px solid #0f0f0f",
-        padding: "24px 20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 20,
-        alignItems: "center",
-        flexShrink: 0,
-        overflowY: "auto",
-      }}
-    >
+    <div className="w-full flex flex-col gap-6 items-center p-6 bg-white/[0.01]">
       {/* Album art */}
-      <AlbumArt track={store.track} size={232} />
+      <AlbumArt track={store.track} size={220} className="shadow-2xl" />
 
       {/* Track info + like */}
-      <div style={{ width: "100%" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: 8,
-          }}
-        >
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div
-              style={{
-                fontFamily: store.track
-                  ? "DM Serif Display, serif"
-                  : "Inter, sans-serif",
-                fontSize: store.track ? 17 : 13,
-                color: store.track ? "#fff" : "#2a2a2a",
-                lineHeight: 1.25,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
+      <div className="w-full">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h2 className={`font-sans font-extrabold truncate text-white leading-snug ${
+              store.track ? "text-base" : "text-sm text-zinc-500"
+            }`}>
               {store.track?.name ?? "Nothing playing"}
-            </div>
+            </h2>
             {store.track && (
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "#484848",
-                  marginTop: 4,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
+              <p className="text-xs text-zinc-400 truncate mt-1">
                 {fmt.artists(store.track?.artists)}
-              </div>
+              </p>
             )}
           </div>
-          <button onClick={toggleLike} style={btnReset} title="Like">
-            <HeartIcon
-              size={15}
-              color={store.isLiked ? GREEN : "#2a2a2a"}
-              filled={store.isLiked}
-            />
-          </button>
+          {store.track && (
+            <button 
+              onClick={toggleLike} 
+              className="p-1 hover:bg-white/5 rounded-full transition-colors group/heart" 
+              title="Like"
+            >
+              <Heart
+                size={16}
+                className={`transition-all duration-300 ${
+                  store.isLiked 
+                    ? "text-emerald-400 fill-emerald-400/20 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" 
+                    : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              />
+            </button>
+          )}
         </div>
       </div>
 
@@ -217,67 +347,64 @@ const NowPlayingPanel = () => {
       />
 
       {/* Playback controls */}
-      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        <button onClick={toggleShuffle} style={btnReset} title="Shuffle">
-          <ShuffleIcon size={14} color={store.shuffle ? GREEN : "#2a2a2a"} />
+      <div className="flex items-center gap-5 justify-center">
+        <button 
+          onClick={toggleShuffle} 
+          className="p-1.5 hover:bg-white/5 rounded-full transition-all" 
+          title="Shuffle"
+        >
+          <Shuffle 
+            size={14} 
+            className={`transition-colors ${store.shuffle ? "text-emerald-400 drop-shadow-[0_0_6px_rgba(16,185,129,0.4)]" : "text-zinc-500 hover:text-zinc-300"}`} 
+          />
         </button>
-        <button onClick={skipPrev} style={btnReset} title="Previous">
-          <SkipBackIcon size={17} color="#5a5a5a" />
+
+        <button 
+          onClick={skipPrev} 
+          className="p-1.5 hover:bg-white/5 rounded-full transition-all active:scale-95 text-zinc-400 hover:text-white" 
+          title="Previous"
+        >
+          <SkipBack size={16} fill="currentColor" />
         </button>
+
         <button
           onClick={togglePlay}
           title={store.isPlaying ? "Pause" : "Play"}
-          style={{
-            ...btnReset,
-            width: 40,
-            height: 40,
-            borderRadius: "50%",
-            background: "#fff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            transition: "transform 0.1s",
-          }}
-          onMouseEnter={(e) =>
-            ((e.currentTarget as HTMLButtonElement).style.transform =
-              "scale(1.05)")
-          }
-          onMouseLeave={(e) =>
-            ((e.currentTarget as HTMLButtonElement).style.transform =
-              "scale(1)")
-          }
+          className="w-10 h-10 rounded-full bg-white hover:bg-white/90 text-black flex items-center justify-center flex-shrink-0 transition-all shadow-lg hover:scale-105 active:scale-95"
         >
           {store.isPlaying ? (
-            <PauseIcon size={15} color="#000" />
+            <Pause size={16} fill="black" />
           ) : (
-            <PlayIcon size={13} color="#000" />
+            <Play size={16} fill="black" className="ml-0.5" />
           )}
         </button>
-        <button onClick={skipNext} style={btnReset} title="Next">
-          <SkipFwdIcon size={17} color="#5a5a5a" />
+
+        <button 
+          onClick={skipNext} 
+          className="p-1.5 hover:bg-white/5 rounded-full transition-all active:scale-95 text-zinc-400 hover:text-white" 
+          title="Next"
+        >
+          <SkipForward size={16} fill="currentColor" />
         </button>
-        <button onClick={cycleRepeat} style={btnReset} title="Repeat">
-          <RepeatIcon
-            size={14}
-            color={store.repeat !== "off" ? GREEN : "#2a2a2a"}
+
+        <button 
+          onClick={cycleRepeat} 
+          className="p-1.5 hover:bg-white/5 rounded-full transition-all" 
+          title="Repeat"
+        >
+          <Repeat 
+            size={14} 
+            className={`transition-colors ${store.repeat !== "off" ? "text-emerald-400 drop-shadow-[0_0_6px_rgba(16,185,129,0.4)]" : "text-zinc-500 hover:text-zinc-300"}`} 
           />
         </button>
       </div>
 
-      {/* Volume */}
-      <VolumeSlider volume={store.volume} onChange={setVolume} />
 
       {/* Active device indicator */}
       {store.deviceId && (
-        <div
-          style={{
-            fontSize: 10,
-            color: "#1e1e1e",
-            letterSpacing: "0.12em",
-          }}
-        >
-          ● ACTIVE
+        <div className="flex items-center gap-1.5 text-[9px] font-bold tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full uppercase mt-2">
+          <Laptop2 className="size-3 animate-pulse" />
+          <span>Active Device</span>
         </div>
       )}
     </div>

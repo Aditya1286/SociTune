@@ -18,7 +18,9 @@ class UserRoutes {
         this.router.get(`${this.path}/check-username`, this.authMiddleware.protectRoute, asyncHandler(this.userController.checkUsername));
         this.router.post(`${this.path}/play-history`, this.authMiddleware.protectRoute, asyncHandler(this.userController.recordPlay));
         this.router.get(`${this.path}/time-travel`, this.authMiddleware.protectRoute, asyncHandler(this.userController.getTimeTravelStats));
-        this.router.get(`${this.path}/`, this.authMiddleware.protectRoute, asyncHandler(this.userController.getAllUsers));
+        this.router.get(`${this.path}/`, 
+        //This route should only be for admin, and it should be even as base api -> OKISH FOR TESTING
+        this.authMiddleware.protectRoute, asyncHandler(this.userController.getAllUsers));
         this.router.get(`${this.path}/messages/:userId`, this.authMiddleware.protectRoute, asyncHandler(this.userController.getMessages));
         this.router.post(`${this.path}/messages/upload`, this.authMiddleware.protectRoute, asyncHandler(this.userController.uploadMedia));
         this.router.post(`${this.path}/request/:userId`, this.authMiddleware.protectRoute, asyncHandler(this.userController.sendFriendRequest));

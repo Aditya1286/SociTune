@@ -23,6 +23,7 @@ class SpotifyService {
             return null;
         }
     }
+    //No embed music for playing 
     async getArtistDetails(artistName) {
         const token = await this.getAccessToken();
         if (!token)

@@ -9,12 +9,24 @@ import { usePlayerStore } from "@/stores/usePlayerStore";
 import { toast } from "sonner";
 import { useAuth } from "@clerk/clerk-react";
 
+interface MonthlyStat {
+  name: string;
+  mins: number;
+}
+
 interface TimeTravelStats {
   topSong: Song | null;
   topArtist: string | null;
+  topArtists?: {
+    _id: string;
+    name: string;
+    imageUrl: string;
+    count?: number;
+  }[];
   totalMinutes: number;
   thisMonthMinutes: number;
   otherMonthMinutes: number;
+  monthlyStats?: MonthlyStat[];
 }
 
 const MOCK_SONG: Song = {
@@ -44,6 +56,36 @@ export default function TimeTravelPage() {
   const [timeframe, setTimeframe] = useState<"all" | "year" | "month">("all");
   const [isLiked, setIsLiked] = useState(false);
   const pageRef = useRef<HTMLDivElement>(null);
+  const [activeArtistIdx, setActiveArtistIdx] = useState(0);
+
+  // Top artists list: use real topArtists if they exist, otherwise construct a list from topArtist and defaults
+  const displayArtists = (stats?.topArtists && stats.topArtists.length > 0)
+    ? stats.topArtists
+    : [
+        {
+          _id: "mock-1",
+          name: stats?.topArtist || "Neon Synthwave Club",
+          imageUrl: "/albums/default.jpg",
+        },
+        {
+          _id: "mock-2",
+          name: "Seedhe Maut",
+          imageUrl: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80",
+        },
+        {
+          _id: "mock-3",
+          name: "KR$NA",
+          imageUrl: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=80",
+        },
+      ];
+
+  useEffect(() => {
+    if (displayArtists.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveArtistIdx((prev) => (prev + 1) % displayArtists.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [displayArtists.length]);
 
   const { currentSong, isPlaying, setCurrentSong, togglePlay } = usePlayerStore();
   const { isSignedIn } = useAuth();
@@ -118,14 +160,27 @@ export default function TimeTravelPage() {
   const displaySong = stats.topSong || MOCK_SONG;
   const isCurrentSongPlaying = currentSong?._id === displaySong._id && isPlaying;
 
-  const chartData = [
-    { name: "Jan", mins: Math.floor(displayMinutes * 0.08), color: "from-emerald-500 to-teal-400" },
-    { name: "Feb", mins: Math.floor(displayMinutes * 0.12), color: "from-teal-500 to-cyan-400" },
-    { name: "Mar", mins: Math.floor(displayMinutes * 0.15), color: "from-cyan-500 to-blue-400" },
-    { name: "Apr", mins: Math.floor(displayMinutes * 0.10), color: "from-blue-500 to-indigo-400" },
-    { name: "May", mins: Math.floor(displayMinutes * 0.22), color: "from-indigo-500 to-purple-400" },
-    { name: "Jun", mins: Math.floor(displayMinutes * 0.18), color: "from-purple-500 to-emerald-400" },
-  ];
+  const chartData = (stats.monthlyStats && stats.monthlyStats.length > 0)
+    ? stats.monthlyStats.map((item, idx) => ({
+        name: item.name,
+        mins: item.mins,
+        color: [
+          "from-emerald-500 to-teal-400",
+          "from-teal-500 to-cyan-400",
+          "from-cyan-500 to-blue-400",
+          "from-blue-500 to-indigo-400",
+          "from-indigo-500 to-purple-400",
+          "from-purple-500 to-emerald-400",
+        ][idx % 6],
+      }))
+    : [
+        { name: "Jan", mins: Math.floor(displayMinutes * 0.08), color: "from-emerald-500 to-teal-400" },
+        { name: "Feb", mins: Math.floor(displayMinutes * 0.12), color: "from-teal-500 to-cyan-400" },
+        { name: "Mar", mins: Math.floor(displayMinutes * 0.15), color: "from-cyan-500 to-blue-400" },
+        { name: "Apr", mins: Math.floor(displayMinutes * 0.10), color: "from-blue-500 to-indigo-400" },
+        { name: "May", mins: Math.floor(displayMinutes * 0.22), color: "from-indigo-500 to-purple-400" },
+        { name: "Jun", mins: Math.floor(displayMinutes * 0.18), color: "from-purple-500 to-emerald-400" },
+      ];
 
   const maxChartVal = Math.max(...chartData.map(d => d.mins));
 
@@ -359,30 +414,80 @@ export default function TimeTravelPage() {
             </div>
           </div>
 
-          {/* Card 3: Top Artist Card (col-span-1) */}
-          <div className="col-span-1 bg-gradient-to-br from-indigo-950/20 to-[#070b0a]/95 border border-[#223330]/40 rounded-3xl p-6 relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-500 flex flex-col justify-between">
-            <div className="absolute bottom-4 right-4 text-emerald-500/10 pointer-events-none">
-              <Mic2 className="-rotate-12 w-28 h-28 opacity-10 group-hover:scale-105 transition-transform duration-700" />
-            </div>
-
-            <div className="flex items-center gap-2.5 relative z-10">
-              <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400">
-                <Mic2 size={18} />
+          {/* Card 3: Top Artist Carousel Card (col-span-1) */}
+          <div className="col-span-1 bg-[#0b0f0e] border border-[#223330]/40 rounded-3xl relative overflow-hidden group hover:border-emerald-500/40 transition-all duration-500 flex flex-col h-[280px]">
+            {/* Static Card Header (Floating on Top) */}
+            <div className="absolute top-6 left-6 z-20 flex items-center gap-2.5 pointer-events-none">
+              <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/30 backdrop-blur-md">
+                <Mic2 size={16} className="animate-pulse" />
               </div>
-              <h2 className="text-sm font-semibold tracking-wide uppercase text-zinc-400">Top Artist</h2>
-            </div>
-            
-            <div className="my-8 relative z-10">
-              <span className="font-['Caveat'] text-2xl text-emerald-400 block mb-1">Your absolute favorite...</span>
-              <h3 className="text-3xl font-extrabold text-white tracking-tight leading-none break-words pr-4">
-                {stats.topArtist || "Neon Synthwave Club"}
-              </h3>
+              <h2 className="text-sm font-semibold tracking-wide uppercase text-zinc-400 drop-shadow-md">Top Artist</h2>
             </div>
 
-            <div className="relative z-10 flex items-center justify-between text-xs text-zinc-500 pt-3 border-t border-white/5">
-              <span>Primary Genre</span>
-              <span className="font-semibold text-zinc-300">Retro Synth / Electronic</span>
-            </div>
+            {/* Carousel Slides */}
+            {displayArtists.map((artist, idx) => {
+              const isActive = idx === activeArtistIdx;
+              return (
+                <div
+                  key={artist._id || artist.name || idx}
+                  className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
+                    isActive 
+                      ? "opacity-100 scale-100 translate-x-0 pointer-events-auto" 
+                      : "opacity-0 scale-105 pointer-events-none"
+                  }`}
+                >
+                  {/* Background Image with zoom on card hover */}
+                  <img
+                    src={artist.imageUrl || "/albums/default.jpg"}
+                    alt={artist.name}
+                    className="w-full h-full object-cover transition-transform duration-[4000ms] ease-out group-hover:scale-110 brightness-[0.3]"
+                  />
+                  
+                  {/* Premium Ambient Overlays */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#050807] via-transparent to-black/55" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/20 via-transparent to-cyan-950/20 mix-blend-overlay" />
+                  
+                  {/* Glassmorphic card contents */}
+                  <div className="absolute inset-0 p-6 flex flex-col justify-between z-10">
+                    <div className="flex items-center justify-end">
+                      {/* Rank badge */}
+                      <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 backdrop-blur-md">
+                        NO. {idx + 1}
+                      </span>
+                    </div>
+
+                    {/* Artist Details */}
+                    <div className="my-auto pt-6 space-y-1">
+                      <span className="font-['Caveat'] text-2xl text-emerald-400 block drop-shadow-sm">
+                        Your absolute favorite...
+                      </span>
+                      <h3 className="text-3xl font-black text-white tracking-tight leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] uppercase">
+                        {artist.name}
+                      </h3>
+                    </div>
+
+
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Carousel navigation indicators */}
+            {displayArtists.length > 1 && (
+              <div className="absolute bottom-6 right-6 z-20 flex gap-1.5 bg-black/40 px-2 py-1.5 rounded-full border border-white/5 backdrop-blur-md">
+                {displayArtists.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveArtistIdx(idx)}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      idx === activeArtistIdx 
+                        ? "w-4 bg-emerald-400" 
+                        : "w-1.5 bg-zinc-600 hover:bg-zinc-400"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Card 4: Month-by-month activity chart (col-span-2) */}

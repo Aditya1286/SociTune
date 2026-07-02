@@ -3,6 +3,7 @@ import { Album } from "../models/album.model.js";
 import cloudinary from "../services/cloudinary.service.js";
 import Singleton from "../utils/Singleton.js";
 import LyricsService from "../services/lyrics.service.js";
+import { generateSongId } from "../helpers/generateSongId.js";
 // helper function for cloudinary uploads
 const uploadToCloudinary = async (file) => {
     try {
@@ -17,19 +18,27 @@ const uploadToCloudinary = async (file) => {
     }
 };
 class AdminController {
+    //Controller -> Services -> DAO CALL Architecture
+    //Adding generic songId function
     async createSong(req, res, next) {
         try {
             if (!req.files || !req.files.audioFile || !req.files.imageFile) {
                 return res.status(400).json({ message: "Please upload all files" });
             }
             const { title, artist, albumId, duration } = req.body;
+            //Need to test this parameter , despite the fact the route won't be used
+            const song_id = generateSongId(title, artist);
             const audioFile = req.files.audioFile;
             const imageFile = req.files.imageFile;
+            console.log("songId", song_id);
             const audioUrl = await uploadToCloudinary(audioFile);
             const imageUrl = await uploadToCloudinary(imageFile);
             const song = new Song({
                 title,
                 artist,
+                external_ids: {
+                    fuzzy_id: song_id,
+                },
                 audioUrl,
                 imageUrl,
                 duration,
@@ -56,6 +65,7 @@ class AdminController {
     }
     async deleteSong(req, res, next) {
         try {
+            //How are you getting this id from req.params? 
             const { id } = req.params;
             const song = await Song.findById(id);
             if (song && song.albumId) {
@@ -73,6 +83,7 @@ class AdminController {
     }
     async createAlbum(req, res, next) {
         try {
+            //Okish
             const { title, artist, releaseYear } = req.body;
             const { imageFile } = req.files;
             const imageUrl = await uploadToCloudinary(imageFile);

@@ -6,6 +6,7 @@ import { parseArtistNames } from "../utils/artistParser.js";
 import LyricsService from "./lyrics.service.js";
 import ArtistEnrichmentService from "./artistEnrichment.service.js";
 import Singleton from "../utils/Singleton.js";
+import { generateSongId } from "../helpers/generateSongId.js";
 
 const searchQueries = [
     "nanku",
@@ -216,7 +217,11 @@ export async function seedDatabaseOnStartup() {
                     danceability: Math.random(),
                     lyrics: lyricsResult ? lyricsResult.lyrics : "",
                     lyricsSource: lyricsResult ? lyricsResult.source : "None",
-                    lyricsFetchedAt: new Date()
+                    lyricsFetchedAt: new Date(),
+                    external_ids: {
+                        spotify_id: track.id,
+                        fuzzy_id: generateSongId(trackName, trackArtist)
+                    }
                 });
 
                 await songDoc.save();
@@ -239,6 +244,35 @@ export async function migrateArtists() {
     try {
         console.log("[Migration] Running artist relationship migration...");
         
+        // Heal database: populate missing fuzzy_id for existing songs
+        const songsMissingFuzzyId = await Song.find({
+            $or: [
+                { "external_ids.fuzzy_id": { $exists: false } },
+                { "external_ids.fuzzy_id": null },
+                { "external_ids.fuzzy_id": "" }
+            ]
+        });
+
+        if (songsMissingFuzzyId.length > 0) {
+            console.log(`[Migration] Healing ${songsMissingFuzzyId.length} songs missing fuzzy_id...`);
+            for (const song of songsMissingFuzzyId) {
+                const fuzzyId = generateSongId(song.title, song.artist);
+                const existingExt = song.external_ids || {};
+                await Song.updateOne(
+                    { _id: song._id },
+                    { 
+                        $set: { 
+                            external_ids: {
+                                ...existingExt,
+                                fuzzy_id: fuzzyId
+                            }
+                        } 
+                    }
+                );
+            }
+            console.log(`[Migration] Successfully healed ${songsMissingFuzzyId.length} songs.`);
+        }
+
         // 1. Get all songs
         const songs = await Song.find({});
         console.log(`[Migration] Processing ${songs.length} songs...`);

@@ -10,7 +10,15 @@ const AudioPlayer = () => {
     playNext();
    }
     useEffect(() => {
-        if(isPlaying) audioRef.current?.play();
+        if(isPlaying) {
+            audioRef.current?.play();
+            const token = localStorage.getItem("spotify_access_token");
+            if (token) {
+                import("@/Features/SpotifyPlayer/services/spotifyApi").then(({ api }) => {
+                    api.pause().catch(() => {});
+                });
+            }
+        }
         else audioRef.current?.pause();
 
     },[isPlaying])

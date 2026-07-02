@@ -18,7 +18,9 @@ import {
   History, 
   Heart, 
   Activity,
-  Bell
+  Bell,
+  Music,
+  Compass
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import PlaylistSkeleton from "../../components/skeletons/PlaylistSkeleton"
@@ -47,6 +49,7 @@ const LeftSidebar = () => {
       { path: "/founder", label: "Founders", icon: Cpu, hoverColorClass: "text-zinc-400 group-hover:text-white" },
       { path: "/time-travel", label: "Time Travel", icon: History, hoverColorClass: "text-zinc-400 group-hover:text-indigo-400" },
       { path: "/matches", label: "Match Engine", icon: Activity, hoverColorClass: "text-zinc-400 group-hover:text-cyan-400" },
+      { path: "/player", label: "Spotify Sync", icon: Music, hoverColorClass: "text-zinc-400 group-hover:text-[#1db954]" },
     ];
 
   return (
@@ -81,6 +84,7 @@ const LeftSidebar = () => {
                         item.path === "/time-travel" ? "bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" :
                         item.path === "/matches" ? "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]" :
                         item.path === "/notifications" ? "bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]" :
+                        item.path === "/player" ? "bg-[#1db954] shadow-[0_0_8px_rgba(29,185,84,0.6)]" :
                         "bg-white shadow-[0_0_8px_rgba(255,255,255,0.6)]"
                       )} />
                     )}
@@ -94,6 +98,7 @@ const LeftSidebar = () => {
                           item.path === "/time-travel" ? "text-indigo-400" :
                           item.path === "/matches" ? "text-cyan-400" :
                           item.path === "/notifications" ? "text-purple-400" :
+                          item.path === "/player" ? "text-[#1db954]" :
                           "text-white"
                         ) : item.hoverColorClass
                       )} 

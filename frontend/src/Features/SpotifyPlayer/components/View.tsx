@@ -1,9 +1,9 @@
-
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useStore } from "../store/PlayerStore";
 import { api } from "../services/spotifyApi";
 import { TrackRow, Section } from "../atom/UI";
 import type { SpotifyTrack, SpotifyPlaylist } from "../utils/types";
+import { Search, Library, Music, Compass } from "lucide-react";
 
 // ─── Home ─────────────────────────────────────────────────────────────────────
 
@@ -22,24 +22,45 @@ export const HomeView: React.FC = () => {
   const queue = (track: SpotifyTrack) => api.addToQueue(track.uri);
 
   return (
-    <div>
+    <div className="space-y-8">
+      {/* Welcome Ambient Card */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/10 to-zinc-500/5 p-6 border border-white/5 shadow-2xl flex items-center gap-6">
+        <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl">
+          <Compass className="size-8" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-white tracking-tight">Spotify Sync Activated</h2>
+          <p className="text-xs text-zinc-400 mt-1 max-w-md">
+            Stream directly from your Spotify premium account. Your playlists, library, and history are synchronized. Warning: side effects may include extreme head-bopping and sudden urges to dance.
+          </p>
+        </div>
+      </div>
+
       {recent.length > 0 && (
         <Section title="Recently Played">
-          {recent.slice(0, 10).map((t, i) => (
-            <TrackRow key={t.id + i} track={t} onPlay={() => play(t)} onQueue={() => queue(t)} />
-          ))}
+          <div className="bg-white/[0.01] border border-white/[0.03] rounded-2xl p-4 shadow-xl">
+            {recent.slice(0, 8).map((t, i) => (
+              <TrackRow key={t.id + i} track={t} onPlay={() => play(t)} onQueue={() => queue(t)} />
+            ))}
+          </div>
         </Section>
       )}
+
       {top.length > 0 && (
         <Section title="Your Top Tracks">
-          {top.slice(0, 10).map((t, i) => (
-            <TrackRow key={t.id + i} track={t} onPlay={() => play(t)} onQueue={() => queue(t)} />
-          ))}
+          <div className="bg-white/[0.01] border border-white/[0.03] rounded-2xl p-4 shadow-xl">
+            {top.slice(0, 8).map((t, i) => (
+              <TrackRow key={t.id + i} track={t} onPlay={() => play(t)} onQueue={() => queue(t)} />
+            ))}
+          </div>
         </Section>
       )}
+
       {recent.length === 0 && top.length === 0 && (
-        <div style={{ padding: "40px 20px", color: "#333", fontSize: 13 }}>
-          Loading your music…
+        <div className="flex flex-col items-center justify-center py-20 text-zinc-500 gap-3">
+          <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-semibold uppercase tracking-wider">Syncing dashboard...</span>
         </div>
       )}
     </div>
@@ -76,36 +97,33 @@ export const SearchView: React.FC = () => {
   const queue = (track: SpotifyTrack) => api.addToQueue(track.uri);
 
   return (
-    <div>
-      <div style={{ padding: "0 16px 20px" }}>
+    <div className="space-y-6">
+      <div className="relative group/search">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-zinc-500 group-focus-within/search:text-emerald-400 transition-colors" />
         <input
           autoFocus
           value={searchQuery}
           onChange={handleInput}
-          placeholder="Search songs, artists, albums…"
-          style={{
-            width: "100%",
-            background: "#111",
-            border: "1px solid #1e1e1e",
-            borderRadius: 4,
-            padding: "10px 14px",
-            color: "#fff",
-            fontSize: 13,
-            outline: "none",
-            boxSizing: "border-box",
-            fontFamily: "inherit",
-          }}
+          placeholder="Search songs, artists, albums on Spotify..."
+          className="w-full bg-white/[0.02] hover:bg-white/[0.04] focus:bg-white/[0.04] border border-white/5 focus:border-emerald-500/30 rounded-2xl py-3.5 pl-12 pr-4 text-sm text-white placeholder-zinc-500 outline-none transition-all shadow-inner focus:shadow-[0_0_15px_rgba(16,185,129,0.05)]"
         />
       </div>
+
       {searchResults?.tracks?.items && searchResults.tracks.items.length > 0 && (
-        <Section title="Songs">
-          {searchResults.tracks.items.map((t) => (
-            <TrackRow key={t.id} track={t} onPlay={() => play(t)} onQueue={() => queue(t)} />
-          ))}
+        <Section title="Search Results">
+          <div className="bg-white/[0.01] border border-white/[0.03] rounded-2xl p-4 shadow-xl">
+            {searchResults.tracks.items.map((t) => (
+              <TrackRow key={t.id} track={t} onPlay={() => play(t)} onQueue={() => queue(t)} />
+            ))}
+          </div>
         </Section>
       )}
+
       {searchQuery && !searchResults && (
-        <div style={{ padding: "20px", color: "#333", fontSize: 13 }}>Searching…</div>
+        <div className="flex items-center justify-center py-20 text-zinc-500 gap-2">
+          <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs">Searching Spotify library...</span>
+        </div>
       )}
     </div>
   );
@@ -125,80 +143,77 @@ export const LibraryView: React.FC = () => {
 
   const openPlaylist = async (pl: SpotifyPlaylist) => {
     const data = await api.playlistTracks(pl.id);
-    console.log("data: ",data)
     setActivePlaylist({ ...pl, tracks: data?.items.map((i) => i.item) ?? [] });
     setView("playlist");
   };
 
   return (
-    <div>
+    <div className="space-y-8">
       {saved.length > 0 && (
         <Section title="Liked Songs">
-          {saved.slice(0, 10).map((t, i) => (
-            <TrackRow
-              key={t.id + i}
-              track={t}
-              onPlay={() => deviceId && api.play(deviceId, { uris: [t.uri] })}
-              onQueue={() => api.addToQueue(t.uri)}
-            />
-          ))}
+          <div className="bg-white/[0.01] border border-white/[0.03] rounded-2xl p-4 shadow-xl">
+            {saved.slice(0, 8).map((t, i) => (
+              <TrackRow
+                key={t.id + i}
+                track={t}
+                onPlay={() => deviceId && api.play(deviceId, { uris: [t.uri] })}
+                onQueue={() => api.addToQueue(t.uri)}
+              />
+            ))}
+          </div>
         </Section>
       )}
+
       {playlists.length > 0 && (
-        <Section title="Your Playlists">
-          {playlists.map((pl) => (
-            <PlaylistRow key={pl.id} playlist={pl} onClick={() => openPlaylist(pl)} />
-          ))}
-        </Section>
+        <div className="space-y-4">
+          <div className="px-4 text-[10px] font-bold tracking-widest text-zinc-500 uppercase">
+            Your Playlists
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {playlists.map((pl) => (
+              <PlaylistCard key={pl.id} playlist={pl} onClick={() => openPlaylist(pl)} />
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
 };
 
-const PlaylistRow: React.FC<{ playlist: SpotifyPlaylist; onClick: () => void }> = ({
+const PlaylistCard: React.FC<{ playlist: SpotifyPlaylist; onClick: () => void }> = ({
   playlist,
   onClick,
 }) => {
-  const [hovered, setHovered] = useState(false);
   return (
     <div
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        padding: "6px 12px",
-        borderRadius: 4,
-        cursor: "pointer",
-        background: hovered ? "#111" : "transparent",
-        transition: "background 0.12s",
-      }}
+      className="group cursor-pointer p-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 hover:border-white/10 rounded-2xl shadow-lg transition-all duration-300 flex flex-col gap-3 relative overflow-hidden"
     >
-      <div
-        style={{
-          width: 38,
-          height: 38,
-          borderRadius: 2,
-          overflow: "hidden",
-          background: "#141414",
-          flexShrink: 0,
-        }}
-      >
-        {playlist.images?.[0]?.url && (
+      <div className="aspect-square w-full rounded-xl overflow-hidden bg-zinc-950 border border-white/5 relative">
+        {playlist.images?.[0]?.url ? (
           <img
             src={playlist.images[0].url}
             alt=""
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Music className="size-8 text-zinc-700" />
+          </div>
         )}
-      </div>
-      <div>
-        <div style={{ fontSize: 13, color: "#e0e0e0", fontWeight: 500 }}>{playlist.name}</div>
-        <div style={{ fontSize: 11, color: "#444", marginTop: 2 }}>
-          {playlist.items.total} tracks
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+          <div className="bg-emerald-500 rounded-full p-3 shadow-lg shadow-emerald-500/25 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+            <Library className="size-4 text-black" />
+          </div>
         </div>
+      </div>
+      <div className="min-w-0">
+        <h3 className="font-bold text-xs text-white truncate leading-snug group-hover:text-emerald-400 transition-colors">
+          {playlist.name}
+        </h3>
+        <p className="text-[10px] text-zinc-500 mt-1 truncate">
+          {playlist.items?.total ?? 0} tracks
+        </p>
       </div>
     </div>
   );
@@ -207,46 +222,39 @@ const PlaylistRow: React.FC<{ playlist: SpotifyPlaylist; onClick: () => void }> 
 // ─── Playlist detail ──────────────────────────────────────────────────────────
 
 export const PlaylistView: React.FC = () => {
-  //I think this is active playlist song
   const { activePlaylist, deviceId, setView } = useStore();
   if (!activePlaylist) return null;
 
   return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "0 16px 20px" }}>
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
         <button
           onClick={() => setView("library")}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            color: "#444",
-            fontSize: 12,
-            fontFamily: "inherit",
-            padding: 0,
-            letterSpacing: "0.06em",
-          }}
+          className="text-xs font-semibold text-zinc-400 hover:text-white px-3 py-1.5 rounded-full border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all"
         >
-          ← BACK
+          ← Back
         </button>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: "#fff" }}>{activePlaylist.name}</div>
-          <div style={{ fontSize: 11, color: "#444", marginTop: 2 }}>
-            {activePlaylist.tracks.length} tracks
-          </div>
+          <h2 className="text-base font-extrabold text-white">{activePlaylist.name}</h2>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Playlist • {activePlaylist.tracks.length} tracks
+          </p>
         </div>
       </div>
-      {activePlaylist.tracks.map((t, i) => (
-        <TrackRow
-          key={i}
-          track={t}
-          onPlay={() =>
-            deviceId &&
-            api.play(deviceId, { context_uri: activePlaylist.uri, offset: { position: i } })
-          }
-          onQueue={() => api.addToQueue(t.uri)}
-        />
-      ))}
+
+      <div className="bg-white/[0.01] border border-white/[0.03] rounded-2xl p-4 shadow-xl">
+        {activePlaylist.tracks.map((t, i) => (
+          <TrackRow
+            key={i}
+            track={t}
+            onPlay={() =>
+              deviceId &&
+              api.play(deviceId, { context_uri: activePlaylist.uri, offset: { position: i } })
+            }
+            onQueue={() => api.addToQueue(t.uri)}
+          />
+        ))}
+      </div>
     </div>
   );
 };
@@ -258,22 +266,26 @@ export const QueueView: React.FC = () => {
 
   if (!queueItems.length) {
     return (
-      <div style={{ padding: "40px 20px", color: "#333", fontSize: 13 }}>
-        Nothing queued up.
+      <div className="flex flex-col items-center justify-center py-20 text-zinc-500 gap-3 border border-dashed border-white/5 rounded-2xl bg-white/[0.01]">
+        <Music className="size-8 text-zinc-700 animate-pulse" />
+        <p className="text-sm font-semibold text-zinc-400">Your queue is as silent as a library during final exams.</p>
+        <p className="text-xs text-zinc-600">Start queueing up some tracks from search or library to get the vibe rolling.</p>
       </div>
     );
   }
 
   return (
     <Section title="Up Next">
-      {queueItems.map((t, i) => (
-        <TrackRow
-          key={t.id + i}
-          track={t}
-          onPlay={() => deviceId && api.play(deviceId, { uris: [t.uri] })}
-          onQueue={() => api.addToQueue(t.uri)}
-        />
-      ))}
+      <div className="bg-white/[0.01] border border-white/[0.03] rounded-2xl p-4 shadow-xl">
+        {queueItems.map((t, i) => (
+          <TrackRow
+            key={t.id + i}
+            track={t}
+            onPlay={() => deviceId && api.play(deviceId, { uris: [t.uri] })}
+            onQueue={() => api.addToQueue(t.uri)}
+          />
+        ))}
+      </div>
     </Section>
   );
 };

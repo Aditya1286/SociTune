@@ -2,11 +2,21 @@ import mongoose from "mongoose";
 const songSchema = new mongoose.Schema({
     title: {
         type: String,
-        required: true
+        required: true,
     },
     artist: {
         type: String,
         required: true,
+    },
+    external_ids: {
+        isrc_id: String,
+        spotify_id: String,
+        yt_id: String,
+        fuzzy_id: {
+            //This is my system generated id -> check in helper/genenrateSongID. Last Fallback
+            type: String,
+            required: true,
+        },
     },
     imageUrl: {
         type: String,
@@ -14,56 +24,55 @@ const songSchema = new mongoose.Schema({
     },
     audioUrl: {
         type: String,
-        required: true,
+        required: false,
     },
     duration: {
         type: Number,
         required: true,
     },
-    tempo: {
-        type: Number,
-        default: () => Math.floor(Math.random() * (180 - 60 + 1) + 60) // Random default 60-180 BPM
-    },
-    energy: {
-        type: Number,
-        default: () => Math.random()
-    },
-    valence: {
-        type: Number,
-        default: () => Math.random()
-    },
-    acousticness: {
-        type: Number,
-        default: () => Math.random()
-    },
-    danceability: {
-        type: Number,
-        default: () => Math.random()
+    audio_details: {
+        tempo: {
+            type: Number,
+        },
+        energy: {
+            type: Number,
+        },
+        valence: {
+            type: Number,
+        },
+        acousticness: {
+            type: Number,
+        },
+        danceability: {
+            type: Number,
+        },
     },
     genre: {
         type: String,
-        default: "Pop"
+        default: "unknown",
     },
     albumId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Album',
+        ref: "Album",
         required: false,
     },
-    artists: [{
+    artists: [
+        {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Artist'
-        }],
+            ref: "Artist",
+        },
+    ],
     lyrics: {
         type: String,
-        default: null
+        default: null,
     },
     lyricsSource: {
         type: String,
-        default: null
+        default: null,
     },
     lyricsFetchedAt: {
         type: Date,
-        default: null
-    }
+        default: null,
+    },
 }, { timestamps: true });
-export const Song = mongoose.model('Song', songSchema);
+export const Song = mongoose.model("Song", songSchema);

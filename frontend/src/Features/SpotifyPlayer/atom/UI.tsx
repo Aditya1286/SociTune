@@ -1,22 +1,8 @@
-
 import React, { useRef, useState } from "react";
 import type { SpotifyTrack, WebPlaybackTrack } from "../utils/types";
 import { PlayIcon, MusicIcon, VolumeIcon } from "./Icons";
 
-// ─── Shared style tokens ──────────────────────────────────────────────────────
-
-export const btnReset: React.CSSProperties = {
-  background: "none",
-  border: "none",
-  cursor: "pointer",
-  padding: 0,
-  fontFamily: "inherit",
-};
-
-export const GREEN = "#1DB954";
-export const BG = "#0A0A0A";
-
-// ─── fmt ──────────────────────────────────────────────────────────────────────
+export const GREEN = "#10b981"; // Use site's emerald branding
 
 export const fmt = {
   time: (ms: number): string => {
@@ -28,42 +14,31 @@ export const fmt = {
 };
 
 // ─── AlbumArt ─────────────────────────────────────────────────────────────────
-
 interface AlbumArtProps {
   track: WebPlaybackTrack | SpotifyTrack | null;
   size?: number;
+  className?: string;
 }
 
-export const AlbumArt: React.FC<AlbumArtProps> = ({ track, size = 280 }) => {
+export const AlbumArt: React.FC<AlbumArtProps> = ({ track, size = 280, className }) => {
   const img = track?.album?.images?.[0]?.url;
   return (
     <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: 4,
-        overflow: "hidden",
-        flexShrink: 0,
-        background: "#141414",
-      }}
+      className={`relative overflow-hidden rounded-xl bg-zinc-900 border border-white/5 shadow-xl flex-shrink-0 group/art transition-all duration-300 ${className}`}
+      style={{ width: size, height: size }}
     >
       {img ? (
-        <img
-          src={img}
-          alt={track?.name}
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-        />
+        <>
+          <img
+            src={img}
+            alt={track?.name}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover/art:scale-105"
+          />
+          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/art:opacity-100 transition-opacity duration-300" />
+        </>
       ) : (
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <MusicIcon size={48} color="#2a2a2a" />
+        <div className="w-full h-full flex items-center justify-center">
+          <MusicIcon size={48} color="#3f3f46" />
         </div>
       )}
     </div>
@@ -71,7 +46,6 @@ export const AlbumArt: React.FC<AlbumArtProps> = ({ track, size = 280 }) => {
 };
 
 // ─── ProgressBar ──────────────────────────────────────────────────────────────
-
 interface ProgressBarProps {
   position: number;
   duration: number;
@@ -83,54 +57,32 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({ position, duration, on
   const pct = duration ? (position / duration) * 100 : 0;
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = barRef.current!.getBoundingClientRect();
+    if (!barRef.current) return;
+    const rect = barRef.current.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     onSeek(Math.floor(ratio * duration));
   };
 
   return (
-    <div style={{ width: "100%", display: "flex", alignItems: "center", gap: 10 }}>
-      <span
-        style={{
-          fontSize: 11,
-          color: "#555",
-          width: 34,
-          textAlign: "right",
-          fontVariantNumeric: "tabular-nums",
-        }}
-      >
+    <div className="w-full flex items-center gap-3 select-none">
+      <span className="text-[10px] font-mono font-semibold text-zinc-500 w-8 text-right tabular-nums">
         {fmt.time(position)}
       </span>
       <div
         ref={barRef}
         onClick={handleClick}
-        style={{
-          flex: 1,
-          height: 3,
-          background: "#1e1e1e",
-          borderRadius: 2,
-          cursor: "pointer",
-          position: "relative",
-        }}
+        className="flex-1 h-1.5 bg-zinc-800 rounded-full cursor-pointer relative group/progress transition-all hover:h-2"
       >
         <div
-          style={{
-            width: `${pct}%`,
-            height: "100%",
-            background: "#fff",
-            borderRadius: 2,
-            transition: "width 0.1s linear",
-          }}
+          className="h-full bg-emerald-500 rounded-full transition-all duration-100"
+          style={{ width: `${pct}%` }}
+        />
+        <div
+          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full scale-0 group-hover/progress:scale-100 transition-transform shadow-lg pointer-events-none"
+          style={{ left: `calc(${pct}% - 6px)` }}
         />
       </div>
-      <span
-        style={{
-          fontSize: 11,
-          color: "#555",
-          width: 34,
-          fontVariantNumeric: "tabular-nums",
-        }}
-      >
+      <span className="text-[10px] font-mono font-semibold text-zinc-500 w-8 text-left tabular-nums">
         {fmt.time(duration)}
       </span>
     </div>
@@ -142,22 +94,22 @@ interface VolumeSliderProps {
   volume: number;
   onChange: (v: number) => void;
 }
+
 export const VolumeSlider: React.FC<VolumeSliderProps> = ({ volume, onChange }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
-    <VolumeIcon size={13} color="#444" />
+  <div className="flex items-center gap-3 w-full group/volume select-none">
+    <VolumeIcon size={14} color="#71717a" />
     <input
       type="range"
       min={0}
       max={100}
       value={volume}
       onChange={(e) => onChange(Number(e.target.value))}
-      style={{ flex: 1, accentColor: "#fff", cursor: "pointer" }}
+      className="flex-1 h-1 bg-zinc-800 rounded-full appearance-none outline-none cursor-pointer accent-white transition-all group-hover/volume:h-1.5 [&::-webkit-slider-runnable-track]:bg-transparent"
     />
   </div>
 );
 
 // ─── TrackRow ─────────────────────────────────────────────────────────────────
-
 interface TrackRowProps {
   track: SpotifyTrack;
   onPlay: () => void;
@@ -173,110 +125,64 @@ export const TrackRow: React.FC<TrackRowProps> = ({ track, onPlay, onQueue, isAc
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        padding: "6px 12px",
-        borderRadius: 4,
-        cursor: "pointer",
-        background: isActive ? "#161616" : hovered ? "#111" : "transparent",
-        transition: "background 0.12s",
-      }}
+      className={`flex items-center gap-4 px-4 py-2.5 rounded-xl cursor-pointer transition-all duration-300 border border-transparent ${
+        isActive
+          ? "bg-white/5 border-white/5 shadow-inner"
+          : "hover:bg-white/[0.02] hover:border-white/[0.02]"
+      }`}
     >
       {/* Thumbnail */}
       <div
-        style={{ position: "relative", width: 38, height: 38, flexShrink: 0 }}
+        className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 shadow-md bg-zinc-900 border border-white/5"
         onClick={onPlay}
       >
         {img ? (
-          <img
-            src={img}
-            alt=""
-            style={{ width: 38, height: 38, objectFit: "cover", borderRadius: 2, display: "block" }}
-          />
+          <img src={img} alt="" className="w-full h-full object-cover" />
         ) : (
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              background: "#1a1a1a",
-              borderRadius: 2,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <MusicIcon size={14} color="#333" />
+          <div className="w-full h-full flex items-center justify-center">
+            <MusicIcon size={16} color="#3f3f46" />
           </div>
         )}
         {hovered && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "rgba(0,0,0,0.55)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 2,
-            }}
-          >
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center transition-all duration-200">
             <PlayIcon size={12} color="#fff" />
           </div>
         )}
       </div>
 
       {/* Info */}
-      <div style={{ flex: 1, minWidth: 0 }} onClick={onPlay}>
+      <div className="flex-1 min-w-0" onClick={onPlay}>
         <div
-          style={{
-            fontSize: 13,
-            color: isActive ? GREEN : "#e0e0e0",
-            fontWeight: 500,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
+          className={`text-sm font-semibold truncate transition-colors leading-snug ${
+            isActive ? "text-emerald-400" : "text-zinc-200 hover:text-white"
+          }`}
         >
           {track?.name}
         </div>
-        <div
-          style={{
-            fontSize: 11,
-            color: "#555",
-            marginTop: 2,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
+        <div className="text-xs text-zinc-400 truncate mt-0.5">
           {fmt.artists(track?.artists)}
         </div>
       </div>
 
-      {/* Queue button */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onQueue(); }}
-        style={{
-          ...btnReset,
-          fontSize: 10,
-          color: "#444",
-          letterSpacing: "0.08em",
-          opacity: hovered ? 1 : 0,
-          transition: "opacity 0.12s",
-          whiteSpace: "nowrap",
-        }}
-      >
-        + QUEUE
-      </button>
+      {/* Action buttons */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onQueue();
+          }}
+          className={`text-[10px] font-bold text-zinc-500 hover:text-white px-2.5 py-1 rounded-full border border-zinc-800 hover:border-zinc-700 bg-zinc-900 transition-all duration-200 uppercase tracking-wider ${
+            hovered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-1"
+          }`}
+        >
+          + Queue
+        </button>
 
-      {/* Duration */}
-      <span
-        style={{ fontSize: 11, color: "#444", minWidth: 32, textAlign: "right" }}
-      >
-        {fmt.time(track?.duration_ms ?? 0)}
-      </span>
+        {/* Duration */}
+        <span className="text-xs font-mono text-zinc-500 w-10 text-right">
+          {fmt.time(track?.duration_ms ?? 0)}
+        </span>
+      </div>
     </div>
   );
 };
@@ -286,22 +192,14 @@ export const Section: React.FC<{ title: string; children: React.ReactNode }> = (
   title,
   children,
 }) => (
-  <div style={{ marginBottom: 28 }}>
-    <div
-      style={{
-        padding: "0 16px 10px",
-        fontSize: 10,
-        letterSpacing: "0.14em",
-        color: "#3a3a3a",
-        fontWeight: 600,
-        textTransform: "uppercase",
-      }}
-    >
+  <div className="mb-6">
+    <div className="px-4 pb-2.5 text-[10px] font-bold tracking-widest text-zinc-500 uppercase">
       {title}
     </div>
-    {children}
+    <div className="space-y-1">{children}</div>
   </div>
 );
+
 // ─── SidebarItem ──────────────────────────────────────────────────────────────
 interface SidebarItemProps {
   label: string;
@@ -313,23 +211,13 @@ interface SidebarItemProps {
 export const SidebarItem: React.FC<SidebarItemProps> = ({ label, active, onClick, icon }) => (
   <button
     onClick={onClick}
-    style={{
-      ...btnReset,
-      width: "100%",
-      textAlign: "left",
-      padding: "8px 14px",
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-      color: active ? "#fff" : "#484848",
-      background: active ? "#141414" : "transparent",
-      borderRadius: 4,
-      fontSize: 13,
-      fontWeight: active ? 600 : 400,
-      transition: "all 0.12s",
-    }}
+    className={`w-full text-left px-4 py-2.5 rounded-lg flex items-center gap-3 text-sm font-medium transition-all duration-300 ${
+      active
+        ? "bg-white/10 text-white shadow-inner border border-white/[0.03]"
+        : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
+    }`}
   >
     {icon}
-    {label}
+    <span>{label}</span>
   </button>
 );

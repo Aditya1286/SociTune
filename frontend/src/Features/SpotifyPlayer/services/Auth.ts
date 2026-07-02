@@ -1,9 +1,9 @@
 // ─── Auth — PKCE OAuth ────────────────────────────────────────────────────────
 
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID as string;
-const REDIRECT_URI = `http://127.0.0.1:3000/callback`;
+const REDIRECT_URI = `${window.location.origin}/callback`;
 
-console.log("REDIRECT",REDIRECT_URI)
+console.log("REDIRECT", REDIRECT_URI);
 
 const SCOPES = [
   "streaming",

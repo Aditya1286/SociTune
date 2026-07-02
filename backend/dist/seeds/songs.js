@@ -3,6 +3,7 @@ import { Song } from "../models/song.model.js";
 import dotenv from "dotenv";
 import Singleton from "../utils/Singleton.js";
 import LyricsService from "../services/lyrics.service.js";
+import { generateSongId } from "../helpers/generateSongId.js";
 dotenv.config();
 const songs = [
     {
@@ -137,8 +138,14 @@ const seedSongs = async () => {
         await mongoose.connect(process.env.MONGO_URI);
         // Clear existing songs
         await Song.deleteMany({});
+        const songsWithIds = songs.map((s) => ({
+            ...s,
+            external_ids: {
+                fuzzy_id: generateSongId(s.title, s.artist),
+            },
+        }));
         // Insert new songs
-        const insertedSongs = await Song.insertMany(songs);
+        const insertedSongs = await Song.insertMany(songsWithIds);
         console.log(`Songs seeded. Fetching lyrics for ${insertedSongs.length} songs...`);
         const lyricsService = Singleton.instance(LyricsService);
         for (const song of insertedSongs) {

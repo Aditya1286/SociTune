@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { Song } from "../models/song.model.js";
 import { Album } from "../models/album.model.js";
 import { config } from "dotenv";
+import { generateSongId } from "../helpers/generateSongId.js";
 
 config();
 
@@ -197,11 +198,17 @@ const seedDatabase = async () => {
                     duration: durationSec,
                     genre: "Hip Hop", // Default or you can determine based on query if you want
                     albumId: albumDoc._id,
-                    tempo: Math.floor(Math.random() * (180 - 60 + 1) + 60),
-                    energy: Math.random(),
-                    valence: Math.random(),
-                    acousticness: Math.random(),
-                    danceability: Math.random(),
+                    audio_details: {
+                        tempo: Math.floor(Math.random() * (180 - 60 + 1) + 60),
+                        energy: Math.random(),
+                        valence: Math.random(),
+                        acousticness: Math.random(),
+                        danceability: Math.random(),
+                    },
+                    external_ids: {
+                        spotify_id: track.id,
+                        fuzzy_id: generateSongId(track.name, trackArtist)
+                    },
                     lyrics: null,
                     lyricsSource: null,
                     lyricsFetchedAt: null

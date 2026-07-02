@@ -25,7 +25,7 @@ interface MusicStore {
 	fetchSongs: () => Promise<void>;
 	deleteSong: (id: string) => Promise<void>;
 	deleteAlbum: (id: string) => Promise<void>;
-	toggleLikeSong: (id: string) => Promise<void>;
+	toggleLikeSong: (id: string, metadata?: { title: string; artist: string; imageUrl: string; duration: number }) => Promise<void>;
 }
 
 export const useMusicStore = create<MusicStore>((set) => ({
@@ -62,9 +62,9 @@ export const useMusicStore = create<MusicStore>((set) => ({
 		}
 	},
 
-	toggleLikeSong: async (id) => {
+	toggleLikeSong: async (id, metadata?: { title: string; artist: string; imageUrl: string; duration: number }) => {
 		try {
-			const response = await axiosInstance.post(`/users/like/${id}`);
+			const response = await axiosInstance.post(`/users/like/${id}`, metadata);
 			set({ likedSongs: response.data });
 		} catch (error: any) {
 			console.log("Error in toggleLikeSong", error);

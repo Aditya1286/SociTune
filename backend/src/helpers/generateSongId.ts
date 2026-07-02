@@ -46,8 +46,4 @@ export const generateSongId = (title:string, artist:string) => {
     .digest("hex");
 }
 
-export function TEST(){
-  console.log("ID: ",generateSongId("505","Arctic monkeys"))
-  process.exit(0)
-}
-TEST()
+

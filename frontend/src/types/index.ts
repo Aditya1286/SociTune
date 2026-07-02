@@ -81,6 +81,7 @@ export interface User {
 	friends?: string[];
 	lastSeen?: string;
 	lastMessage?: string;
+	lastMessageAt?: string;
 	lastActivity?: string;
 	isFriend?: boolean;
 	isPending?: boolean;

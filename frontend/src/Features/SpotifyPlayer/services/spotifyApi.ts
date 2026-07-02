@@ -29,16 +29,16 @@ async function spotifyFetch<T = unknown>(
       },
     });
   
-    const data = await res.json()
-    console.log("data: ",data)
-  
-    if(!data) {
-      throw new Error("Invalid Response") 
+    if (res.status === 204 || res.status === 205) {
+      return undefined;
     }
+
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : undefined;
     return data;
   } catch (error) {
-    console.log(error)
-    throw new Error("Error Encountered in spotify fetch")
+    console.error("Spotify Fetch Error:", error);
+    throw new Error("Error Encountered in spotify fetch");
   }
 }
 
@@ -61,11 +61,13 @@ export const api = {
       body: JSON.stringify({ device_ids: [deviceId], play: false }),
     }),
 
-  play: (deviceId: string, body?: Record<string, unknown>) =>
-    spotifyFetch(`/me/player/play?device_id=${deviceId}`, {
+  play: (deviceId?: string, body?: Record<string, unknown>) => {
+    const qs = deviceId ? `?device_id=${deviceId}` : "";
+    return spotifyFetch(`/me/player/play${qs}`, {
       method: "PUT",
-      body: JSON.stringify(body ?? {}),
-    }),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  },
 
   pause: () =>
     spotifyFetch("/me/player/pause", { method: "PUT" }),

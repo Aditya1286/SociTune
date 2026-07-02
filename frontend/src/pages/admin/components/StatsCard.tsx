@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 
 type StatsCardProps = {
-	icon: React.ElementType;
+	icon: React.ComponentType<any>;
 	label: string;
 	value: string;
 	bgColor: string;

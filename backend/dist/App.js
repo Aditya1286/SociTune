@@ -42,7 +42,7 @@ class App {
     }
     initialiseMiddlewares() {
         this.app.use(cors({
-            origin: this.env === "production" ? true : ["http://localhost:3000", "http://localhost:3001"],
+            origin: this.env === "production" ? true : ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"],
             credentials: true
         }));
         this.app.use(express.json());

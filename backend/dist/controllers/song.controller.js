@@ -7,6 +7,7 @@ import LyricsService from "../services/lyrics.service.js";
 class SongController {
     async getAllSongs(req, res, next) {
         try {
+            //Valid
             const songs = await Song.find().sort({ createdAt: -1 });
             res.json(songs);
         }
@@ -38,7 +39,7 @@ class SongController {
     async getMadeForYouSongs(req, res, next) {
         try {
             const songs = await Song.aggregate([
-                { $sample: { size: 12 } },
+                { $sample: { size: 12 } }, //NAAHH -> Invalidate this logic, fine for you even you know it ADI
                 {
                     $project: {
                         _id: 1,
@@ -128,6 +129,7 @@ class SongController {
     }
     async getSongById(req, res, next) {
         try {
+            //Again, how are you gettinig songs by id -> is the frontend sending us music id? 
             const { id } = req.params;
             const song = await Song.findById(id);
             if (!song) {
@@ -164,7 +166,8 @@ class SongController {
             const artists = await Artist.find({
                 name: searchRegex
             }).limit(10);
-            // 4. Mock Playlists
+            // 4. Mock Playlists 
+            //Okish for now
             const playlists = [
                 { id: "liked-songs", title: "Liked Songs", imageUrl: "https://images.unsplash.com/photo-1513829096960-ef04324d32f4?w=500", artist: "You" },
                 { id: "ihh-essentials", title: "IHH Essentials", imageUrl: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500", artist: "SociTune" },
@@ -246,6 +249,7 @@ class SongController {
             next(error);
         }
     }
+    //Not of our use case for the time being
     async getTrendingArtists(req, res, next) {
         try {
             // Find artists in database, sorted by monthly listeners or followers

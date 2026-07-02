@@ -25,7 +25,7 @@ class LyricsService {
         try {
             console.log(`[LyricsService] Querying Gemini AI for lyrics of: ${songName} - ${artistName}`);
             const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
+            const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" }); //Can use heavy model in future for better content generation, works fine for now
             const prompt = `Write the lyrics for the song "${songName}" by "${artistName}".
 If you know the official lyrics, please write the official lyrics exactly.
 If you do not know the official lyrics or if it is an instrumental/indie song, write high-quality, creative, and beautiful song lyrics in the style of "${artistName}".
@@ -41,6 +41,7 @@ Do not include any introduction, explanations, meta-commentary, or markdown form
         }
         return null;
     }
+    //Good approach for fallbacks as well
     async getLyrics(songName, artistName) {
         try {
             console.log(`[LyricsService] Attempting to fetch lyrics for: ${songName} - ${artistName}`);
@@ -48,6 +49,8 @@ Do not include any introduction, explanations, meta-commentary, or markdown form
             const aiLyrics = await this.getLyricsFromAI(songName, artistName);
             if (aiLyrics) {
                 console.log(`[LyricsService] Successfully generated lyrics via Gemini AI`);
+                //Note -> What if wrong lyrics has been generated??
+                //Can find a stable lyrics Provider the future, and second fallback to gemini
                 return {
                     lyrics: aiLyrics,
                     source: "Gemini AI"
@@ -124,13 +127,14 @@ Do not include any introduction, explanations, meta-commentary, or markdown form
     }
     async fetchAndSaveLyrics(songId) {
         try {
+            //SongId -> MongoDbId
             const song = await Song.findById(songId);
             if (!song) {
                 console.log(`[LyricsService] Song not found: ${songId}`);
                 return;
             }
             // Avoid duplicate API calls if we already have valid lyrics
-            if (song.lyrics !== null && song.lyrics !== "" && song.lyricsSource !== "None") {
+            if (song.lyrics !== null && song.lyrics !== "" && song.lyricsSource !== "None") { //Good to go
                 console.log(`[LyricsService] Valid lyrics already exist in DB for: ${song.title}`);
                 return;
             }

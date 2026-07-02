@@ -1,8 +1,8 @@
-import { Route, Routes } from "react-router-dom";
+import {Route,Routes, Navigate} from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
-import HomePage from "./pages/home/HomePage.tsx";
+import HomePage from "./pages/home/HomePage.tsx"
 import MainLayout from "./layout/MainLayout.tsx";
-import AuthCallbackPage from "./pages/auth-callback/AuthCallbackPage.tsx";
+import AuthCallbackPage from "./pages/auth-callback/AuthCallbackPage.tsx"
 import { AuthenticateWithRedirectCallback, useAuth } from "@clerk/clerk-react";
 import ChatPage from "./pages/chat/ChatPage.tsx";
 import AlbumPage from "./pages/album/AlbumPage.tsx";
@@ -20,10 +20,15 @@ import { useChatStore } from "./stores/useChatStore.ts";
 import { usePlayerStore } from "./stores/usePlayerStore.ts";
 import { useEffect } from "react";
 import { SearchCommand } from "./components/SearchCommand.tsx";
-import AdminPage from "./pages/admin/AdminPage.tsx";
-import SpotifyPlayerPage, {
-  SpotifyCallback,
-} from "./Features/SpotifyPlayer/components/SpotifyPlayer.tsx";
+import SpotifyPlayerPage, { SpotifyCallback } from "./Features/SpotifyPlayer/components/SpotifyPlayer.tsx";
+import LoginPage from "./pages/login/LoginPage.tsx";
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isSignedIn, isLoaded } = useAuth();
+  if (!isLoaded) return null;
+  if (!isSignedIn) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+};
 
 const App = () => {
   const { userId } = useAuth();
@@ -47,26 +52,30 @@ const App = () => {
       <SearchCommand />
       <Toaster theme="dark" position="top-center" />
       <Routes>
-        <Route
-          path="/sso-callback"
-          element={<AuthenticateWithRedirectCallback signUpForceRedirectUrl={"/auth-callback"} />}
+        <Route path='/sso-callback' 
+          element={<AuthenticateWithRedirectCallback signUpForceRedirectUrl={"/auth-callback"}/>} 
         />
-        <Route path="/auth-callback" element={<AuthCallbackPage />} />
-        <Route path="/player" element={<SpotifyPlayerPage />} />
-        <Route path="/callback" element={<SpotifyCallback />} />
+        <Route path='/auth-callback' element={<AuthCallbackPage/>} />
+        <Route path='/login' element={<LoginPage />} />
+        
+        {/* We keep SpotifyCallback outside MainLayout, protected if necessary. */}
+        <Route path='/callback' element={<ProtectedRoute><SpotifyCallback/></ProtectedRoute>} />
+        
         <Route element={<MainLayout />}>
-          {/* <Route path='/' element={<HomePage/>} /> */}
-          <Route path="/chat" element={<ChatPage />} />
-          <Route path="/albums/:albumId" element={<AlbumPage />} />
-          <Route path="/founder" element={<FounderPage />} />
-          <Route path="/premium" element={<PremiumPage />} />
-          <Route path="/time-travel" element={<TimeTravelPage />} />
-          <Route path="/liked-songs" element={<LikedSongsPage />} />
-          <Route path="/matches" element={<MatchesPage />} />
-          <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/artists/:artistName" element={<ArtistPage />} />
-          <Route path="*" element={<NotFoundPage />} />
+          <Route path='/' element={<HomePage/>} />
+          <Route path='/search' element={<SearchPage/>} />
+          
+          <Route path='/chat' element={<ProtectedRoute><ChatPage/></ProtectedRoute>} />
+          <Route path='/albums/:albumId' element={<ProtectedRoute><AlbumPage/></ProtectedRoute>} />
+          <Route path='/founder' element={<ProtectedRoute><FounderPage/></ProtectedRoute>} />
+          <Route path='/premium' element={<ProtectedRoute><PremiumPage/></ProtectedRoute>} />
+          <Route path='/time-travel' element={<ProtectedRoute><TimeTravelPage/></ProtectedRoute>} />
+          <Route path='/liked-songs' element={<ProtectedRoute><LikedSongsPage/></ProtectedRoute>} />
+          <Route path='/matches' element={<ProtectedRoute><MatchesPage/></ProtectedRoute>} />
+          <Route path='/notifications' element={<ProtectedRoute><NotificationsPage/></ProtectedRoute>} />
+          <Route path='/artists/:artistName' element={<ProtectedRoute><ArtistPage/></ProtectedRoute>} />
+          <Route path='/player' element={<ProtectedRoute><SpotifyPlayerPage/></ProtectedRoute>} />
+          <Route path='*' element={<NotFoundPage/>} />
         </Route>
       </Routes>
     </>

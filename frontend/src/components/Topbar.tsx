@@ -1,7 +1,6 @@
 import { SearchIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
-import SignInOAuthButtons from "./SignInOAuthButtons";
 import NotificationDropdown from "./NotificationDropdown";
 import { buttonVariants } from "./ui/button";
 import { cn } from "@/lib/utils";
@@ -82,7 +81,15 @@ const Topbar = () => {
 
 
           <SignedOut>
-            <SignInOAuthButtons />
+            <Link
+              to="/login"
+              className={cn(
+                buttonVariants({ variant: "secondary" }),
+                "w-auto text-white border-zinc-200 h-9 sm:h-10 px-4 text-sm font-medium hover:scale-[1.02] active:scale-[0.98] transition-all"
+              )}
+            >
+              Continue with Google
+            </Link>
           </SignedOut>
 
           <SignedIn>

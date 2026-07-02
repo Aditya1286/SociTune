@@ -8,6 +8,7 @@ import { Search } from "lucide-react";
 import { useState } from "react";
 import { FriendButton } from "@/components/FriendButton";
 import type { User } from "@/types";
+import { motion } from "framer-motion";
 
 const UsersList = () => {
 	const { users, selectedUser, isLoading, setSelectedUser, onlineUsers, unreadMessages } = useChatStore();
@@ -22,11 +23,21 @@ const UsersList = () => {
 		);
 	});
 
-	const friends = filteredUsers.filter((u: User) => u.isFriend);
+	const friends = filteredUsers
+		.filter((u: User) => u.isFriend)
+		.sort((a, b) => {
+			const timeA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+			const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+			if (timeA !== timeB) {
+				return timeB - timeA;
+			}
+			return a.fullName.localeCompare(b.fullName);
+		});
 	const discoverUsers = searchQuery ? filteredUsers : filteredUsers.filter((u: User) => !u.isFriend);
 
 	const renderUser = (user: User, isFriendTab: boolean) => (
-		<div
+		<motion.div
+			layout="position"
 			key={user._id}
 			onClick={() => setSelectedUser(user, isFriendTab ? 'chat' : 'profile')}
 			className={`flex items-center justify-between gap-3 p-3 w-full min-w-0
@@ -34,6 +45,11 @@ const UsersList = () => {
 				${selectedUser?.clerkId === user.clerkId 
 					? "bg-white/[0.06] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] border-white/[0.05]" 
 					: "hover:bg-white/[0.03] border-transparent"}`}
+			transition={{
+				type: "spring",
+				stiffness: 300,
+				damping: 30
+			}}
 		>
 			<div className='flex items-center gap-3 flex-1 min-w-0'>
 				<div className='relative shrink-0'>
@@ -82,7 +98,7 @@ const UsersList = () => {
 			<div className="lg:hidden shrink-0">
 				{!isFriendTab && <FriendButton user={user} />}
 			</div>
-		</div>
+		</motion.div>
 	);
 
 	return (

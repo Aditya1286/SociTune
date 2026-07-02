@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { Song } from "../models/song.model.js";
 import { Album } from "../models/album.model.js";
 import { config } from "dotenv";
+import { generateSongId } from "../helpers/generateSongId.js";
 config();
 const searchTerms = ["pop", "synthwave", "lofi", "hiphop", "electronic"];
 const seedDatabase = async () => {
@@ -87,12 +88,16 @@ const seedDatabase = async () => {
                     duration: durationSec,
                     genre: track.primaryGenreName || "Pop",
                     albumId: albumDoc._id,
-                    // Random attributes for recommendation service / matches
-                    tempo: Math.floor(Math.random() * (180 - 60 + 1) + 60),
-                    energy: Math.random(),
-                    valence: Math.random(),
-                    acousticness: Math.random(),
-                    danceability: Math.random(),
+                    audio_details: {
+                        tempo: Math.floor(Math.random() * (180 - 60 + 1) + 60),
+                        energy: Math.random(),
+                        valence: Math.random(),
+                        acousticness: Math.random(),
+                        danceability: Math.random(),
+                    },
+                    external_ids: {
+                        fuzzy_id: generateSongId(track.trackName, track.artistName),
+                    },
                     lyrics: null,
                     lyricsSource: null,
                     lyricsFetchedAt: null

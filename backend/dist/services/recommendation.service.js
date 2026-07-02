@@ -70,6 +70,14 @@ function cosineSimilarity(vecA, vecB, weights) {
         return 0;
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
+function userIdHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+    }
+    return hash;
+}
 class MusicRecommender {
     similarityThreshold;
     users;
@@ -85,16 +93,16 @@ class MusicRecommender {
     }
     async init() {
         console.log("Initializing Advanced AI Music Recommendation Engine...");
-        const songs = await Song.find({});
+        const songs = await Song.find({}).select("title artist audio_details tempo energy valence acousticness danceability genre");
         for (const song of songs) {
             this.addSong(song._id.toString(), {
                 title: song.title,
                 artist: song.artist,
-                tempo: song.tempo || 120,
-                energy: song.energy || 0.5,
-                valence: song.valence || 0.5,
-                acousticness: song.acousticness || 0.5,
-                danceability: song.danceability || 0.5,
+                tempo: song.audio_details?.tempo || song.tempo || 120,
+                energy: song.audio_details?.energy || song.energy || 0.5,
+                valence: song.audio_details?.valence || song.valence || 0.5,
+                acousticness: song.audio_details?.acousticness || song.acousticness || 0.5,
+                danceability: song.audio_details?.danceability || song.danceability || 0.5,
                 genre: song.genre || "Unknown"
             });
         }
@@ -122,6 +130,25 @@ class MusicRecommender {
     }
     async recalculateUser(userId, precomputedHistory = null) {
         const history = precomputedHistory !== null ? precomputedHistory : await PlayHistory.find({ userId });
+        // Dynamically load any missing songs from the database to avoid ignoring them
+        const songIds = history.map(h => h.songId.toString());
+        const missingSongIds = Array.from(new Set(songIds.filter(id => !this.songCatalog.has(id))));
+        if (missingSongIds.length > 0) {
+            console.log(`[Recommender] Fetching ${missingSongIds.length} missing songs into catalog dynamically...`);
+            const missingSongs = await Song.find({ _id: { $in: missingSongIds } }).select("title artist audio_details tempo energy valence acousticness danceability genre");
+            for (const song of missingSongs) {
+                this.addSong(song._id.toString(), {
+                    title: song.title,
+                    artist: song.artist,
+                    tempo: song.audio_details?.tempo || song.tempo || 120,
+                    energy: song.audio_details?.energy || song.energy || 0.5,
+                    valence: song.audio_details?.valence || song.valence || 0.5,
+                    acousticness: song.audio_details?.acousticness || song.acousticness || 0.5,
+                    danceability: song.audio_details?.danceability || song.danceability || 0.5,
+                    genre: song.genre || "Unknown"
+                });
+            }
+        }
         const playCounts = new Map();
         let morning = 0, afternoon = 0, evening = 0, night = 0;
         for (const h of history) {
@@ -156,6 +183,7 @@ class MusicRecommender {
             preferredTime,
             behavior: { skipRate: 0.1, avgListenTime: 180 }
         });
+        profile.clerkId = userId;
         this.users.set(userId, profile);
         this.similarityCache.clear();
     }
@@ -215,8 +243,44 @@ class MusicRecommender {
         };
     }
     calculateSimilarity(userA, userB) {
-        if (userA.isNewUser || userB.isNewUser)
-            return { score: 0, details: null };
+        if (userA.isNewUser || userB.isNewUser) {
+            // Humorous and thoughtful narrative summaries for new users/cold starts
+            const narratives = [
+                "You're both musical mysteries. Your profiles are so fresh that our AI matching engine is currently calibrating your cosmic alignment. Start spinning tracks to unlock deep metrics!",
+                "Vibe check in progress! While you populate your listening history, we predict a high probability of matching music tastes here. Grab a pair of headphones and listen along.",
+                "Taste matching under construction! Our audiophile servers are crunching numbers. In the meantime, say hello and share your all-time favorite song."
+            ];
+            const hashA = userA.clerkId ? userIdHash(userA.clerkId) : 0;
+            const hashB = userB.clerkId ? userIdHash(userB.clerkId) : 0;
+            const index = Math.abs(hashA + hashB) % narratives.length;
+            const narrative_summary = narratives[index];
+            const score = 55 + (Math.abs(hashA + hashB) % 20); // Score between 55 and 74%
+            const matchDetails = {
+                grade: score >= 90 ? "S" : score >= 80 ? "A" : score >= 70 ? "B" : score >= 60 ? "C" : "D",
+                compatibility_score: score,
+                signal_breakdown: {
+                    genre_overlap: 0.5,
+                    audio_similarity: 0.5,
+                    mood_alignment: 0.5,
+                    artist_graph: 0.5,
+                    context_sync: 0.5
+                },
+                shared_genres: [],
+                taste_tension_points: ["No common tracks found yet! Both of you are currently cold-starting your profiles."],
+                narrative_summary,
+                topSongs: [],
+                topArtists: [],
+                commonGenres: [],
+                audioMatch: {
+                    energy: 50,
+                    tempo: 50,
+                    valence: 50,
+                    acousticness: 50
+                },
+                preferredTime: "Unknown"
+            };
+            return { score, details: matchDetails };
+        }
         // 1. GENRE OVERLAP (weight: 0.30)
         let intersectionG = 0;
         let unionG = 0;

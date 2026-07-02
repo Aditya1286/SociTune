@@ -132,8 +132,8 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 												className={cn(
 													"h-9 px-6 rounded-lg transition-all font-medium text-xs tracking-wide",
 													user.isFriend 
-														? (isHoveringFollow ? "bg-red-955/20 border-red-900/30 text-red-400 hover:bg-red-900/20" : "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-850")
-														: "bg-zinc-100 hover:bg-zinc-200 text-zinc-955 border-0"
+														? (isHoveringFollow ? "bg-red-550/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300" : "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-850")
+														: "bg-blue-600 hover:bg-blue-700 text-white border-0"
 												)}
 											>
 												{user.isFriend ? (
@@ -149,13 +149,7 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 											<Button 
 												onClick={handleMessageClick}
 												disabled={!user.isFriend}
-												variant="outline"
-												className={cn(
-													"h-9 px-6 rounded-lg transition-all font-medium text-xs tracking-wide",
-													user.isFriend 
-														? "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-850" 
-														: "bg-zinc-900/40 border border-zinc-950 text-zinc-655 cursor-not-allowed opacity-50"
-												)}
+												className="h-9 px-6 rounded-lg transition-all font-medium text-xs tracking-wide bg-white hover:bg-zinc-200 text-black hover:text-black border-0 disabled:bg-white disabled:text-black disabled:opacity-40 disabled:cursor-not-allowed"
 											>
 												<MessageCircle className="size-3.5 mr-1.5" />
 												Message
@@ -374,8 +368,8 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 										className={cn(
 											"flex-1 h-9 rounded-lg transition-all font-medium text-xs tracking-wide",
 											user.isFriend 
-												? (isHoveringFollow ? "bg-red-955/20 border-red-900/30 text-red-400 hover:bg-red-900/20" : "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-850")
-												: "bg-zinc-100 hover:bg-zinc-200 text-zinc-955 border-0"
+												? (isHoveringFollow ? "bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300" : "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-850")
+												: "bg-blue-600 hover:bg-blue-700 text-white border-0"
 										)}
 									>
 										{user.isFriend ? (
@@ -391,13 +385,7 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 									<Button 
 										onClick={handleMessageClick}
 										disabled={!user.isFriend}
-										variant="outline"
-										className={cn(
-											"flex-1 h-9 rounded-lg transition-all font-medium text-xs tracking-wide",
-											user.isFriend 
-												? "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-850" 
-												: "bg-zinc-900/40 border border-zinc-950 text-zinc-655 cursor-not-allowed opacity-50"
-										)}
+										className="flex-1 h-9 rounded-lg transition-all font-medium text-xs tracking-wide bg-white hover:bg-zinc-200 text-black hover:text-black border-0 disabled:bg-white disabled:text-black disabled:opacity-40 disabled:cursor-not-allowed"
 									>
 										<MessageCircle className="size-3.5 mr-1" />
 										Message

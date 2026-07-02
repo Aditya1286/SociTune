@@ -44,7 +44,9 @@ class AdminController {
             const song = new Song({
                 title,
                 artist,
-                song_id,
+                external_ids: {
+                    fuzzy_id: song_id,
+                },
                 audioUrl,
                 imageUrl,
                 duration,

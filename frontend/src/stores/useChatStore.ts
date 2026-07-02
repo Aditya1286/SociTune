@@ -279,7 +279,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 					}
 
 					const newUsers = state.users.map((user) => 
-						user.clerkId === message.senderId ? { ...user, lastMessage: message.content } : user
+						user.clerkId === message.senderId ? { ...user, lastMessage: message.content, lastMessageAt: message.createdAt } : user
 					);
 
 					return {
@@ -293,7 +293,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 			socket.on("message_sent", (message: Message) => {
 				set((state) => {
 					const newUsers = state.users.map((user) => 
-						user.clerkId === message.receiverId ? { ...user, lastMessage: message.content } : user
+						user.clerkId === message.receiverId ? { ...user, lastMessage: message.content, lastMessageAt: message.createdAt } : user
 					);
 					return {
 						messages: [...state.messages, message],
