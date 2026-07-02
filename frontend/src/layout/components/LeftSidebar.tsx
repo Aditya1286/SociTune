@@ -19,8 +19,7 @@ import {
   Heart, 
   Activity,
   Bell,
-  Music,
-  Compass
+  Music
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import PlaylistSkeleton from "../../components/skeletons/PlaylistSkeleton"
