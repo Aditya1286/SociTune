@@ -11,7 +11,7 @@ import {
 } from "./View";
 import type { ViewId } from "../utils/types";
 import NowPlayingPanel from "../atom/NowPlayingPanel";
-import { Home, Search, Library, Disc, LogOut, LayoutList } from "lucide-react";
+import { Home, Search, Library, Disc, LogOut, LayoutList, Music, Heart, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 
 export { SpotifyCallback } from "./SpotifyCallback";
@@ -19,7 +19,7 @@ export { SpotifyCallback } from "./SpotifyCallback";
 // ─── Login screen ─────────────────────────────────────────────────────────────
 
 const LoginScreen: React.FC = () => (
-  <div className="relative min-h-[calc(100vh-140px)] w-full overflow-y-auto bg-[#090909] flex flex-col p-6 sm:p-16 select-none rounded-[28px] border border-white/5 shadow-2xl items-center justify-center">
+  <div className="relative min-h-[calc(100vh-140px)] w-full overflow-y-auto bg-gradient-to-b from-[#121214] to-[#090909] flex flex-col p-6 sm:p-16 select-none rounded-[28px] border border-white/5 shadow-2xl items-center justify-center">
     {/* Subtle Ambient Background glow */}
     <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] bg-[#1ED760]/[0.015] rounded-full blur-[130px] pointer-events-none" />
 
@@ -69,7 +69,9 @@ const LoginScreen: React.FC = () => (
         <div className="grid grid-cols-1 gap-2.5">
           {/* Card 1 */}
           <div className="bg-[#171717] border border-white/5 p-4 rounded-[20px] flex gap-3.5 items-start transition-all duration-300 hover:border-white/10 group">
-            <span className="text-lg mt-0.5" role="img" aria-label="Audio DNA">🎵</span>
+            <div className="p-1.5 rounded-lg bg-white/[0.02] border border-white/5 text-[#A1A1AA] group-hover:text-white transition-colors">
+              <Music className="w-4 h-4" />
+            </div>
             <div className="space-y-0.5">
               <h4 className="text-xs font-semibold text-white">Your Audio DNA</h4>
               <p className="text-[10px] text-[#A1A1AA] leading-relaxed">
@@ -80,7 +82,9 @@ const LoginScreen: React.FC = () => (
 
           {/* Card 2 */}
           <div className="bg-[#171717] border border-white/5 p-4 rounded-[20px] flex gap-3.5 items-start transition-all duration-300 hover:border-white/10 group">
-            <span className="text-lg mt-0.5" role="img" aria-label="Soulmate Matching">❤️</span>
+            <div className="p-1.5 rounded-lg bg-white/[0.02] border border-white/5 text-[#A1A1AA] group-hover:text-white transition-colors">
+              <Heart className="w-4 h-4" />
+            </div>
             <div className="space-y-0.5">
               <h4 className="text-xs font-semibold text-white">Soulmate Matching</h4>
               <p className="text-[10px] text-[#A1A1AA] leading-relaxed">
@@ -91,7 +95,9 @@ const LoginScreen: React.FC = () => (
 
           {/* Card 3 */}
           <div className="bg-[#171717] border border-white/5 p-4 rounded-[20px] flex gap-3.5 items-start transition-all duration-300 hover:border-white/10 group">
-            <span className="text-lg mt-0.5" role="img" aria-label="Privacy First">🔒</span>
+            <div className="p-1.5 rounded-lg bg-white/[0.02] border border-white/5 text-[#A1A1AA] group-hover:text-white transition-colors">
+              <Shield className="w-4 h-4" />
+            </div>
             <div className="space-y-0.5">
               <h4 className="text-xs font-semibold text-white">Privacy First</h4>
               <p className="text-[10px] text-[#A1A1AA] leading-relaxed">
