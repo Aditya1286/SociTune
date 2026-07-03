@@ -117,7 +117,7 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 
 							{/* User details and buttons */}
 							<div className="flex-1 flex flex-col gap-5 text-center md:text-left w-full">
-								<div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
+								<div className="flex flex-col md:flex-row md:items-center gap-4 justify-between flex-wrap">
 									<div>
 										<h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-100">{user.fullName}</h2>
 										{user.username && <p className="text-zinc-500 text-sm mt-0.5">@{user.username}</p>}
@@ -130,7 +130,7 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 												onMouseLeave={() => setIsHoveringFollow(false)}
 												variant={user.isFriend ? "outline" : "default"}
 												className={cn(
-													"h-9 px-6 rounded-lg transition-all font-medium text-xs tracking-wide",
+													"h-9 px-4 rounded-lg transition-all font-medium text-xs tracking-wide",
 													user.isFriend 
 														? (isHoveringFollow ? "bg-red-550/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300" : "bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-850")
 														: "bg-blue-600 hover:bg-blue-700 text-white border-0"
@@ -149,7 +149,7 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 											<Button 
 												onClick={handleMessageClick}
 												disabled={!user.isFriend}
-												className="h-9 px-6 rounded-lg transition-all font-medium text-xs tracking-wide bg-white hover:bg-zinc-200 text-black hover:text-black border-0 disabled:bg-white disabled:text-black disabled:opacity-40 disabled:cursor-not-allowed"
+												className="h-9 px-4 rounded-lg transition-all font-medium text-xs tracking-wide bg-white hover:bg-zinc-200 text-black hover:text-black border-0 disabled:bg-white disabled:text-black disabled:opacity-40 disabled:cursor-not-allowed"
 											>
 												<MessageCircle className="size-3.5 mr-1.5" />
 												Message

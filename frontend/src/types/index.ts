@@ -1,3 +1,24 @@
+export interface ExternalIds {
+  spotify_id?: string;
+  isrc_id?: string;
+  yt_id?: string;
+  fuzzy_id: string;
+}
+
+export interface AudioDetails {
+  tempo?: number;
+  energy?: number;
+  valence?: number;
+  acousticness?: number;
+  danceability?: number;
+}
+
+export interface LyricsDetails {
+  lyrics: string;
+  lyricsSource: string;
+  lyricsFetchedAt: string | Date;
+}
+
 export interface Song {
 	_id: string;
 	title: string;
@@ -8,10 +29,50 @@ export interface Song {
 	duration: number;
 	createdAt: string;
 	updatedAt: string;
+	external_ids?: ExternalIds;
+	audio_details?: AudioDetails;
+	genre?: string;
 	lyrics?: string;
 	lyricsSource?: string;
 	lyricsFetchedAt?: string;
 }
+
+export interface SongDetails {
+  title: string;
+  artist: string;
+  external_ids: {
+    isrc_id?: string;
+    spotify_id?: string;
+    yt_id?: string;
+    fuzzy_id: string;
+  };
+  primary_genre: string;
+  duration: string;
+  audio_details?: {
+    tempo: number;
+    energy: number;
+    valence: number;
+    acousticness: number;
+    danceability: number;
+  };
+  lyrics_details?: {
+    lyrics: string;
+    lyricsSource: string;
+    lyricsFetchedAt: string | Date;
+  };
+  image_url: string;
+}
+
+export interface ListenEventMetaData {
+  song_details: SongDetails;
+  played_at: string;
+  duration_ms: string;
+  completed: boolean;
+  session_id?: string;
+  source?: "organic" | "playlist" | "radio" | "search" | "recommendation" | "share" | "other";
+}
+
+export interface ListeningEventPayload extends ListenEventMetaData {}
 
 export interface Album {
 	_id: string;

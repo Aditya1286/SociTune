@@ -342,56 +342,100 @@ public async checkUsername(req: Request, res: Response, next: NextFunction) {
 public async recordPlay(req: Request, res: Response, next: NextFunction) {
 	try {
 		const userId = (req as any).auth.userId;
-		let { songId, spotifyId, title, artist, imageUrl, duration } = req.body;
+		let songId = req.body.songId;
+		let spotifyId = req.body.spotifyId;
+		let title = req.body.title;
+		let artist = req.body.artist;
+		let imageUrl = req.body.imageUrl;
+		let duration = req.body.duration;
 
-		if (!songId && !spotifyId) {
-			return res.status(400).json({ message: "songId or spotifyId is required" });
-		}
+		let durationMsStr = req.body.durationMs !== undefined ? req.body.durationMs : req.body.duration_ms;
+		let completed = req.body.completed;
+		let sessionId = req.body.sessionId !== undefined ? req.body.sessionId : req.body.session_id;
+		let source = req.body.source;
+		let playedAtVal = req.body.playedAt || req.body.played_at ? new Date(req.body.playedAt || req.body.played_at) : new Date();
 
-		// If songId is not provided, look up or create the song using spotifyId/metadata
-		if (!songId && spotifyId) {
-			let song = await Song.findOne({ "external_ids.spotify_id": spotifyId });
+		// If the request contains the new payload structure, parse it
+		if (req.body.song_details) {
+			const { song_details } = req.body;
+			title = song_details.title;
+			artist = song_details.artist;
+			imageUrl = song_details.image_url;
+			duration = song_details.duration;
+			
+			const externalIds = song_details.external_ids || {};
+			spotifyId = externalIds.spotify_id;
+			const fuzzyId = externalIds.fuzzy_id || generateSongId(title, artist);
+			
+			// Try to find the song by spotifyId, fuzzyId, or title/artist
+			let song = null;
+			if (spotifyId) {
+				song = await Song.findOne({ "external_ids.spotify_id": spotifyId });
+			}
+			if (!song && fuzzyId) {
+				song = await Song.findOne({ "external_ids.fuzzy_id": fuzzyId });
+			}
 			if (!song && title && artist) {
-				// Also try to look up by title and artist to avoid duplicate song records
 				const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 				const escapedArtist = artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 				song = await Song.findOne({
 					title: { $regex: new RegExp(`^${escapedTitle}$`, "i") },
 					artist: { $regex: new RegExp(`^${escapedArtist}$`, "i") }
 				});
-				
-				if (song) {
-					// Update existing song with spotify_id if it didn't have it
-					const existingExt = song.external_ids || {};
-					await Song.updateOne(
-						{ _id: song._id },
-						{ $set: { "external_ids.spotify_id": spotifyId } }
-					);
-				}
 			}
 
-			if (!song && title && artist) {
-				// Create a new song document
-				const fuzzyId = generateSongId(title, artist);
+			if (song) {
+				songId = song._id;
+				// If existing song doesn't have details, update them
+				let needsUpdate = false;
+				const updateFields: any = {};
+				
+				if (spotifyId && song.external_ids?.spotify_id !== spotifyId) {
+					updateFields["external_ids.spotify_id"] = spotifyId;
+					needsUpdate = true;
+				}
+				if (song_details.audio_details && (!song.audio_details || !song.audio_details.tempo)) {
+					updateFields.audio_details = song_details.audio_details;
+					needsUpdate = true;
+				}
+				if (song_details.lyrics_details?.lyrics && (!song.lyrics || song.lyricsSource === "None")) {
+					updateFields.lyrics = song_details.lyrics_details.lyrics;
+					updateFields.lyricsSource = song_details.lyrics_details.lyricsSource;
+					updateFields.lyricsFetchedAt = song_details.lyrics_details.lyricsFetchedAt ? new Date(song_details.lyrics_details.lyricsFetchedAt) : new Date();
+					needsUpdate = true;
+				}
+				
+				if (needsUpdate) {
+					await Song.updateOne({ _id: song._id }, { $set: updateFields });
+				}
+			} else if (title && artist) {
+				// Create a new song document with details
 				song = new Song({
 					title,
 					artist,
 					imageUrl: imageUrl || "/albums/default.jpg",
 					audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
 					duration: Number(duration) || 180,
-					genre: "Hip Hop",
-					tempo: Math.floor(Math.random() * (180 - 60 + 1) + 60),
-					energy: Math.random(),
-					valence: Math.random(),
-					acousticness: Math.random(),
-					danceability: Math.random(),
+					genre: song_details.primary_genre || "Hip Hop",
+					audio_details: song_details.audio_details || {
+						tempo: Math.floor(Math.random() * (180 - 60 + 1) + 60),
+						energy: Math.random(),
+						valence: Math.random(),
+						acousticness: Math.random(),
+						danceability: Math.random()
+					},
+					lyrics: song_details.lyrics_details?.lyrics || null,
+					lyricsSource: song_details.lyrics_details?.lyricsSource || "None",
+					lyricsFetchedAt: song_details.lyrics_details?.lyricsFetchedAt ? new Date(song_details.lyrics_details.lyricsFetchedAt) : null,
 					external_ids: {
 						spotify_id: spotifyId,
+						isrc_id: externalIds.isrc_id,
+						yt_id: externalIds.yt_id,
 						fuzzy_id: fuzzyId
 					}
 				});
 				await song.save();
-
+				
 				// Setup artist connections
 				try {
 					const { Artist } = await import("../models/artist.model.js");
@@ -428,19 +472,164 @@ public async recordPlay(req: Request, res: Response, next: NextFunction) {
 				} catch (err) {
 					console.error("Error setting artist links:", err);
 				}
-			}
 
-			if (song) {
 				songId = song._id;
-			} else {
-				return res.status(400).json({ message: "Song details are incomplete to register new track" });
+			}
+		} else {
+			// Handle legacy payload (only songId or spotifyId provided directly)
+			if (!songId && spotifyId) {
+				let song = await Song.findOne({ "external_ids.spotify_id": spotifyId });
+				if (!song && title && artist) {
+					const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+					const escapedArtist = artist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+					song = await Song.findOne({
+						title: { $regex: new RegExp(`^${escapedTitle}$`, "i") },
+						artist: { $regex: new RegExp(`^${escapedArtist}$`, "i") }
+					});
+					
+					if (song) {
+						await Song.updateOne(
+							{ _id: song._id },
+							{ $set: { "external_ids.spotify_id": spotifyId } }
+						);
+					}
+				}
+
+				if (!song && title && artist) {
+					const fuzzyId = generateSongId(title, artist);
+					song = new Song({
+						title,
+						artist,
+						imageUrl: imageUrl || "/albums/default.jpg",
+						audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+						duration: Number(duration) || 180,
+						genre: "Hip Hop",
+						tempo: Math.floor(Math.random() * (180 - 60 + 1) + 60),
+						energy: Math.random(),
+						valence: Math.random(),
+						acousticness: Math.random(),
+						danceability: Math.random(),
+						external_ids: {
+							spotify_id: spotifyId,
+							fuzzy_id: fuzzyId
+						}
+					});
+					await song.save();
+
+					try {
+						const { Artist } = await import("../models/artist.model.js");
+						const { parseArtistNames } = await import("../utils/artistParser.js");
+						
+						const artistNames = parseArtistNames(artist);
+						const artistIds: any[] = [];
+						
+						for (const name of artistNames) {
+							const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+							let artistDoc = await Artist.findOne({ name: { $regex: new RegExp(`^${escapedName}$`, "i") } });
+							if (!artistDoc) {
+								artistDoc = new Artist({
+									name: name,
+									imageUrl: imageUrl || "/albums/default.jpg",
+									monthlyListeners: Math.floor(Math.random() * (1200000 - 15000 + 1) + 15000),
+									followers: Math.floor(Math.random() * (600000 - 8000 + 1) + 8000),
+									genres: ["Indian Hip Hop", "Pop", "Desi Hip Hop"],
+									bio: `${name} is a featured artist on SociTune.`,
+									verified: Math.random() > 0.5
+								});
+								await artistDoc.save();
+							}
+							
+							if (!artistDoc.songs.includes(song._id as any)) {
+								artistDoc.songs.push(song._id as any);
+								await artistDoc.save();
+							}
+							artistIds.push(artistDoc._id);
+						}
+						
+						song.set("artists", artistIds);
+						await song.save();
+					} catch (err) {
+						console.error("Error setting artist links:", err);
+					}
+				}
+
+				if (song) {
+					songId = song._id;
+				} else {
+					return res.status(400).json({ message: "Song details are incomplete to register new track" });
+				}
 			}
 		}
 
-		await PlayHistory.create({ userId, songId });
+		if (!songId) {
+			return res.status(400).json({ message: "songId could not be determined" });
+		}
+
+		// Create play history record in DB
+		const playHistoryObj: any = {
+			userId,
+			songId,
+			playedAt: playedAtVal
+		};
+		if (durationMsStr !== undefined) playHistoryObj.durationMs = durationMsStr;
+		if (completed !== undefined) playHistoryObj.completed = completed;
+		if (sessionId !== undefined) playHistoryObj.sessionId = sessionId;
+		if (source !== undefined) playHistoryObj.source = source;
+
+		await PlayHistory.create(playHistoryObj);
 		
-		// Notify recommender engine to clear cache or queue recalculation
+		// Notify recommender engine
 		recommender.recordPlay(userId, songId);
+
+		// Async send to Docker AI service
+		if (req.body.song_details) {
+			// If it's the new payload, forward it
+			const { dockerAiService } = await import("../services/dockerAi.service.js");
+			dockerAiService.sendListeningEvent(req.body).catch(err => {
+				console.error("[recordPlay] Failed to forward listening event to Docker AI service:", err);
+			});
+		} else {
+			// If it's the legacy payload, construct the new payload format to forward
+			const songDoc = await Song.findById(songId);
+			if (songDoc) {
+				const constructedPayload = {
+					song_details: {
+						title: songDoc.title,
+						artist: songDoc.artist,
+						external_ids: {
+							spotify_id: songDoc.external_ids?.spotify_id,
+							isrc_id: songDoc.external_ids?.isrc_id,
+							yt_id: songDoc.external_ids?.yt_id,
+							fuzzy_id: songDoc.external_ids?.fuzzy_id
+						},
+						primary_genre: songDoc.genre || "unknown",
+						duration: String(songDoc.duration),
+						audio_details: songDoc.audio_details ? {
+							tempo: songDoc.audio_details.tempo || 0,
+							energy: songDoc.audio_details.energy || 0,
+							valence: songDoc.audio_details.valence || 0,
+							acousticness: songDoc.audio_details.acousticness || 0,
+							danceability: songDoc.audio_details.danceability || 0
+						} : undefined,
+						lyrics_details: songDoc.lyrics ? {
+							lyrics: songDoc.lyrics,
+							lyricsSource: songDoc.lyricsSource || "Unknown",
+							lyricsFetchedAt: songDoc.lyricsFetchedAt
+						} : undefined,
+						image_url: songDoc.imageUrl
+					},
+					played_at: playedAtVal.toISOString(),
+					duration_ms: durationMsStr || "0",
+					completed: completed || false,
+					session_id: sessionId,
+					source: source || "organic"
+				};
+				const { dockerAiService } = await import("../services/dockerAi.service.js");
+				dockerAiService.sendListeningEvent(constructedPayload).catch(err => {
+					console.error("[recordPlay] Failed to forward constructed listening event to Docker AI service:", err);
+				});
+			}
+		}
 		
 		res.status(200).json({ message: "Play recorded", songId });
 	} catch (error) {

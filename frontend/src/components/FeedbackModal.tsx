@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import { Star, MessageCircle, X } from "lucide-react";
+import { Star, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { axiosInstance } from "@/lib/axios";
 import toast from "react-hot-toast";
 import confetti from "canvas-confetti";
-import { motion, AnimatePresence } from "framer-motion";
 
 const FeedbackModal = () => {
     const [open, setOpen] = useState(false);
@@ -32,7 +31,7 @@ const FeedbackModal = () => {
             setContent("");
             setRating(5);
             
-            toast.success("Feedback sent");
+            toast.success("Feedback submitted");
 
             // Epic side-popping confetti blast
             const end = Date.now() + 2 * 1000;
@@ -70,102 +69,65 @@ const FeedbackModal = () => {
     };
 
     const displayRating = hoveredRating || rating;
-    const ratingLabels = ["", "Terrible", "Could be better", "It's okay", "Pretty good", "Absolutely love it!"];
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="sm:max-w-md bg-[rgba(24,24,24,0.82)] backdrop-blur-2xl border border-white/10 text-white shadow-2xl p-0 overflow-hidden rounded-[28px] focus:outline-none">
-                {/* Custom Mac-style circular close button that shows on hover */}
-                <button
-                    onClick={() => setOpen(false)}
-                    className="absolute top-4 right-4 w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-all focus:outline-none"
-                    aria-label="Close"
-                >
-                    <X className="w-3.5 h-3.5" />
-                </button>
-
-                <div className="p-8 sm:p-10 flex flex-col items-center">
-                    <DialogHeader className="mb-8 space-y-3 text-center items-center">
-                        <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/5 flex items-center justify-center shadow-inner mb-2">
-                            <MessageCircle className="w-6 h-6 text-zinc-300" />
+            <DialogContent className="sm:max-w-[425px] bg-[#09090b] border border-zinc-800 p-0 shadow-xl rounded-xl">
+                <div className="p-6">
+                    <DialogHeader className="mb-5 space-y-1 text-left">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="bg-zinc-900 rounded-lg p-2 border border-zinc-800">
+                                <MessageSquare className="w-5 h-5 text-zinc-300" />
+                            </div>
+                            <DialogTitle className="text-lg font-medium text-zinc-100">
+                                Send feedback
+                            </DialogTitle>
                         </div>
-                        <DialogTitle className="text-2xl font-bold tracking-tight text-white">
-                            Share Feedback
-                        </DialogTitle>
-                        <DialogDescription className="text-sm text-zinc-400 max-w-xs font-normal leading-relaxed">
-                            Your thoughts help us build a better music experience.
+                        <DialogDescription className="text-sm text-zinc-400">
+                            Let us know what's on your mind. We read every submission.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <form onSubmit={handleSubmit} className="w-full space-y-8">
-                        {/* Rating Stars - Apple Style */}
-                        <div className="flex flex-col items-center gap-3">
-                            <div className="flex justify-center gap-2.5">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                    <motion.button
-                                        key={star}
-                                        type="button"
-                                        whileHover={{ scale: 1.15 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onMouseEnter={() => setHoveredRating(star)}
-                                        onMouseLeave={() => setHoveredRating(0)}
-                                        onClick={() => setRating(star)}
-                                        className="focus:outline-none"
-                                    >
-                                        <Star 
-                                            className={`h-8 w-8 transition-colors duration-200 ${
-                                                star <= displayRating 
-                                                    ? 'fill-[#F59E0B] text-[#F59E0B] filter drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]' 
-                                                    : 'fill-transparent text-zinc-600 hover:text-zinc-400'
-                                            }`} 
-                                        />
-                                    </motion.button>
-                                ))}
-                            </div>
-                            <div className="h-4">
-                                <AnimatePresence mode="wait">
-                                    <motion.p
-                                        key={displayRating}
-                                        initial={{ opacity: 0, y: 3 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -3 }}
-                                        transition={{ duration: 0.15 }}
-                                        className="text-xs font-semibold text-[#F59E0B]"
-                                    >
-                                        {ratingLabels[displayRating]}
-                                    </motion.p>
-                                </AnimatePresence>
-                            </div>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                    key={star}
+                                    type="button"
+                                    onMouseEnter={() => setHoveredRating(star)}
+                                    onMouseLeave={() => setHoveredRating(0)}
+                                    onClick={() => setRating(star)}
+                                    className="focus:outline-none p-1 transition-transform active:scale-95"
+                                >
+                                    <Star 
+                                        className={`h-6 w-6 transition-all duration-200 ${
+                                            star <= displayRating 
+                                                ? 'fill-emerald-500 text-emerald-500' 
+                                                : 'fill-transparent text-zinc-700 hover:text-zinc-500'
+                                        }`} 
+                                    />
+                                </button>
+                            ))}
                         </div>
 
-                        {/* Input Field - Notes / Search Style */}
-                        <div className="relative">
+                        <div>
                             <textarea 
-                                className="w-full bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#1ED760]/30 focus:border-[#1ED760]/40 min-h-[130px] resize-none transition-all duration-300 shadow-inner"
-                                placeholder="Tell us what you enjoyed or what we could improve…"
+                                className="w-full bg-[#09090b] border border-zinc-800 rounded-lg p-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 min-h-[100px] resize-none transition-colors"
+                                placeholder="Your thoughts..."
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
                                 spellCheck={false}
                             />
                         </div>
                         
-                        {/* Apple-style Action Buttons */}
-                        <div className="flex flex-col gap-3 pt-2">
+                        <div className="flex justify-end pt-2">
                             <Button 
                                 type="submit" 
                                 disabled={isSubmitting || !content.trim()}
-                                className="w-full bg-white text-black hover:bg-zinc-200 font-semibold h-12 rounded-full transition-all shadow-[0_4px_12px_rgba(255,255,255,0.1)] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="bg-zinc-100 text-zinc-900 hover:bg-zinc-200 font-medium h-9 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isSubmitting ? "Sending..." : "Send Feedback"}
+                                {isSubmitting ? "Sending..." : "Submit"}
                             </Button>
-                            
-                            <button 
-                                type="button"
-                                onClick={() => setOpen(false)}
-                                className="w-full text-zinc-400 hover:text-white font-medium text-sm h-10 rounded-full hover:bg-white/[0.02] active:bg-white/[0.04] transition-all"
-                            >
-                                Not Now
-                            </button>
                         </div>
                     </form>
                 </div>

@@ -27,6 +27,7 @@ class AdminController {
             }
             const { title, artist, albumId, duration } = req.body;
             //Need to test this parameter , despite the fact the route won't be used
+            //This is the fuzzyId
             const song_id = generateSongId(title, artist);
             const audioFile = req.files.audioFile;
             const imageFile = req.files.imageFile;

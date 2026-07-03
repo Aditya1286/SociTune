@@ -10,7 +10,9 @@ import AudioPlayer from "./components/AudioPlayer";
 import { PlaybackControls } from "./components/PlaybackControls";
 import { useState, useEffect } from "react";
 import FeedbackModal from "@/components/FeedbackModal";
+import { usePlaybackTracker } from "@/hooks/usePlaybackTracker";
 const MainLayout = () => {
+  usePlaybackTracker();
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const checkMobile = () => {

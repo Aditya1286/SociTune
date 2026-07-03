@@ -1,14 +1,6 @@
 import {create} from "zustand";
-import type { Song } from "@/types";
+import type { Song, ListenEventMetaData } from "@/types";
 import { axiosInstance } from "@/lib/axios";
-
-const logPlay = async (songId: string) => {
-    try {
-        await axiosInstance.post("/users/play-history", { songId });
-    } catch (error) {
-        console.error("Failed to log play history:", error);
-    }
-};
 
 interface PLayerStore {
     currentSong: Song | null;
@@ -29,6 +21,7 @@ interface PLayerStore {
     lyrics: Record<string, string | null>;
     isLoadingLyrics: boolean;
     fetchLyrics: (songId: string) => Promise<void>;
+    logPlay: (payload: ListenEventMetaData) => Promise<void>;
 }
 
 export const usePlayerStore = create<PLayerStore>((set,get) => ({
@@ -53,7 +46,6 @@ export const usePlayerStore = create<PLayerStore>((set,get) => ({
             currentIndex: startIndex,
             isPlaying: true,
         });
-        logPlay(song._id);
     },
     setCurrentSong: (song: Song | null) => {
 
@@ -64,7 +56,6 @@ export const usePlayerStore = create<PLayerStore>((set,get) => ({
             isPlaying: true,
             currentIndex: songIndex !== -1 ? songIndex : get().currentIndex,
         });
-        logPlay(song._id);
     },
     togglePlay: () => {
         const willStartPlaying = !get().isPlaying;
@@ -94,7 +85,6 @@ export const usePlayerStore = create<PLayerStore>((set,get) => ({
                 currentIndex: nextIndex,
                 isPlaying: true,
             });
-            logPlay(nextSong._id);
         }
         else{
             set({isPlaying: false});
@@ -115,7 +105,6 @@ export const usePlayerStore = create<PLayerStore>((set,get) => ({
                 currentIndex: prevIndex,
                 isPlaying: true,
             });
-            logPlay(prevSong._id);
         }
         else{
             set({isPlaying: false});
@@ -138,6 +127,13 @@ export const usePlayerStore = create<PLayerStore>((set,get) => ({
             }));
         } finally {
             set({ isLoadingLyrics: false });
+        }
+    },
+    logPlay: async (payload: ListenEventMetaData) => {
+        try {
+            await axiosInstance.post("/users/play-history", payload);
+        } catch (error) {
+            console.error("Failed to log play history:", error);
         }
     },
 }));

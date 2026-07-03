@@ -158,27 +158,7 @@ const NowPlayingPanel = () => {
       .catch((e) => console.error("Error checking Spotify like state:", e));
   }, [store.track?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Log Spotify track play history to backend ──
-  useEffect(() => {
-    if (!store.track?.id) return;
 
-    const logSpotifyPlay = async () => {
-      try {
-        const { axiosInstance } = await import("@/lib/axios");
-        await axiosInstance.post("/users/play-history", {
-          spotifyId: store.track?.id,
-          title: store.track?.name,
-          artist: fmt.artists(store.track?.artists),
-          imageUrl: store.track?.album?.images?.[0]?.url || "",
-          duration: Math.round(store.duration / 1000)
-        });
-      } catch (err) {
-        console.error("Failed to log Spotify play history:", err);
-      }
-    };
-
-    logSpotifyPlay();
-  }, [store.track?.id]);
 
   // ── Fetch local liked songs on mount ──
   useEffect(() => {

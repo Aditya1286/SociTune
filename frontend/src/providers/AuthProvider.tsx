@@ -22,6 +22,29 @@ const updateApiToken = (token: string | null) => {
     const { initSocket, disconnectSocket } = useChatStore();
     const { fetchLikedSongs } = useMusicStore();
 
+    useEffect(() => {
+      const requestInterceptor = axiosInstance.interceptors.request.use(
+        async (config) => {
+          try {
+            const token = await getToken();
+            if (token) {
+              config.headers.Authorization = `Bearer ${token}`;
+            }
+          } catch (error) {
+            console.error("Error setting auth token in interceptor", error);
+          }
+          return config;
+        },
+        (error) => {
+          return Promise.reject(error);
+        }
+      );
+
+      return () => {
+        axiosInstance.interceptors.request.eject(requestInterceptor);
+      };
+    }, [getToken]);
+
 
   useEffect(() => {
     const initAuth = async () => {

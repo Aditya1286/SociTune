@@ -245,7 +245,7 @@ export async function migrateArtists() {
         console.log("[Migration] Running artist relationship migration...");
         
         // Heal database: populate missing fuzzy_id for existing songs
-        const songsMissingFuzzyId = await Song.find({
+        const needsFuzzyIdHealing = await Song.exists({
             $or: [
                 { "external_ids.fuzzy_id": { $exists: false } },
                 { "external_ids.fuzzy_id": null },
@@ -253,7 +253,14 @@ export async function migrateArtists() {
             ]
         });
 
-        if (songsMissingFuzzyId.length > 0) {
+        if (needsFuzzyIdHealing) {
+            const songsMissingFuzzyId = await Song.find({
+                $or: [
+                    { "external_ids.fuzzy_id": { $exists: false } },
+                    { "external_ids.fuzzy_id": null },
+                    { "external_ids.fuzzy_id": "" }
+                ]
+            });
             console.log(`[Migration] Healing ${songsMissingFuzzyId.length} songs missing fuzzy_id...`);
             for (const song of songsMissingFuzzyId) {
                 const fuzzyId = generateSongId(song.title, song.artist);
@@ -273,12 +280,64 @@ export async function migrateArtists() {
             console.log(`[Migration] Successfully healed ${songsMissingFuzzyId.length} songs.`);
         }
 
+        // Check if we actually need to migrate songs or albums
+        const needsSongArtistMigration = await Song.exists({
+            $and: [
+                { artist: { $nin: ["Various Artists", "various artists", ""] } },
+                {
+                    $or: [
+                        { artists: { $exists: false } },
+                        { artists: { $size: 0 } }
+                    ]
+                }
+            ]
+        });
+
+        const needsAlbumArtistMigration = await Album.exists({
+            $and: [
+                { artist: { $nin: ["Various Artists", "various artists", ""] } },
+                {
+                    $or: [
+                        { artists: { $exists: false } },
+                        { artists: { $size: 0 } }
+                    ]
+                }
+            ]
+        });
+
+        if (!needsSongArtistMigration && !needsAlbumArtistMigration) {
+            console.log("[Migration] All songs and albums already have artist relationships. Skipping migration.");
+            
+            // Start background enrichment for unenriched artists
+            const unenrichedArtists = await Artist.find({ enriched: false });
+            if (unenrichedArtists.length > 0) {
+                console.log(`[Migration] Found ${unenrichedArtists.length} unenriched artists. Starting background enrichment...`);
+                (async () => {
+                    const enrichmentService = Singleton.instance<ArtistEnrichmentService>(ArtistEnrichmentService);
+                    for (const artist of unenrichedArtists) {
+                        try {
+                            // Wait 4 seconds between requests to avoid exceeding rate limits
+                            await new Promise(resolve => setTimeout(resolve, 4000));
+                            console.log(`[Migration] Background enriching artist: ${artist.name}`);
+                            await enrichmentService.enrichArtist(artist.name);
+                        } catch (err) {
+                            console.error(`[Migration] Failed to background enrich artist ${artist.name}:`, err);
+                        }
+                    }
+                    console.log("[Migration] Background enrichment process complete!");
+                })();
+            }
+            return;
+        }
+
         // 1. Get all songs
         const songs = await Song.find({});
         console.log(`[Migration] Processing ${songs.length} songs...`);
         
         for (const song of songs) {
             const artistNames = parseArtistNames(song.artist);
+            if (artistNames.length === 0) continue;
+            
             const artistIds: mongoose.Types.ObjectId[] = [];
             
             for (const name of artistNames) {
@@ -299,16 +358,25 @@ export async function migrateArtists() {
                 }
                 
                 // Add song to artist if not already present
-                if (!artist.songs.includes(song._id as any)) {
+                const songIdStr = song._id.toString();
+                const artistSongIds = (artist.songs || []).map(id => id.toString());
+                if (!artistSongIds.includes(songIdStr)) {
                     artist.songs.push(song._id as any);
                     await artist.save();
                 }
                 artistIds.push(artist._id as any);
             }
             
-            // Update song's artists array
-            song.set("artists", artistIds);
-            await song.save();
+            // Only update and save song if artists array actually changed
+            const existingArtistIds = (song.artists || []).map(id => id.toString());
+            const newArtistIds = artistIds.map(id => id.toString());
+            const arraysMatch = existingArtistIds.length === newArtistIds.length && 
+                               existingArtistIds.every((val, index) => val === newArtistIds[index]);
+            
+            if (!arraysMatch) {
+                song.set("artists", artistIds);
+                await song.save();
+            }
         }
         
         // 2. Get all albums
@@ -317,6 +385,8 @@ export async function migrateArtists() {
         
         for (const album of albums) {
             const artistNames = parseArtistNames(album.artist);
+            if (artistNames.length === 0) continue;
+            
             const artistIds: mongoose.Types.ObjectId[] = [];
             
             for (const name of artistNames) {
@@ -336,38 +406,49 @@ export async function migrateArtists() {
                 }
                 
                 // Add album to artist if not already present
-                if (!artist.albums.includes(album._id as any)) {
+                const albumIdStr = album._id.toString();
+                const artistAlbumIds = (artist.albums || []).map(id => id.toString());
+                if (!artistAlbumIds.includes(albumIdStr)) {
                     artist.albums.push(album._id as any);
                     await artist.save();
                 }
                 artistIds.push(artist._id as any);
             }
             
-            // Update album's artists array
-            album.set("artists", artistIds);
-            await album.save();
+            // Only update and save album if artists array actually changed
+            const existingArtistIds = (album.artists || []).map(id => id.toString());
+            const newArtistIds = artistIds.map(id => id.toString());
+            const arraysMatch = existingArtistIds.length === newArtistIds.length && 
+                               existingArtistIds.every((val, index) => val === newArtistIds[index]);
+            
+            if (!arraysMatch) {
+                album.set("artists", artistIds);
+                await album.save();
+            }
         }
         
         console.log("[Migration] Artist relationship migration completed successfully!");
-
+        
         // Start background enrichment for unenriched artists
         const unenrichedArtists = await Artist.find({ enriched: false });
-        console.log(`[Migration] Found ${unenrichedArtists.length} unenriched artists. Starting background enrichment...`);
-        
-        (async () => {
-            const enrichmentService = Singleton.instance<ArtistEnrichmentService>(ArtistEnrichmentService);
-            for (const artist of unenrichedArtists) {
-                try {
-                    // Wait 4 seconds between requests to avoid exceeding rate limits
-                    await new Promise(resolve => setTimeout(resolve, 4000));
-                    console.log(`[Migration] Background enriching artist: ${artist.name}`);
-                    await enrichmentService.enrichArtist(artist.name);
-                } catch (err) {
-                    console.error(`[Migration] Failed to background enrich artist ${artist.name}:`, err);
+        if (unenrichedArtists.length > 0) {
+            console.log(`[Migration] Found ${unenrichedArtists.length} unenriched artists. Starting background enrichment...`);
+            
+            (async () => {
+                const enrichmentService = Singleton.instance<ArtistEnrichmentService>(ArtistEnrichmentService);
+                for (const artist of unenrichedArtists) {
+                    try {
+                        // Wait 4 seconds between requests to avoid exceeding rate limits
+                        await new Promise(resolve => setTimeout(resolve, 4000));
+                        console.log(`[Migration] Background enriching artist: ${artist.name}`);
+                        await enrichmentService.enrichArtist(artist.name);
+                    } catch (err) {
+                        console.error(`[Migration] Failed to background enrich artist ${artist.name}:`, err);
+                    }
                 }
-            }
-            console.log("[Migration] Background enrichment process complete!");
-        })();
+                console.log("[Migration] Background enrichment process complete!");
+            })();
+        }
     } catch (err) {
         console.error("[Migration] Error during artist migration:", err);
     }

@@ -10,6 +10,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import MessageInput from "./components/MessageInput";
 import { Button } from "@/components/ui/button";
+import { 
+    Message, 
+    MessageContent, 
+    MessageGroup 
+} from "@/components/ui/message";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
 
 
 const formatTime = (date: string) => {
@@ -36,6 +42,28 @@ const formatMessageDate = (dateString: string) => {
         return date.toLocaleDateString("en-US", { weekday: "long" });
     }
     return date.toLocaleDateString("en-GB");
+};
+
+const getSubGroups = (messages: any[]) => {
+    const subGroups: any[][] = [];
+    let currentSubGroup: any[] = [];
+    messages.forEach((msg) => {
+        if (currentSubGroup.length === 0) {
+            currentSubGroup.push(msg);
+        } else {
+            const lastMsg = currentSubGroup[currentSubGroup.length - 1];
+            if (lastMsg.senderId === msg.senderId) {
+                currentSubGroup.push(msg);
+            } else {
+                subGroups.push(currentSubGroup);
+                currentSubGroup = [msg];
+            }
+        }
+    });
+    if (currentSubGroup.length > 0) {
+        subGroups.push(currentSubGroup);
+    }
+    return subGroups;
 };
 
 const VoiceMessagePlayer = ({ url, isSender }: { url: string; isSender: boolean }) => {
@@ -185,112 +213,112 @@ const ChatPage = () => {
 
                                 {/* Messages */}
                                 <ScrollArea className='flex-1 min-h-0 bg-[url("/chat-bg.png")] bg-repeat bg-center bg-blend-overlay bg-opacity-25'>
-                                    <div className='p-4 space-y-6'>
+                                    <div className='p-4 space-y-4'>
                                         {groupedMessages.map((group) => (
-                                            <div key={group.date} className="space-y-6">
+                                            <div key={group.date} className="space-y-3">
                                                 <div className="flex justify-center sticky top-2 z-20">
                                                     <span className="bg-[#121216]/90 border border-white/[0.06] backdrop-blur-md text-zinc-300 text-[11px] px-3.5 py-1 rounded-full shadow-lg font-semibold tracking-wide">
                                                         {group.date}
                                                     </span>
                                                 </div>
-                                                {group.messages.map((message) => (
-                                                    <div
-                                                        key={message._id}
-                                                        className={`flex items-end gap-3 group/row ${
-                                                    message.senderId === user?.id ? "flex-row-reverse" : ""
-                                                }`}
-                                            >
-                                                <Avatar className='size-8 shrink-0 border border-white/[0.06] shadow-sm'>
-                                                    <AvatarImage
-                                                        src={
-                                                            message.senderId === user?.id
-                                                                ? user?.imageUrl
-                                                                : selectedUser.imageUrl
-                                                        }
-                                                    />
-                                                    <AvatarFallback>
-                                                        {message.senderId === user?.id
-                                                            ? user?.fullName?.[0]
-                                                            : selectedUser.fullName[0]}
-                                                    </AvatarFallback>
-                                                </Avatar>
+                                                {getSubGroups(group.messages).map((subGroup, subGroupIdx) => {
+                                                    const firstMsg = subGroup[0];
+                                                    const isSender = firstMsg.senderId === user?.id;
+                                                    return (
+                                                        <MessageGroup key={subGroupIdx} className={`gap-[3px] ${isSender ? "items-end" : "items-start"}`}>
+                                                            {subGroup.map((message, idx) => {
+                                                                const isFirstInGroup = idx === 0;
+                                                                const bubbleRoundClass = isSender
+                                                                    ? (isFirstInGroup ? "rounded-[8px] rounded-tr-none" : "rounded-[8px]")
+                                                                    : (isFirstInGroup ? "rounded-[8px] rounded-tl-none" : "rounded-[8px]");
+                                                                return (
+                                                                    <Message
+                                                                        key={message._id}
+                                                                        align={isSender ? "end" : "start"}
+                                                                        className="group/row"
+                                                                    >
+                                                                        <MessageContent className={`relative max-w-[65%] w-fit flex flex-col ${isSender ? "items-end" : "items-start"}`}>
+                                                                            <Bubble variant="custom" className="w-full">
+                                                                                <BubbleContent
+                                                                                    className={`${bubbleRoundClass} px-3 py-1.5 w-full shadow-sm relative group/bubble transition-all duration-200 ${
+                                                                                        isSender
+                                                                                            ? "bg-[#005c4b] text-[#e9edef]"
+                                                                                            : "bg-[#202c33] text-[#e9edef] border-0"
+                                                                                    }`}
+                                                                                >
+                                                                                    {message.replyTo && (
+                                                                                        <div className="mb-2 p-2 rounded-lg text-xs border-l-2 border-emerald-500 bg-black/20">
+                                                                                            <span className="font-semibold block mb-0.5 text-emerald-400">
+                                                                                                {message.replyTo.senderId === user?.id ? "You" : selectedUser?.fullName}
+                                                                                            </span>
+                                                                                            <p className="truncate opacity-80">{message.replyTo.content}</p>
+                                                                                        </div>
+                                                                                    )}
 
-                                                <div className={`relative max-w-[75%] flex flex-col ${message.senderId === user?.id ? "items-end" : "items-start"}`}>
-                                                    <div
-                                                        className={`rounded-[20px] p-3 px-4 w-full shadow-sm relative group/bubble transition-all duration-200
-                                                            ${message.senderId === user?.id 
-                                                                ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-br-[4px] shadow-[0_2px_12px_rgba(16,185,129,0.12)]" 
-                                                                : "bg-white/[0.04] border border-white/[0.06] text-white/95 rounded-bl-[4px] shadow-[0_2px_12px_rgba(0,0,0,0.15)]"}
-                                                        `}
-                                                    >
-                                                        {message.replyTo && (
-                                                            <div className={`mb-2.5 p-2 rounded-xl text-xs border-l-2 border-white/30 bg-black/25`}>
-                                                                <span className="font-semibold block mb-0.5 text-white/90">
-                                                                    {message.replyTo.senderId === user?.id ? "You" : selectedUser?.fullName}
-                                                                </span>
-                                                                <p className="truncate opacity-80">{message.replyTo.content}</p>
-                                                            </div>
-                                                        )}
+                                                                                    {message.imageUrl && (
+                                                                                        <div className="mb-1.5 rounded-lg overflow-hidden relative border border-white/[0.06] cursor-pointer" onClick={() => setPreviewImage(message.imageUrl!)}>
+                                                                                            <img src={message.imageUrl} alt="attachment" className="max-w-[200px] md:max-w-[250px] object-cover hover:scale-[1.02] transition-transform duration-300" />
+                                                                                        </div>
+                                                                                    )}
+                                                                                    {message.voiceNoteUrl && (
+                                                                                        <VoiceMessagePlayer url={message.voiceNoteUrl} isSender={isSender} />
+                                                                                    )}
+                                                                                    {message.content && (
+                                                                                        <p className="text-[14px] leading-relaxed break-words">{message.content}</p>
+                                                                                    )}
+                                                                                    <span className="text-[10px] text-white/50 mt-1 flex items-center justify-end gap-1 font-normal select-none">
+                                                                                        {formatTime(message.createdAt)}
+                                                                                        {isSender && (
+                                                                                            <CheckCheck className={`size-3.5 ${message.isRead ? "text-[#53bdeb]" : "text-white/30"}`} />
+                                                                                        )}
+                                                                                    </span>
+                                                                                </BubbleContent>
+                                                                            </Bubble>
 
-                                                        {message.imageUrl && (
-                                                            <div className="mb-2 rounded-xl overflow-hidden relative border border-white/[0.06] cursor-pointer" onClick={() => setPreviewImage(message.imageUrl!)}>
-                                                                <img src={message.imageUrl} alt="attachment" className="max-w-[200px] md:max-w-[250px] object-cover hover:scale-[1.02] transition-transform duration-300" />
-                                                            </div>
-                                                        )}
-                                                        {message.voiceNoteUrl && (
-                                                            <VoiceMessagePlayer url={message.voiceNoteUrl} isSender={message.senderId === user?.id} />
-                                                        )}
-                                                        {message.content && (
-                                                            <p className='text-[14px] leading-relaxed break-words font-medium'>{message.content}</p>
-                                                        )}
-                                                        <span className='text-[10px] text-white/40 mt-1.5 flex items-center justify-end gap-1 font-semibold'>
-                                                            {formatTime(message.createdAt)}
-                                                            {message.senderId === user?.id && (
-                                                                <CheckCheck className={`size-3.5 ${message.isRead ? "text-emerald-400" : "text-white/40"}`} />
-                                                            )}
-                                                        </span>
-                                                    </div>
+                                                                            {message.reactions && Object.keys(message.reactions).length > 0 && (
+                                                                                <div className={`absolute -bottom-2.5 flex items-center gap-1 bg-[#121216]/90 border border-white/[0.08] backdrop-blur-md rounded-full px-1.5 py-0.5 text-[10px] shadow-lg z-10 hover:scale-105 active:scale-95 transition-all select-none ${
+                                                                                    isSender ? "right-2" : "left-2"
+                                                                                }`}>
+                                                                                    {Array.from(new Set(Object.values(message.reactions))).map((emoji: any) => (
+                                                                                        <span key={emoji}>{emoji}</span>
+                                                                                    ))}
+                                                                                    <span className="text-[9px] text-zinc-400 ml-0.5 font-bold">
+                                                                                        {Object.keys(message.reactions).length}
+                                                                                    </span>
+                                                                                </div>
+                                                                            )}
 
-                                                    {message.reactions && Object.keys(message.reactions).length > 0 && (
-                                                        <div className={`absolute -bottom-2 flex items-center gap-1 bg-[#121216]/90 border border-white/[0.08] backdrop-blur-md rounded-full px-2 py-0.5 text-[11px] shadow-lg z-10 hover:scale-105 active:scale-95 transition-all select-none
-                                                            ${message.senderId === user?.id ? "right-3" : "left-3"}
-                                                        `}>
-                                                            {Array.from(new Set(Object.values(message.reactions))).map((emoji: any) => (
-                                                                <span key={emoji}>{emoji}</span>
-                                                            ))}
-                                                            <span className="text-[10px] text-zinc-400 ml-0.5 font-bold">
-                                                                {Object.keys(message.reactions).length}
-                                                            </span>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Action Menu (Apple Design floating glass pill) */}
-                                                    <div className={`opacity-0 group-hover/row:opacity-100 transition-all duration-200 absolute top-1/2 -translate-y-1/2 flex items-center gap-1 bg-[#121215]/90 border border-white/[0.08] p-1 rounded-full shadow-2xl z-10 backdrop-blur-md scale-95 group-hover/row:scale-100
-                                                        ${message.senderId === user?.id ? "right-[calc(100%+12px)]" : "left-[calc(100%+12px)]"}
-                                                    `}>
-                                                        <Button variant='ghost' size='icon' className='size-7 rounded-full text-zinc-400 hover:text-white hover:bg-white/5 active:scale-90 transition-all' onClick={() => setReplyingToMessage(message)}>
-                                                            <Reply className='size-4' />
-                                                        </Button>
-                                                        <div className="flex items-center gap-0.5 bg-black/25 rounded-full px-1.5 py-0.5">
-                                                            {['👍', '❤️', '😂', '😮', '😢', '🙏'].map(emoji => (
-                                                                <button 
-                                                                    key={emoji}
-                                                                    onClick={() => reactToMessage(message._id, emoji)}
-                                                                    className={`hover:scale-125 p-1 rounded-full text-sm transition-transform active:scale-90 ${message.reactions?.[user?.id || ""] === emoji ? "bg-white/10" : ""}`}
-                                                                >
-                                                                    {emoji}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                        {message.senderId === user?.id && (
-                                                            <Button variant='ghost' size='icon' className='size-7 rounded-full text-red-400 hover:text-red-300 hover:bg-red-500/10 active:scale-90 transition-all' onClick={() => deleteMessage(message._id)}>
-                                                                <Trash className='size-4' />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                    </div>
-                                                ))}
+                                                                            {/* Action Menu (Apple Design floating glass pill) */}
+                                                                            <div className={`opacity-0 group-hover/row:opacity-100 transition-all duration-200 absolute top-1/2 -translate-y-1/2 flex items-center gap-1 bg-[#121215]/90 border border-white/[0.08] p-1 rounded-full shadow-2xl z-10 backdrop-blur-md scale-95 group-hover/row:scale-100 ${
+                                                                                isSender ? "right-[calc(100%+8px)]" : "left-[calc(100%+8px)]"
+                                                                            }`}>
+                                                                                <Button variant="ghost" size="icon" className="size-7 rounded-full text-zinc-400 hover:text-white hover:bg-white/5 active:scale-90 transition-all" onClick={() => setReplyingToMessage(message)}>
+                                                                                    <Reply className="size-4" />
+                                                                                </Button>
+                                                                                <div className="flex items-center gap-0.5 bg-black/25 rounded-full px-1.5 py-0.5">
+                                                                                    {["👍", "❤️", "😂", "😮", "😢", "🙏"].map(emoji => (
+                                                                                        <button 
+                                                                                            key={emoji}
+                                                                                            onClick={() => reactToMessage(message._id, emoji)}
+                                                                                            className={`hover:scale-125 p-1 rounded-full text-sm transition-transform active:scale-90 ${message.reactions?.[user?.id || ""] === emoji ? "bg-white/10" : ""}`}
+                                                                                        >
+                                                                                            {emoji}
+                                                                                        </button>
+                                                                                    ))}
+                                                                                </div>
+                                                                                {isSender && (
+                                                                                    <Button variant="ghost" size="icon" className="size-7 rounded-full text-red-400 hover:text-red-300 hover:bg-red-500/10 active:scale-90 transition-all" onClick={() => deleteMessage(message._id)}>
+                                                                                        <Trash className="size-4" />
+                                                                                    </Button>
+                                                                                )}
+                                                                            </div>
+                                                                        </MessageContent>
+                                                                    </Message>
+                                                                );
+                                                            })}
+                                                        </MessageGroup>
+                                                    );
+                                                })}
                                             </div>
                                         ))}
                                         <div ref={messagesEndRef} />
