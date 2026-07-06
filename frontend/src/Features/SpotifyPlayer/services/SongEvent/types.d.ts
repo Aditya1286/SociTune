@@ -49,7 +49,7 @@ export type songAnalyzeInputType = {
 };
 
 
-export type saveSongEventPayload = {
+export type songDetails = {
   title: string;
   artist: string;
   external_ids: {
@@ -73,4 +73,20 @@ export type saveSongEventPayload = {
     lyricsFetchedAt: Date;
   };
   image_url: string;
+};
+
+export type songEventPayload = {
+  song_details: songDetails;
+  played_at: string;
+  duration_ms: string;
+  completed: boolean; //can be calculated
+  session_id?: string;
+  source?:
+    | "organic"
+    | "playlist"
+    | "radio"
+    | "search"
+    | "recommendation"
+    | "share"
+    | "other";
 };

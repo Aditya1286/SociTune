@@ -134,6 +134,7 @@ export const getClient = (
   return axiosClient;
 };
 
+//The base path will be dynamic in future for multiple micro services
 export const client = getClient(import.meta.env.VITE_APP_API_BASE_PATH + "");
 
 export const clientUploadingLarge = getClient(

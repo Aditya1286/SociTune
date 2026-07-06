@@ -1,6 +1,10 @@
-import React, { useRef, useState } from "react";
-import type { SpotifyTrack, WebPlaybackTrack } from "../utils/types";
+import React, { useEffect, useRef, useState } from "react";
 import { PlayIcon, MusicIcon, VolumeIcon } from "./Icons";
+import { saveSongEvent } from "../services/SongEvent/songEvent.service";
+import {useMutation} from "@tanstack/react-query"
+//Types
+import type { songEventPayload } from "../services/SongEvent/types";
+import type { SpotifyTrack, WebPlaybackTrack } from "../utils/types";
 
 export const GREEN = "#10b981"; // Use site's emerald branding
 
@@ -117,9 +121,43 @@ interface TrackRowProps {
   isActive?: boolean;
 }
 
+
 export const TrackRow: React.FC<TrackRowProps> = ({ track, onPlay, onQueue, isActive }) => {
   const [hovered, setHovered] = useState(false);
   const img = track?.album?.images?.[2]?.url ?? track?.album?.images?.[0]?.url;
+
+  const { mutate: sendSongEvent } = useMutation({
+    mutationFn: saveSongEvent,
+    onError: (err) => {
+      console.error("Failed to save song event", err);
+    },
+  });
+
+  useEffect(() => {
+    console.log("check",isActive,track)
+    if (!isActive || !track) return;
+
+    const payload: songEventPayload = {
+      song_details: {
+        title: track.name,
+        artist: fmt.artists(track.artists),
+        external_ids: {
+          spotify_id: track.id,
+          fuzzy_id: `${track.name}-${fmt.artists(track.artists)}`,
+        },
+        primary_genre: "", // fill in once you have genre data available
+        duration: fmt.time(track.duration_ms ?? 0),
+        image_url: track?.album?.images?.[0]?.url ?? "",
+      },
+      played_at: new Date().toISOString(),
+      duration_ms: String(track.duration_ms ?? 0),
+      completed: false,
+      source: "organic", //Need to make it dynamic
+    };
+
+    sendSongEvent(payload);
+    // re-fire only when the actively playing track changes, not on every render
+  }, [isActive, track?.id]);
 
   return (
     <div

@@ -1,10 +1,10 @@
 import { client } from "@/util/axios";
-import type { saveSongEventPayload, } from "./types";
+import type { songEventPayload } from "./types";
 
-export const sendSongEvent = async (
-  songPayload:saveSongEventPayload 
+export const saveSongEvent = async (
+  songPayload:songEventPayload
 ) => {
-  const response = await client.post<saveSongEventPayload,{}>(
+  const response = await client.post<songEventPayload,{}>(
     {
       url:'/emotion-profile/save-event',
       payload:songPayload
