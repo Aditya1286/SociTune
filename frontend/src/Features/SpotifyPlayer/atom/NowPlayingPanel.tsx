@@ -5,16 +5,7 @@ import { getStoredToken, getValidToken } from "../services/Auth";
 import type { RepeatMode, WebPlaybackState, WebPlaybackTrack } from "../Index";
 import { api } from "../services/spotifyApi";
 import { useMusicStore } from "@/stores/useMusicStore";
-import { 
-  Play, 
-  Pause, 
-  SkipBack, 
-  SkipForward, 
-  Shuffle, 
-  Repeat, 
-  Heart, 
-  Laptop2
-} from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Heart, Laptop2 } from "lucide-react";
 import type { songEventPayload } from "../services/SongEvent/types";
 import { saveSongEvent } from "../services/SongEvent/songEvent.service";
 import { useMutation } from "@tanstack/react-query";
@@ -24,10 +15,7 @@ const CONFIRM_PLAY_MS = 5000; // ignore skips shorter than this
 const COMPLETED_THRESHOLD = 0.9; // 90% listened = "completed"
 const FAILED_QUEUE_KEY = "song_event_failed_queue";
 
-
-
 type SongSession = {
-
   sessionId: string;
   trackId: string;
   track: WebPlaybackTrack; // whatever type store.track is
@@ -36,18 +24,14 @@ type SongSession = {
   maxPositionReached: number;
 };
 
-const buildPayload = (
-  session: SongSession,
-  completed: boolean
-): songEventPayload=> ({
+const buildPayload = (session: SongSession, completed: boolean): songEventPayload => ({
   song_details: {
     title: session.track.name,
     artist: fmt.artists(session.track.artists),
     external_ids: {
       spotify_id: session.track.id,
-      fuzzy_id: `${session.track.name}-${fmt.artists(session.track.artists)}`,
     },
-    primary_genre: "", // TODO: fill once genre lookup is wired in
+    genre_primary: "unknown", // TODO: fill once genre lookup is wired in
     duration: fmt.time(session.duration),
     image_url: session.track?.album?.images?.[0]?.url ?? "",
   },
@@ -74,8 +58,7 @@ const writeFailedQueue = (queue: songEventPayload[]) => {
   }
 };
 const NowPlayingPanel = () => {
-
-    const store = useStore();
+  const store = useStore();
   const { likedSongs, toggleLikeSong, fetchLikedSongs } = useMusicStore();
   const positionTimer = useRef<ReturnType<typeof setInterval>>(0);
 
@@ -109,8 +92,7 @@ const NowPlayingPanel = () => {
 
   const finalizeSession = (session: SongSession) => {
     const completed =
-      session.duration > 0 &&
-      session.maxPositionReached / session.duration >= COMPLETED_THRESHOLD;
+      session.duration > 0 && session.maxPositionReached / session.duration >= COMPLETED_THRESHOLD;
     sendSongEvent(buildPayload(session, completed));
   };
 
@@ -230,11 +212,9 @@ const NowPlayingPanel = () => {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-
-
   const pollState = async () => {
     try {
-      const data = await api.player() as any;
+      const data = (await api.player()) as any;
       if (!data || !data.item) return;
 
       // Skip updating if playing on the local Web SDK device to avoid race conditions
@@ -262,7 +242,12 @@ const NowPlayingPanel = () => {
         position: data.progress_ms,
         duration: item.duration_ms,
         shuffle: data.shuffle_state,
-        repeat: data.repeat_state === "track" ? "track" : data.repeat_state === "context" ? "context" : "off",
+        repeat:
+          data.repeat_state === "track"
+            ? "track"
+            : data.repeat_state === "context"
+              ? "context"
+              : "off",
       });
     } catch (e) {
       // Ignore fetch/empty-state errors
@@ -286,7 +271,8 @@ const NowPlayingPanel = () => {
     if (!store.track?.id) return;
 
     // Check Spotify liked status
-    api.isTrackLiked([store.track.id])
+    api
+      .isTrackLiked([store.track.id])
       .then((res) => {
         if (res && res.length > 0) {
           store.setIsLiked(res[0]);
@@ -294,8 +280,6 @@ const NowPlayingPanel = () => {
       })
       .catch((e) => console.error("Error checking Spotify like state:", e));
   }, [store.track?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-
 
   // ── Fetch local liked songs on mount ──
   useEffect(() => {
@@ -354,8 +338,6 @@ const NowPlayingPanel = () => {
     api.seek(ms).catch(() => {});
   };
 
-
-
   const toggleShuffle = async () => {
     const next = !store.shuffle;
     store.setPlaybackState({ shuffle: next });
@@ -368,10 +350,7 @@ const NowPlayingPanel = () => {
   };
 
   const cycleRepeat = async () => {
-    const next =
-      REPEAT_CYCLE[
-        (REPEAT_CYCLE.indexOf(store.repeat) + 1) % REPEAT_CYCLE.length
-      ];
+    const next = REPEAT_CYCLE[(REPEAT_CYCLE.indexOf(store.repeat) + 1) % REPEAT_CYCLE.length];
     store.setPlaybackState({ repeat: next });
     try {
       await api.repeat(next);
@@ -399,7 +378,7 @@ const NowPlayingPanel = () => {
         (s: any) =>
           s.external_ids?.spotify_id === store.track?.id ||
           (s.title?.toLowerCase() === store.track?.name?.toLowerCase() &&
-           s.artist?.toLowerCase() === fmt.artists(store.track?.artists)?.toLowerCase())
+            s.artist?.toLowerCase() === fmt.artists(store.track?.artists)?.toLowerCase())
       );
 
       if (nextLiked && !matchedLocalSong) {
@@ -426,9 +405,11 @@ const NowPlayingPanel = () => {
       <div className="w-full">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <h2 className={`font-sans font-extrabold truncate text-white leading-snug ${
-              store.track ? "text-base" : "text-sm text-zinc-500"
-            }`}>
+            <h2
+              className={`font-sans font-extrabold truncate text-white leading-snug ${
+                store.track ? "text-base" : "text-sm text-zinc-500"
+              }`}
+            >
               {store.track?.name ?? "Nothing playing"}
             </h2>
             {store.track && (
@@ -438,16 +419,16 @@ const NowPlayingPanel = () => {
             )}
           </div>
           {store.track && (
-            <button 
-              onClick={toggleLike} 
-              className="p-1 hover:bg-white/5 rounded-full transition-colors group/heart" 
+            <button
+              onClick={toggleLike}
+              className="p-1 hover:bg-white/5 rounded-full transition-colors group/heart"
               title="Like"
             >
               <Heart
                 size={16}
                 className={`transition-all duration-300 ${
-                  store.isLiked 
-                    ? "text-emerald-400 fill-emerald-400/20 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" 
+                  store.isLiked
+                    ? "text-emerald-400 fill-emerald-400/20 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]"
                     : "text-zinc-500 hover:text-zinc-300"
                 }`}
               />
@@ -457,28 +438,24 @@ const NowPlayingPanel = () => {
       </div>
 
       {/* Progress bar */}
-      <ProgressBar
-        position={store.position}
-        duration={store.duration}
-        onSeek={seek}
-      />
+      <ProgressBar position={store.position} duration={store.duration} onSeek={seek} />
 
       {/* Playback controls */}
       <div className="flex items-center gap-5 justify-center">
-        <button 
-          onClick={toggleShuffle} 
-          className="p-1.5 hover:bg-white/5 rounded-full transition-all" 
+        <button
+          onClick={toggleShuffle}
+          className="p-1.5 hover:bg-white/5 rounded-full transition-all"
           title="Shuffle"
         >
-          <Shuffle 
-            size={14} 
-            className={`transition-colors ${store.shuffle ? "text-emerald-400 drop-shadow-[0_0_6px_rgba(16,185,129,0.4)]" : "text-zinc-500 hover:text-zinc-300"}`} 
+          <Shuffle
+            size={14}
+            className={`transition-colors ${store.shuffle ? "text-emerald-400 drop-shadow-[0_0_6px_rgba(16,185,129,0.4)]" : "text-zinc-500 hover:text-zinc-300"}`}
           />
         </button>
 
-        <button 
-          onClick={skipPrev} 
-          className="p-1.5 hover:bg-white/5 rounded-full transition-all active:scale-95 text-zinc-400 hover:text-white" 
+        <button
+          onClick={skipPrev}
+          className="p-1.5 hover:bg-white/5 rounded-full transition-all active:scale-95 text-zinc-400 hover:text-white"
           title="Previous"
         >
           <SkipBack size={16} fill="currentColor" />
@@ -496,26 +473,25 @@ const NowPlayingPanel = () => {
           )}
         </button>
 
-        <button 
-          onClick={skipNext} 
-          className="p-1.5 hover:bg-white/5 rounded-full transition-all active:scale-95 text-zinc-400 hover:text-white" 
+        <button
+          onClick={skipNext}
+          className="p-1.5 hover:bg-white/5 rounded-full transition-all active:scale-95 text-zinc-400 hover:text-white"
           title="Next"
         >
           <SkipForward size={16} fill="currentColor" />
         </button>
 
-        <button 
-          onClick={cycleRepeat} 
-          className="p-1.5 hover:bg-white/5 rounded-full transition-all" 
+        <button
+          onClick={cycleRepeat}
+          className="p-1.5 hover:bg-white/5 rounded-full transition-all"
           title="Repeat"
         >
-          <Repeat 
-            size={14} 
-            className={`transition-colors ${store.repeat !== "off" ? "text-emerald-400 drop-shadow-[0_0_6px_rgba(16,185,129,0.4)]" : "text-zinc-500 hover:text-zinc-300"}`} 
+          <Repeat
+            size={14}
+            className={`transition-colors ${store.repeat !== "off" ? "text-emerald-400 drop-shadow-[0_0_6px_rgba(16,185,129,0.4)]" : "text-zinc-500 hover:text-zinc-300"}`}
           />
         </button>
       </div>
-
 
       {/* Active device indicator */}
       {store.deviceId && (

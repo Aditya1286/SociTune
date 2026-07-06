@@ -55,10 +55,9 @@ export type songDetails = {
   external_ids: {
     isrc_id?: string;
     spotify_id?: string;
-    yt_id?: string;
-    fuzzy_id: string;
+    yt_id?: string; //Will not send fuzzy id from frontend , it'll be generated at backend
   };
-  primary_genre: string;
+  genre_primary: string;
   duration: string;
   audio_details?: {
     tempo: number;
