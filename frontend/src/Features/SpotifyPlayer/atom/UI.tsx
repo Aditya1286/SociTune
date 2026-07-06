@@ -121,7 +121,6 @@ interface TrackRowProps {
   isActive?: boolean;
 }
 
-
 export const TrackRow: React.FC<TrackRowProps> = ({ track, onPlay, onQueue, isActive }) => {
   const [hovered, setHovered] = useState(false);
   const img = track?.album?.images?.[2]?.url ?? track?.album?.images?.[0]?.url;
@@ -134,7 +133,7 @@ export const TrackRow: React.FC<TrackRowProps> = ({ track, onPlay, onQueue, isAc
   });
 
   useEffect(() => {
-    console.log("check",isActive,track)
+    console.log("check", isActive, track)
     if (!isActive || !track) return;
 
     const payload: songEventPayload = {
@@ -143,9 +142,8 @@ export const TrackRow: React.FC<TrackRowProps> = ({ track, onPlay, onQueue, isAc
         artist: fmt.artists(track.artists),
         external_ids: {
           spotify_id: track.id,
-          fuzzy_id: `${track.name}-${fmt.artists(track.artists)}`,
         },
-        primary_genre: "", // fill in once you have genre data available
+        genre_primary: "", // fill in once you have genre data available
         duration: fmt.time(track.duration_ms ?? 0),
         image_url: track?.album?.images?.[0]?.url ?? "",
       },
