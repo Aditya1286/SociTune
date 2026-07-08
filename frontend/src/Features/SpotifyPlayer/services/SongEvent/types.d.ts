@@ -70,6 +70,7 @@ export type songDetails = {
     lyrics: string ;
     lyricsSource: string ;
     lyricsFetchedAt: Date;
+    languageDetected: string;
   };
   image_url: string;
 };
