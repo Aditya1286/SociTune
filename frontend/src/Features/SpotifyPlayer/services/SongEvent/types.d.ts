@@ -1,4 +1,3 @@
-
 //For localhost
 export type songAnalyzeInputType = {
   song_id: string; //can be isrc,spotify,yt,fuzzy,
