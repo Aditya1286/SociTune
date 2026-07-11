@@ -5,7 +5,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { useChatStore } from "@/stores/useChatStore";
 import { axiosInstance } from "@/lib/axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { Camera, Loader2, CheckCircle2, XCircle, Sparkles, Globe, Calendar, User as UserIcon, ArrowRight, ArrowLeft, Play } from "lucide-react";
+import { Camera, Loader2, CheckCircle2, XCircle, Sparkles, Globe, Calendar, User as UserIcon, ArrowRight, ArrowLeft, Play, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -114,8 +114,8 @@ const OnboardingPage: React.FC = () => {
     setStep(prev => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (usernameAvailable === false) return;
 
     setIsSubmitting(true);
@@ -133,6 +133,13 @@ const OnboardingPage: React.FC = () => {
 
       if (imageFile) {
         formData.append("imageFile", imageFile);
+        if (user) {
+          try {
+            await user.setProfileImage({ file: imageFile });
+          } catch (clerkErr) {
+            console.error("Failed to update Clerk profile image:", clerkErr);
+          }
+        }
       }
 
       await updateProfile(formData);
@@ -245,7 +252,17 @@ const OnboardingPage: React.FC = () => {
             {/* Card top shine */}
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-400/15 to-transparent" />
 
-            <form onSubmit={handleSubmit} className="h-full flex flex-col justify-between flex-1">
+            {currentUser?.profileCompleted && (
+              <button
+                onClick={() => navigate("/")}
+                className="absolute top-4 right-4 z-10 p-2 text-zinc-400 hover:text-white bg-zinc-900/50 hover:bg-zinc-800/80 rounded-full border border-white/[0.05] transition-all cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="size-4" />
+              </button>
+            )}
+
+            <div className="h-full flex flex-col justify-between flex-1">
               
               <AnimatePresence mode="wait">
                 {step === 1 && (
@@ -478,6 +495,7 @@ const OnboardingPage: React.FC = () => {
                 {/* Next or Submit button */}
                 {step < 3 ? (
                   <Button
+                    key="continue-btn"
                     type="button"
                     onClick={handleNextStep}
                     disabled={step === 1 && (!displayName.trim() || !username.trim() || usernameAvailable === false)}
@@ -488,7 +506,9 @@ const OnboardingPage: React.FC = () => {
                   </Button>
                 ) : (
                   <Button
-                    type="submit"
+                    key="submit-btn"
+                    type="button"
+                    onClick={() => handleSubmit()}
                     disabled={isSubmitting || usernameAvailable === false}
                     className="h-11 px-8 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-zinc-950 font-extrabold rounded-xl transition-all shadow-xl shadow-emerald-500/15 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-xs"
                   >
@@ -508,7 +528,7 @@ const OnboardingPage: React.FC = () => {
 
               </div>
 
-            </form>
+            </div>
           </div>
         </div>
 
