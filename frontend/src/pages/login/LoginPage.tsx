@@ -2,6 +2,7 @@ import React from "react";
 import { useSignIn, useAuth } from "@clerk/clerk-react";
 import { Navigate } from "react-router-dom";
 import { Sparkles, Headphones } from "lucide-react";
+import { PointerHighlight } from "@/components/ui/pointer-highlight";
 
 const LoginPage: React.FC = () => {
   const { isSignedIn, isLoaded: isAuthLoaded } = useAuth();
@@ -63,7 +64,16 @@ const LoginPage: React.FC = () => {
           {/* Editorial Title */}
           <div className="space-y-4">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-[1.12] tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-white via-zinc-100 to-zinc-400">
-              The soundtrack of your <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">social world</span>.
+              The soundtrack of your{" "}
+              <PointerHighlight
+                rectangleClassName="border-emerald-500/50 bg-emerald-500/5 rounded-lg px-2 py-0.5"
+                pointerClassName="text-emerald-400 drop-shadow-[0_0_6px_rgba(52,211,153,0.5)]"
+              >
+                <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+                  social world
+                </span>
+              </PointerHighlight>
+              .
             </h1>
             <p className="text-xs sm:text-sm text-zinc-550 font-light max-w-lg leading-relaxed">
               Discover and share what your friends are listening to in real-time. Analyze your acoustic fingerprint, match with musical soulmates, and sync your music vibe curves.
