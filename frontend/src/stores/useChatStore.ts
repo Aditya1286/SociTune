@@ -3,6 +3,7 @@ import type { Message, User } from "@/types";
 import { create } from "zustand";
 import { io } from "socket.io-client";
 import { toast } from "sonner";
+import { useAuthStore } from "./useAuthStore";
 
 interface ChatStore {
 	users: User[];
@@ -183,6 +184,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 						? { ...state.selectedUser, ...res.data }
 						: state.selectedUser,
 			}));
+			// Update current user in Auth Store
+			useAuthStore.getState().updateCurrentUserProfile(res.data);
 			// Re-fetch to ensure all other users see the fresh data from the server
 			await get().fetchUsers();
 		} catch (error) {

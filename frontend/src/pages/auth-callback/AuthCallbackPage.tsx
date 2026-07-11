@@ -5,6 +5,8 @@ import { Loader } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { useAuthStore } from "@/stores/useAuthStore";
+
 const AuthCallbackPage = () => {
 	const { isLoaded, user } = useUser();
 	const navigate = useNavigate();
@@ -24,6 +26,9 @@ const AuthCallbackPage = () => {
 					username: user.username || `${user.firstName?.toLowerCase() || ""}${user.lastName?.toLowerCase() || ""}${Math.floor(Math.random() * 1000)}`,
 					imageUrl: user.imageUrl,
 				}); 
+				
+				// Re-fetch current user profile in authStore so they have the profile loaded and completed status is checked
+				await useAuthStore.getState().fetchCurrentUser();
 			} catch (error) {
 				console.log("Error in auth callback", error);
 			} finally {

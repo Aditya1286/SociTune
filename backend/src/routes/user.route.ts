@@ -82,6 +82,11 @@ class UserRoutes implements Routes {
             this.authMiddleware.protectRoute,
             asyncHandler(this.userController.removeFriend)
         );
+        this.router.get(
+            `${this.path}/me`,
+            this.authMiddleware.protectRoute,
+            asyncHandler(this.userController.getCurrentUser)
+        );
         this.router.put(
             `${this.path}/profile`,
             this.authMiddleware.protectRoute,

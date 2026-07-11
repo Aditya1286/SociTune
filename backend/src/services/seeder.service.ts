@@ -374,8 +374,7 @@ export async function migrateArtists() {
                                existingArtistIds.every((val, index) => val === newArtistIds[index]);
             
             if (!arraysMatch) {
-                song.set("artists", artistIds);
-                await song.save();
+                await Song.updateOne({ _id: song._id }, { $set: { artists: artistIds } });
             }
         }
         
@@ -422,8 +421,7 @@ export async function migrateArtists() {
                                existingArtistIds.every((val, index) => val === newArtistIds[index]);
             
             if (!arraysMatch) {
-                album.set("artists", artistIds);
-                await album.save();
+                await Album.updateOne({ _id: album._id }, { $set: { artists: artistIds } });
             }
         }
         

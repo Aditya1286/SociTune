@@ -220,54 +220,74 @@ public async removeFriend(req: Request, res: Response, next: NextFunction) {
 	}
 }
 
-public async updateProfile(req: Request, res: Response, next: NextFunction) {
-	try {
-		const userId = (req as any).auth.userId;
-		const { bio } = req.body;
-		const imageFile = (req as any).files?.imageFile;
-
-		// Fetch current user first so we can compare values
-		const currentUser = await User.findOne({ clerkId: userId });
-		if (!currentUser) return res.status(404).json({ message: "User not found" });
-
-		let imageUrl;
-		if (imageFile) {
-			const result = await cloudinary.uploader.upload(imageFile.tempFilePath, {
-				resource_type: "auto",
-			});
-			imageUrl = result.secure_url;
+	public async getCurrentUser(req: Request, res: Response, next: NextFunction) {
+		try {
+			const userId = (req as any).auth.userId;
+			const user = await User.findOne({ clerkId: userId });
+			if (!user) return res.status(404).json({ message: "User not found" });
+			res.status(200).json(user);
+		} catch (error) {
+			console.log("Error in getCurrentUser", error);
+			next(error);
 		}
-
-		const updateData: any = {}
-		if (bio !== undefined) updateData.bio = bio;
-		if (imageUrl) updateData.imageUrl = imageUrl;
-		if (req.body.fullName) updateData.fullName = req.body.fullName;
-		if (req.body.username && req.body.username !== currentUser.username) {
-			// Check if username is already taken by someone else
-			const existingUser = await User.findOne({ 
-				username: new RegExp(`^${req.body.username}$`, 'i'),
-				clerkId: { $ne: userId }
-			});
-			if (existingUser) {
-				return res.status(400).json({ message: "Username already occupied" });
-			}
-			updateData.username = req.body.username;
-		}
-		if (req.body.favoriteSong !== undefined) updateData.favoriteSong = req.body.favoriteSong;
-		if (req.body.favoriteArtist !== undefined) updateData.favoriteArtist = req.body.favoriteArtist;
-
-		const user = await User.findOneAndUpdate(
-			{ clerkId: userId },
-			updateData,
-			{ new: true }
-		);
-
-		res.status(200).json(user);
-	} catch (error) {
-		console.log("Error in updateProfile", error);
-		next(error);
 	}
-}
+
+	public async updateProfile(req: Request, res: Response, next: NextFunction) {
+		try {
+			const userId = (req as any).auth.userId;
+			const { bio } = req.body;
+			const imageFile = (req as any).files?.imageFile;
+
+			// Fetch current user first so we can compare values
+			const currentUser = await User.findOne({ clerkId: userId });
+			if (!currentUser) return res.status(404).json({ message: "User not found" });
+
+			let imageUrl;
+			if (imageFile) {
+				const result = await cloudinary.uploader.upload(imageFile.tempFilePath, {
+					resource_type: "auto",
+				});
+				imageUrl = result.secure_url;
+			}
+
+			const updateData: any = {}
+			if (bio !== undefined) updateData.bio = bio;
+			if (imageUrl) updateData.imageUrl = imageUrl;
+			if (req.body.fullName) updateData.fullName = req.body.fullName;
+			if (req.body.username && req.body.username !== currentUser.username) {
+				// Check if username is already taken by someone else
+				const existingUser = await User.findOne({ 
+					username: new RegExp(`^${req.body.username}$`, 'i'),
+					clerkId: { $ne: userId }
+				});
+				if (existingUser) {
+					return res.status(400).json({ message: "Username already occupied" });
+				}
+				updateData.username = req.body.username;
+			}
+			if (req.body.favoriteSong !== undefined) updateData.favoriteSong = req.body.favoriteSong;
+			if (req.body.favoriteArtist !== undefined) updateData.favoriteArtist = req.body.favoriteArtist;
+			if (req.body.displayName !== undefined) updateData.displayName = req.body.displayName;
+			if (req.body.gender !== undefined) updateData.gender = req.body.gender;
+			if (req.body.birthday !== undefined) updateData.birthday = req.body.birthday ? new Date(req.body.birthday) : null;
+			if (req.body.country !== undefined) updateData.country = req.body.country;
+			if (req.body.profileCompleted !== undefined) {
+				// Coerce string "true" / "false" to boolean if sent as FormData
+				updateData.profileCompleted = req.body.profileCompleted === "true" || req.body.profileCompleted === true;
+			}
+
+			const user = await User.findOneAndUpdate(
+				{ clerkId: userId },
+				updateData,
+				{ new: true }
+			);
+
+			res.status(200).json(user);
+		} catch (error) {
+			console.log("Error in updateProfile", error);
+			next(error);
+		}
+	}
 
 public async getMutualFriends(req: Request, res: Response, next: NextFunction) {
 	try {

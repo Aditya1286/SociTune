@@ -54,7 +54,8 @@ const updateApiToken = (token: string | null) => {
         if(token) {
           await Promise.all([
             checkAdminStatus(),
-            fetchLikedSongs()
+            fetchLikedSongs(),
+            useAuthStore.getState().fetchCurrentUser()
           ]);
           // init socket
           if (userId) {

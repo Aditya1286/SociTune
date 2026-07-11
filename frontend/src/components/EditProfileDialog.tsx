@@ -5,15 +5,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useRef, useEffect } from "react";
 import { useChatStore } from "@/stores/useChatStore";
-import { Camera, Loader2, User as UserIcon, CheckCircle2, XCircle } from "lucide-react";
-import { useUser } from "@clerk/clerk-react";
+import { Camera, Loader2, User as UserIcon, CheckCircle2, XCircle, Globe, Calendar } from "lucide-react";
 import { axiosInstance } from "@/lib/axios";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const EditProfileDialog = () => {
 	const [isOpen, setIsOpen] = useState(false);
 	const [bio, setBio] = useState("");
 	const [fullName, setFullName] = useState("");
+	const [displayName, setDisplayName] = useState("");
 	const [username, setUsername] = useState("");
+	const [gender, setGender] = useState("");
+	const [birthday, setBirthday] = useState("");
+	const [country, setCountry] = useState("");
 	const [favoriteSong, setFavoriteSong] = useState("");
 	const [favoriteArtist, setFavoriteArtist] = useState("");
 	const [imageFile, setImageFile] = useState<File | null>(null);
@@ -25,10 +30,8 @@ export const EditProfileDialog = () => {
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
-	const { updateProfile, users } = useChatStore();
-	const { user } = useUser();
-
-	const currentUser = users.find((u) => u.clerkId === user?.id);
+	const { updateProfile } = useChatStore();
+	const { currentUser } = useAuthStore();
 
 	useEffect(() => {
 		const handleOpen = () => setIsOpen(true);
@@ -40,8 +43,12 @@ export const EditProfileDialog = () => {
 		if (isOpen && currentUser) {
 			setBio(currentUser.bio || "");
 			setFullName(currentUser.fullName || "");
+			setDisplayName(currentUser.displayName || "");
 			setUsername(currentUser.username || "");
 			setInitialUsername(currentUser.username || "");
+			setGender(currentUser.gender || "");
+			setBirthday(currentUser.birthday ? new Date(currentUser.birthday).toISOString().split('T')[0] : "");
+			setCountry(currentUser.country || "");
 			setFavoriteSong(currentUser.favoriteSong || "");
 			setFavoriteArtist(currentUser.favoriteArtist || "");
 			setPreviewUrl(currentUser.imageUrl);
@@ -89,7 +96,12 @@ export const EditProfileDialog = () => {
 		const formData = new FormData();
 		if (bio !== currentUser?.bio) formData.append("bio", bio);
 		if (fullName !== currentUser?.fullName) formData.append("fullName", fullName);
+		if (displayName !== currentUser?.displayName) formData.append("displayName", displayName);
 		if (username !== currentUser?.username) formData.append("username", username);
+		if (gender !== currentUser?.gender) formData.append("gender", gender);
+		const currentBirthdayStr = currentUser?.birthday ? new Date(currentUser.birthday).toISOString().split('T')[0] : "";
+		if (birthday !== currentBirthdayStr) formData.append("birthday", birthday);
+		if (country !== currentUser?.country) formData.append("country", country);
 		if (favoriteSong !== currentUser?.favoriteSong) formData.append("favoriteSong", favoriteSong);
 		if (favoriteArtist !== currentUser?.favoriteArtist) formData.append("favoriteArtist", favoriteArtist);
 		
@@ -140,6 +152,7 @@ export const EditProfileDialog = () => {
 					</div>
 
 					<div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+						{/* Grid: Full Name & Display Name */}
 						<div className="grid grid-cols-2 gap-4">
 							<div className="space-y-2">
 								<Label htmlFor="fullName" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Full Name</Label>
@@ -151,6 +164,20 @@ export const EditProfileDialog = () => {
 									required
 								/>
 							</div>
+							<div className="space-y-2">
+								<Label htmlFor="displayName" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Display Name</Label>
+								<Input 
+									id="displayName" 
+									value={displayName}
+									onChange={(e) => setDisplayName(e.target.value)}
+									className="bg-zinc-900/40 border-zinc-800 focus:border-zinc-700 transition-colors rounded-lg"
+									required
+								/>
+							</div>
+						</div>
+
+						{/* Grid: Username & Country */}
+						<div className="grid grid-cols-2 gap-4">
 							<div className="space-y-2 relative">
 								<Label htmlFor="username" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Username</Label>
 								<div className="relative">
@@ -173,8 +200,22 @@ export const EditProfileDialog = () => {
 									<span className="text-[10px] text-red-400 absolute -bottom-4 left-0">Username already occupied</span>
 								)}
 							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="country" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Country</Label>
+								<div className="relative">
+									<Input 
+										id="country" 
+										value={country}
+										onChange={(e) => setCountry(e.target.value)}
+										className="bg-zinc-900/40 border-zinc-800 focus:border-zinc-700 transition-colors pl-8 rounded-lg"
+									/>
+									<Globe className="size-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+								</div>
+							</div>
 						</div>
 
+						{/* Bio */}
 						<div className="space-y-2">
 							<Label htmlFor="bio" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Bio</Label>
 							<Textarea 
@@ -190,6 +231,40 @@ export const EditProfileDialog = () => {
 							</div>
 						</div>
 
+						{/* Grid: Gender & Birthday */}
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-2">
+								<Label htmlFor="gender" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Gender</Label>
+								<Select value={gender} onValueChange={setGender}>
+									<SelectTrigger className="w-full bg-zinc-900/40 border-zinc-800 focus:border-zinc-700 transition-colors rounded-lg text-white">
+										<SelectValue placeholder="Gender" />
+									</SelectTrigger>
+									<SelectContent className="bg-zinc-950 border-zinc-800 text-white rounded-lg">
+										<SelectItem value="Male">Male</SelectItem>
+										<SelectItem value="Female">Female</SelectItem>
+										<SelectItem value="Non-binary">Non-binary</SelectItem>
+										<SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
+										<SelectItem value="Other">Other</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="birthday" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Birthday</Label>
+								<div className="relative">
+									<Input 
+										id="birthday" 
+										type="date"
+										value={birthday}
+										onChange={(e) => setBirthday(e.target.value)}
+										className="bg-zinc-900/40 border-zinc-800 focus:border-zinc-700 transition-colors rounded-lg w-full text-white pr-8 block [color-scheme:dark]"
+									/>
+									<Calendar className="size-3.5 text-zinc-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+								</div>
+							</div>
+						</div>
+
+						{/* Grid: Favorite Song & Artist */}
 						<div className="grid grid-cols-2 gap-4">
 							<div className="space-y-2">
 								<Label htmlFor="favoriteSong" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">Favorite Song</Label>

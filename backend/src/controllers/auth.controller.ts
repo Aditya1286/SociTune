@@ -16,8 +16,10 @@ class AuthController {
                 await User.create({
                     clerkId: id,
                     fullName: `${firstName} ${lastName}`,
+                    displayName: `${firstName} ${lastName}`,
                     username: generatedUsername,
-                    imageUrl: imageUrl
+                    imageUrl: imageUrl,
+                    profileCompleted: false
                 });
                 
                 // Immediately register the user in the recommendation cache

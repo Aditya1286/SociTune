@@ -134,6 +134,7 @@ export interface User {
 	_id: string;
 	clerkId: string;
 	fullName: string;
+	displayName: string;
 	username?: string;
 	imageUrl: string;
 	bio?: string;
@@ -150,6 +151,11 @@ export interface User {
 	mutualFriendsCount?: number;
 	similarityScore?: number;
 	matchDetails?: MatchDetails | null;
+	gender?: string;
+	birthday?: string;
+	country?: string;
+	profileCompleted: boolean;
+	uid: string;
 }
 
 export interface Notification {

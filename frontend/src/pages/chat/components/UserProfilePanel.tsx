@@ -3,7 +3,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChatStore } from "@/stores/useChatStore";
 import type { User } from "@/types";
-import { Users, ArrowLeft, MessageCircle, UserPlus, UserMinus, Music2, Mic2, X, UserCheck, Flame, Network, Activity } from "lucide-react";
+import { Users, ArrowLeft, MessageCircle, UserPlus, UserMinus, Music2, Mic2, X, UserCheck, Flame, Network, Activity, Calendar, Globe, User as UserIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -119,7 +119,7 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 							<div className="flex-1 flex flex-col gap-5 text-center md:text-left w-full">
 								<div className="flex flex-col md:flex-row md:items-center gap-4 justify-between flex-wrap">
 									<div>
-										<h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-100">{user.fullName}</h2>
+										<h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-100">{user.displayName || user.fullName}</h2>
 										{user.username && <p className="text-zinc-500 text-sm mt-0.5">@{user.username}</p>}
 									</div>
 									{user.clerkId !== userId && (
@@ -334,6 +334,30 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 										"{user.bio}"
 									</p>
 								)}
+
+								{/* Premium Info Badge Row (Desktop) */}
+								{(user.gender || user.birthday || user.country) && (
+									<div className="flex flex-wrap gap-3 mt-4 justify-center md:justify-start">
+										{user.gender && (
+											<span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] font-medium text-zinc-300">
+												<UserIcon className="size-3 text-zinc-500" />
+												{user.gender}
+											</span>
+										)}
+										{user.birthday && (
+											<span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] font-medium text-zinc-300">
+												<Calendar className="size-3 text-zinc-500" />
+												{new Date().getFullYear() - new Date(user.birthday).getFullYear()} years old
+											</span>
+										)}
+										{user.country && (
+											<span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] font-medium text-zinc-300">
+												<Globe className="size-3 text-zinc-500" />
+												{user.country}
+											</span>
+										)}
+									</div>
+								)}
 							</div>
 						</div>
 					) : (
@@ -354,7 +378,7 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 								)} />
 							</div>
 
-							<h2 className="text-lg font-semibold text-zinc-100 text-center">{user.fullName}</h2>
+							<h2 className="text-lg font-semibold text-zinc-100 text-center">{user.displayName || user.fullName}</h2>
 							{user.username && <p className="text-zinc-500 text-xs text-center mt-0.5">@{user.username}</p>}
 
 							{/* Sidebar action buttons */}
@@ -397,6 +421,30 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 								<p className="text-zinc-400 text-xs leading-relaxed text-center italic mt-4 px-2">
 									"{user.bio}"
 								</p>
+							)}
+
+							{/* Premium Info Badge Row (Sidebar) */}
+							{(user.gender || user.birthday || user.country) && (
+								<div className="flex flex-wrap gap-2 mt-4 justify-center w-full px-2">
+									{user.gender && (
+										<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-[10px] font-medium text-zinc-300">
+											<UserIcon className="size-2.5 text-zinc-500" />
+											{user.gender}
+										</span>
+									)}
+									{user.birthday && (
+										<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-[10px] font-medium text-zinc-300">
+											<Calendar className="size-2.5 text-zinc-500" />
+											{new Date().getFullYear() - new Date(user.birthday).getFullYear()} y/o
+										</span>
+									)}
+									{user.country && (
+										<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-[10px] font-medium text-zinc-300">
+											<Globe className="size-2.5 text-zinc-500" />
+											{user.country}
+										</span>
+									)}
+								</div>
 							)}
 
 							{/* Sidebar Stats Row */}
