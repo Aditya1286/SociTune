@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@/lib/clerk-mock";
 import { useChatStore } from "@/stores/useChatStore";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { useMusicStore } from "@/stores/useMusicStore";

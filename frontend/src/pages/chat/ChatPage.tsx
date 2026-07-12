@@ -1,5 +1,5 @@
 import { useChatStore } from "@/stores/useChatStore";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@/lib/clerk-mock";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { CheckCheck, Trash, Reply, Music2, Users, X, Download, Play, Pause } from "lucide-react";
 import { motion } from "framer-motion";

@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/lib/clerk-mock";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChatStore } from "@/stores/useChatStore";
 import type { User } from "@/types";

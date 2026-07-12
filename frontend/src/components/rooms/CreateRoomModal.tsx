@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@/lib/clerk-mock";
 import { useChatStore } from "@/stores/useChatStore";
 import { axiosInstance } from "@/lib/axios";
 import {

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useChatStore } from "@/stores/useChatStore";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@/lib/clerk-mock";
 import { Send, X, Paperclip, Mic, Square, Loader2, Smile, Play, Pause, Volume2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { axiosInstance } from "@/lib/axios";

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { LikeButton } from "@/components/LikeButton";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@/lib/clerk-mock";
 import { useNavigate } from "react-router-dom";
 
 const formatTime = (seconds: number) => {

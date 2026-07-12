@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useMusicStore } from "@/stores/useMusicStore"
 import { useChatStore } from "@/stores/useChatStore"
 import { useNotificationStore } from "@/stores/useNotificationStore"
-import { SignedIn } from "@clerk/clerk-react"
+import { SignedIn } from "@/lib/clerk-mock";
 import { 
   Home, 
   Search,

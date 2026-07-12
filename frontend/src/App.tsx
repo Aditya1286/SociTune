@@ -2,8 +2,7 @@ import { Route, Routes, Navigate, useLocation, useNavigate } from "react-router-
 import { Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import MainLayout from "./layout/MainLayout.tsx";
-import AuthCallbackPage from "./pages/auth-callback/AuthCallbackPage.tsx";
-import { AuthenticateWithRedirectCallback, useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/lib/clerk-mock";
 import NotFoundPage from "./pages/404/NotFoundPage.tsx";
 import { useChatStore } from "./stores/useChatStore.ts";
 import { usePlayerStore } from "./stores/usePlayerStore.ts";
@@ -86,14 +85,8 @@ const App = () => {
       <Toaster theme="dark" position="top-center" />
       <Suspense fallback={null}>
         <Routes>
-          <Route
-            path="/sso-callback"
-            element={<AuthenticateWithRedirectCallback signUpForceRedirectUrl={"/auth-callback"} />}
-          />
-          <Route path="/auth-callback" element={<AuthCallbackPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/onboarding" element={<OnboardingRoute><OnboardingPage /></OnboardingRoute>} />
-
           <Route path="/callback" element={<ProtectedRoute><SpotifyCallback /></ProtectedRoute>} />
 
           <Route element={<MainLayout />}>

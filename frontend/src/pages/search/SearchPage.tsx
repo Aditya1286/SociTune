@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useMusicStore } from "@/stores/useMusicStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth } from "@/lib/clerk-mock";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, 

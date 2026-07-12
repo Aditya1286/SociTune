@@ -10,8 +10,17 @@ const userSchema = new mongoose.Schema({
     },
     clerkId: {
         type:String,
-        required:true,
-        unique:true
+        unique:true,
+        sparse:true
+    },
+    email: {
+        type:String,
+        unique:true,
+        sparse:true
+    },
+    password: {
+        type:String,
+        select: false
     },
     username: {
         type:String,

@@ -1,5 +1,6 @@
-import { clerkClient } from '@clerk/express';
-import { ADMIN_EMAIL, INTERNAL_SERVICE_TOKEN } from '../config/index.js';
+import jwt from 'jsonwebtoken';
+import { ADMIN_EMAIL, INTERNAL_SERVICE_TOKEN, JWT_SECRET } from '../config/index.js';
+import { User } from '../models/user.model.js';
 class AuthMiddleware {
     verifyServiceToken(req, res, next) {
         const token = req.headers['x-service-token'];
@@ -9,23 +10,36 @@ class AuthMiddleware {
         next();
     }
     async protectRoute(req, res, next) {
-        const auth = req.auth;
-        if (!auth || !auth.userId) {
-            return res.status(401).json({ message: "Unauthorized - you must be logged in" });
+        try {
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith("Bearer ")) {
+                return res.status(401).json({ message: "Unauthorized - missing or invalid token format" });
+            }
+            const token = authHeader.split(" ")[1];
+            const decoded = jwt.verify(token, JWT_SECRET);
+            const user = await User.findOne({ clerkId: decoded.userId });
+            if (!user) {
+                return res.status(401).json({ message: "Unauthorized - user not found" });
+            }
+            req.user = user;
+            // Maintain compatibility with any endpoint reading (req as any).auth.userId
+            req.auth = { userId: user.clerkId };
+            next();
         }
-        next();
+        catch (error) {
+            console.error("Token verification error:", error);
+            return res.status(401).json({ message: "Unauthorized - token invalid or expired" });
+        }
     }
     async requireAdmin(req, res, next) {
         try {
-            const auth = req.auth;
-            if (!auth || !auth.userId) {
+            const user = req.user;
+            if (!user) {
                 return res.status(401).json({ message: "Unauthorized - you must be logged in" });
             }
-            const currentUser = await clerkClient.users.getUser(auth.userId);
-            console.log("EMAIL", currentUser);
-            const isAdmin = ADMIN_EMAIL === currentUser.primaryEmailAddress?.emailAddress; //Need to improve admin logic, can provide user object with a role's array.
+            const isAdmin = ADMIN_EMAIL === user.email || ADMIN_EMAIL === user.fullName;
             if (!isAdmin) {
-                return res.status(403).json({ message: "Unauthorized - you must be admin " });
+                return res.status(403).json({ message: "Unauthorized - you must be admin" });
             }
             next();
         }
