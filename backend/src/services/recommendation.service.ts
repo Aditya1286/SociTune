@@ -73,6 +73,7 @@ class MusicRecommender {
     public similarityThreshold: number;
     public users: Map<string, any>;
     public songCatalog: Map<string, any>;
+    public invalidSongIds: Set<string>;
     public similarityCache: Map<string, any>;
     public isInitialized: boolean;
 
@@ -80,13 +81,12 @@ class MusicRecommender {
         this.similarityThreshold = similarityThreshold;
         this.users = new Map<string, any>();       
         this.songCatalog = new Map<string, any>(); 
+        this.invalidSongIds = new Set<string>();
         this.similarityCache = new Map<string, any>();
         this.isInitialized = false;
     }
 
     async init() {
-        console.log("Initializing Advanced AI Music Recommendation Engine...");
-        
         const songs = await Song.find({}).select("title artist audio_details tempo energy valence acousticness danceability genre");
         for (const song of songs) {
             this.addSong(song._id.toString(), {
@@ -105,6 +105,33 @@ class MusicRecommender {
         
         // Fetch all history at once to prevent N+1 queries during startup
         const allHistory = await PlayHistory.find({});
+        
+        // Bulk pre-fetch any missing songs referenced in PlayHistory to avoid N+1 queries on startup
+        const historySongIds: string[] = Array.from(new Set(allHistory.map(h => h.songId.toString())));
+        const missingSongIds: string[] = historySongIds.filter(id => !this.songCatalog.has(id));
+        if (missingSongIds.length > 0) {
+            const missingSongs = await Song.find({ _id: { $in: missingSongIds } }).select("title artist audio_details tempo energy valence acousticness danceability genre");
+            const foundSongIds = new Set(missingSongs.map(s => s._id.toString()));
+            for (const song of missingSongs) {
+                this.addSong(song._id.toString(), {
+                    title: song.title,
+                    artist: song.artist,
+                    tempo: song.audio_details?.tempo || (song as any).tempo || 120,
+                    energy: song.audio_details?.energy || (song as any).energy || 0.5,
+                    valence: song.audio_details?.valence || (song as any).valence || 0.5,
+                    acousticness: song.audio_details?.acousticness || (song as any).acousticness || 0.5,
+                    danceability: song.audio_details?.danceability || (song as any).danceability || 0.5,
+                    genre: song.genre || "Unknown"
+                });
+            }
+            // Track missing/deleted songs that are in history but not database so we never query them again
+            for (const id of missingSongIds) {
+                if (!foundSongIds.has(id as string)) {
+                    this.invalidSongIds.add(id as string);
+                }
+            }
+        }
+
         const historyByUser = new Map();
         for (const h of allHistory) {
             const uid = h.userId;
@@ -119,7 +146,7 @@ class MusicRecommender {
         }
         
         this.isInitialized = true;
-        console.log(`Advanced Engine Initialized. Loaded ${this.songCatalog.size} songs and ${this.users.size} users.`);
+        console.log(`[Recommender] Initialized (${this.songCatalog.size} songs, ${this.users.size} users)`);
     }
 
     addSong(id, features) {
@@ -132,11 +159,11 @@ class MusicRecommender {
         const history = precomputedHistory !== null ? precomputedHistory : await PlayHistory.find({ userId });
         
         // Dynamically load any missing songs from the database to avoid ignoring them
-        const songIds = history.map(h => h.songId.toString());
-        const missingSongIds = Array.from(new Set(songIds.filter(id => !this.songCatalog.has(id))));
+        const songIds: string[] = history.map(h => h.songId.toString());
+        const missingSongIds: string[] = Array.from(new Set(songIds.filter(id => !this.songCatalog.has(id) && !this.invalidSongIds.has(id))));
         if (missingSongIds.length > 0) {
-            console.log(`[Recommender] Fetching ${missingSongIds.length} missing songs into catalog dynamically...`);
             const missingSongs = await Song.find({ _id: { $in: missingSongIds } }).select("title artist audio_details tempo energy valence acousticness danceability genre");
+            const foundSongIds = new Set(missingSongs.map(s => s._id.toString()));
             for (const song of missingSongs) {
                 this.addSong(song._id.toString(), {
                     title: song.title,
@@ -148,6 +175,11 @@ class MusicRecommender {
                     danceability: song.audio_details?.danceability || (song as any).danceability || 0.5,
                     genre: song.genre || "Unknown"
                 });
+            }
+            for (const id of missingSongIds) {
+                if (!foundSongIds.has(id as string)) {
+                    this.invalidSongIds.add(id as string);
+                }
             }
         }
 

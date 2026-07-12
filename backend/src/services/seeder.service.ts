@@ -96,11 +96,9 @@ const getSaavnPreview = async (trackName: string, artistName: string) => {
 
 export async function seedDatabaseOnStartup() {
     try {
-        console.log("[SeederService] Checking if database needs seeding...");
         // Check if songs exist to avoid re-seeding on every startup
         const hasSongs = await Song.exists({});
         if (hasSongs) {
-            console.log("[SeederService] Songs already seeded. Skipping auto-seeding.");
             await migrateArtists();
             return;
         }
@@ -242,8 +240,6 @@ export async function seedDatabaseOnStartup() {
 
 export async function migrateArtists() {
     try {
-        console.log("[Migration] Running artist relationship migration...");
-        
         // Heal database: populate missing fuzzy_id for existing songs
         const needsFuzzyIdHealing = await Song.exists({
             $or: [
@@ -254,6 +250,7 @@ export async function migrateArtists() {
         });
 
         if (needsFuzzyIdHealing) {
+            console.log("[Migration] Running artist relationship migration...");
             const songsMissingFuzzyId = await Song.find({
                 $or: [
                     { "external_ids.fuzzy_id": { $exists: false } },
@@ -306,8 +303,6 @@ export async function migrateArtists() {
         });
 
         if (!needsSongArtistMigration && !needsAlbumArtistMigration) {
-            console.log("[Migration] All songs and albums already have artist relationships. Skipping migration.");
-            
             // Start background enrichment for unenriched artists
             const unenrichedArtists = await Artist.find({ enriched: false });
             if (unenrichedArtists.length > 0) {
@@ -328,6 +323,10 @@ export async function migrateArtists() {
                 })();
             }
             return;
+        }
+
+        if (needsSongArtistMigration || needsAlbumArtistMigration) {
+            console.log("[Migration] Running artist relationship migration...");
         }
 
         // 1. Get all songs

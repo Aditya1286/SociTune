@@ -41,22 +41,16 @@ export const migrateExistingNotifications = async () => {
             }
         });
         const oldDb = mongoose.connection.db;
-        if (!oldDb) {
-            console.log("[Migration] Default DB connection not ready, skipping migration check");
+        if (!oldDb)
             return;
-        }
         // Check if old notifications collection exists
         const collections = await oldDb.listCollections({ name: "notifications" }).toArray();
-        if (collections.length === 0) {
-            console.log("[Migration] No legacy notifications collection found to migrate");
+        if (collections.length === 0)
             return;
-        }
         const oldCollection = oldDb.collection("notifications");
         const count = await oldCollection.countDocuments();
-        if (count === 0) {
-            console.log("[Migration] Legacy notifications collection is empty");
+        if (count === 0)
             return;
-        }
         console.log(`[Migration] Found ${count} legacy notifications to migrate to socification_db...`);
         // Fetch all legacy notifications
         const legacyNotifications = await oldCollection.find({}).toArray();
