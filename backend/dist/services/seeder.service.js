@@ -338,7 +338,8 @@ export async function migrateArtists() {
             const arraysMatch = existingArtistIds.length === newArtistIds.length &&
                 existingArtistIds.every((val, index) => val === newArtistIds[index]);
             if (!arraysMatch) {
-                await Song.updateOne({ _id: song._id }, { $set: { artists: artistIds } });
+                song.set("artists", artistIds);
+                await song.save();
             }
         }
         // 2. Get all albums
@@ -379,7 +380,8 @@ export async function migrateArtists() {
             const arraysMatch = existingArtistIds.length === newArtistIds.length &&
                 existingArtistIds.every((val, index) => val === newArtistIds[index]);
             if (!arraysMatch) {
-                await Album.updateOne({ _id: album._id }, { $set: { artists: artistIds } });
+                album.set("artists", artistIds);
+                await album.save();
             }
         }
         console.log("[Migration] Artist relationship migration completed successfully!");

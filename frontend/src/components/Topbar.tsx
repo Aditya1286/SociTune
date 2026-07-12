@@ -1,6 +1,6 @@
 import { SearchIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { SignedIn, SignedOut, useClerk, useUser } from "@/lib/clerk-mock";
+import { SignedIn, SignedOut, useClerk, useUser } from "@clerk/clerk-react";
 import NotificationDropdown from "./NotificationDropdown";
 import { buttonVariants } from "./ui/button";
 import { cn } from "@/lib/utils";
@@ -111,7 +111,7 @@ const Topbar = () => {
                 "w-auto text-white border-zinc-200 h-9 sm:h-10 px-4 text-sm font-medium hover:scale-[1.02] active:scale-[0.98] transition-all"
               )}
             >
-              Sign In
+              Continue with Google
             </Link>
           </SignedOut>
 

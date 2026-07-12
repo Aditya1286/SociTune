@@ -168,19 +168,6 @@ class UserController {
             next(error);
         }
     }
-    async getCurrentUser(req, res, next) {
-        try {
-            const userId = req.auth.userId;
-            const user = await User.findOne({ clerkId: userId });
-            if (!user)
-                return res.status(404).json({ message: "User not found" });
-            res.status(200).json(user);
-        }
-        catch (error) {
-            console.log("Error in getCurrentUser", error);
-            next(error);
-        }
-    }
     async updateProfile(req, res, next) {
         try {
             const userId = req.auth.userId;
@@ -219,18 +206,6 @@ class UserController {
                 updateData.favoriteSong = req.body.favoriteSong;
             if (req.body.favoriteArtist !== undefined)
                 updateData.favoriteArtist = req.body.favoriteArtist;
-            if (req.body.displayName !== undefined)
-                updateData.displayName = req.body.displayName;
-            if (req.body.gender !== undefined)
-                updateData.gender = req.body.gender;
-            if (req.body.birthday !== undefined)
-                updateData.birthday = req.body.birthday ? new Date(req.body.birthday) : null;
-            if (req.body.country !== undefined)
-                updateData.country = req.body.country;
-            if (req.body.profileCompleted !== undefined) {
-                // Coerce string "true" / "false" to boolean if sent as FormData
-                updateData.profileCompleted = req.body.profileCompleted === "true" || req.body.profileCompleted === true;
-            }
             const user = await User.findOneAndUpdate({ clerkId: userId }, updateData, { new: true });
             res.status(200).json(user);
         }
@@ -306,11 +281,11 @@ class UserController {
             let artist = req.body.artist;
             let imageUrl = req.body.imageUrl;
             let duration = req.body.duration;
-            let durationMsStr = req.body.durationMs !== undefined ? req.body.durationMs : req.body.duration_ms;
+            let durationMsStr = req.body.duration_ms;
             let completed = req.body.completed;
-            let sessionId = req.body.sessionId !== undefined ? req.body.sessionId : req.body.session_id;
+            let sessionId = req.body.session_id;
             let source = req.body.source;
-            let playedAtVal = req.body.playedAt || req.body.played_at ? new Date(req.body.playedAt || req.body.played_at) : new Date();
+            let playedAtVal = req.body.played_at ? new Date(req.body.played_at) : new Date();
             // If the request contains the new payload structure, parse it
             if (req.body.song_details) {
                 const { song_details } = req.body;
@@ -509,11 +484,11 @@ class UserController {
                 playedAt: playedAtVal
             };
             if (durationMsStr !== undefined)
-                playHistoryObj.durationMs = durationMsStr;
+                playHistoryObj.duration_ms = durationMsStr;
             if (completed !== undefined)
                 playHistoryObj.completed = completed;
             if (sessionId !== undefined)
-                playHistoryObj.sessionId = sessionId;
+                playHistoryObj.session_id = sessionId;
             if (source !== undefined)
                 playHistoryObj.source = source;
             await PlayHistory.create(playHistoryObj);

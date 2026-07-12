@@ -1,4 +1,4 @@
-import { UserButton } from "@/lib/clerk-mock";
+import { UserButton } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
 
 const Header = () => {

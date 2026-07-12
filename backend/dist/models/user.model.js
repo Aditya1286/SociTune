@@ -10,17 +10,8 @@ const userSchema = new mongoose.Schema({
     },
     clerkId: {
         type: String,
-        unique: true,
-        sparse: true
-    },
-    email: {
-        type: String,
-        unique: true,
-        sparse: true
-    },
-    password: {
-        type: String,
-        select: false
+        required: true,
+        unique: true
     },
     username: {
         type: String,
@@ -59,31 +50,6 @@ const userSchema = new mongoose.Schema({
     lastActivity: {
         type: String,
         default: "Offline"
-    },
-    displayName: {
-        type: String,
-        default: ""
-    },
-    gender: {
-        type: String,
-        default: ""
-    },
-    birthday: {
-        type: Date
-    },
-    country: {
-        type: String,
-        default: ""
-    },
-    profileCompleted: {
-        type: Boolean,
-        default: false
-    },
-    uid: {
-        type: String,
-        default: () => new mongoose.Types.ObjectId().toString(),
-        unique: true,
-        sparse: true
     }
 }, { timestamps: true });
 export const User = mongoose.model("User", userSchema);

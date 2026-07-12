@@ -27,7 +27,6 @@ class UserRoutes {
         this.router.post(`${this.path}/accept/:userId`, this.authMiddleware.protectRoute, asyncHandler(this.userController.acceptFriendRequest));
         this.router.post(`${this.path}/reject/:userId`, this.authMiddleware.protectRoute, asyncHandler(this.userController.rejectFriendRequest));
         this.router.post(`${this.path}/remove/:userId`, this.authMiddleware.protectRoute, asyncHandler(this.userController.removeFriend));
-        this.router.get(`${this.path}/me`, this.authMiddleware.protectRoute, asyncHandler(this.userController.getCurrentUser));
         this.router.put(`${this.path}/profile`, this.authMiddleware.protectRoute, asyncHandler(this.userController.updateProfile));
         this.router.get(`${this.path}/profile/:userId/mutual`, this.authMiddleware.protectRoute, asyncHandler(this.userController.getMutualFriends));
         this.router.get(`${this.path}/profile/:userId/friends`, this.authMiddleware.protectRoute, asyncHandler(this.userController.getFriends));

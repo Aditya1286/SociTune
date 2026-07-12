@@ -13,4 +13,3 @@ export const FEATURE_SOCIFICATION = process.env.FEATURE_SOCIFICATION === "true";
 export const INTERNAL_SERVICE_TOKEN = process.env.INTERNAL_SERVICE_TOKEN || "socitune_internal_secret_token_123!";
 export const SOCIFICATION_SERVICE_URL = process.env.SOCIFICATION_SERVICE_URL || "https://socification.onrender.com";
 export const DOCKER_AI_SERVICE_URL = process.env.DOCKER_AI_SERVICE_URL || "http://localhost:3066";
-export const JWT_SECRET = process.env.JWT_SECRET || "fallback_default_jwt_secret_token_key";

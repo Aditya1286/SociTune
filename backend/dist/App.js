@@ -12,7 +12,6 @@ import { initializeSocket } from "./services/socket.service.js";
 import { recommender } from "./services/recommendation.service.js";
 import { seedDatabaseOnStartup } from "./services/seeder.service.js";
 import { migrateExistingNotifications } from "./databases/socification.db.js";
-import { migrateExistingUsers } from "./databases/userMigration.js";
 class App {
     env;
     port;
@@ -34,7 +33,6 @@ class App {
     }
     async initialiseDatabases() {
         await connectWithMongo();
-        await migrateExistingUsers();
         await seedDatabaseOnStartup();
         await migrateExistingNotifications();
         await recommender.init();

@@ -15,14 +15,6 @@ class AuthRoutes implements Routes {
 
     private initializeRoutes() {
         this.router.post(
-            `${this.path}/signup`,
-            asyncHandler(this.authController.signup)
-        );
-        this.router.post(
-            `${this.path}/login`,
-            asyncHandler(this.authController.login)
-        );
-        this.router.post(
             `${this.path}/callback`,
             asyncHandler(this.authController.authCallback)
         );

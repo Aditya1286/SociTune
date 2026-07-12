@@ -136,7 +136,6 @@ export interface User {
 	fullName: string;
 	displayName: string;
 	username?: string;
-	email?: string;
 	imageUrl: string;
 	bio?: string;
 	favoriteSong?: string;

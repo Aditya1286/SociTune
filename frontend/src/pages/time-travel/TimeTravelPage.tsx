@@ -7,7 +7,7 @@ import { axiosInstance } from "@/lib/axios";
 import type { Song } from "@/types";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/clerk-mock";
+import { useAuth } from "@clerk/clerk-react";
 
 interface MonthlyStat {
   name: string;

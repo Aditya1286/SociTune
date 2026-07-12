@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChatStore } from "@/stores/useChatStore";
-import { useUser } from "@/lib/clerk-mock";
+import { useUser } from "@clerk/clerk-react";
 import { HeadphonesIcon, Users } from "lucide-react";
 import { useEffect } from "react";
 
