@@ -40,7 +40,10 @@ export async function redirectToSpotify(): Promise<void> {
     const res = await axiosInstance.get("/spotify/client-id");
     clientId = res.data.clientId;
   } catch (err) {
-    console.error("Failed to fetch Spotify Client ID from backend, falling back to static config:", err);
+    console.error("Failed to fetch Spotify Client ID from backend:", err);
+  }
+
+  if (!clientId) {
     clientId = CLIENT_ID;
   }
 
