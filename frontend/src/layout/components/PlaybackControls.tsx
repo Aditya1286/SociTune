@@ -18,8 +18,11 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { LikeButton } from "@/components/LikeButton";
-import { useUser } from "@clerk/clerk-react";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { useNavigate } from "react-router-dom";
+import { useStore as useSpotifyStore } from "@/Features/SpotifyPlayer/store/PlayerStore";
+import { api as spotifyApi } from "@/Features/SpotifyPlayer/services/spotifyApi";
+
 
 const formatTime = (seconds: number) => {
 	const minutes = Math.floor(seconds / 60);
@@ -30,7 +33,7 @@ const formatTime = (seconds: number) => {
 export const PlaybackControls = () => {
 	const { 
 		currentSong, 
-		isPlaying, 
+		isPlaying: localIsPlaying, 
 		togglePlay, 
 		playNext, 
 		playPrevious, 
@@ -42,7 +45,86 @@ export const PlaybackControls = () => {
 		isLoadingLyrics,
 		fetchLyrics
 	} = usePlayerStore();
-	const { user } = useUser();
+
+	const spotifyStore = useSpotifyStore();
+	const isSpotifyTrack = currentSong?.audioUrl?.startsWith("spotify:");
+
+	const isPlaying = isSpotifyTrack ? spotifyStore.isPlaying : localIsPlaying;
+	const shuffleActive = isSpotifyTrack ? spotifyStore.shuffle : isShuffled;
+	const repeatActive = isSpotifyTrack ? spotifyStore.repeat !== "off" : isLooping;
+
+	const handleTogglePlay = async () => {
+		if (isSpotifyTrack) {
+			try {
+				if (spotifyStore.isPlaying) {
+					await spotifyApi.pause();
+					spotifyStore.setPlaybackState({ isPlaying: false });
+				} else {
+					await spotifyApi.play();
+					spotifyStore.setPlaybackState({ isPlaying: true });
+				}
+			} catch (e) {
+				console.error("Spotify toggle play error:", e);
+			}
+		} else {
+			togglePlay();
+		}
+	};
+
+	const handlePlayNext = async () => {
+		if (isSpotifyTrack) {
+			try {
+				await spotifyApi.next();
+			} catch (e) {
+				console.error("Spotify next error:", e);
+			}
+		} else {
+			playNext();
+		}
+	};
+
+	const handlePlayPrevious = async () => {
+		if (isSpotifyTrack) {
+			try {
+				await spotifyApi.prev();
+			} catch (e) {
+				console.error("Spotify prev error:", e);
+			}
+		} else {
+			playPrevious();
+		}
+	};
+
+	const handleToggleShuffle = async () => {
+		if (isSpotifyTrack) {
+			const next = !spotifyStore.shuffle;
+			spotifyStore.setPlaybackState({ shuffle: next });
+			try {
+				await spotifyApi.shuffle(next);
+			} catch (e) {
+				console.error(e);
+			}
+		} else {
+			toggleShuffle();
+		}
+	};
+
+	const handleToggleRepeat = async () => {
+		if (isSpotifyTrack) {
+			const repeatCycle: ("off" | "context" | "track")[] = ["off", "context", "track"];
+			const next = repeatCycle[(repeatCycle.indexOf(spotifyStore.repeat) + 1) % repeatCycle.length];
+			spotifyStore.setPlaybackState({ repeat: next });
+			try {
+				await spotifyApi.repeat(next);
+			} catch (e) {
+				console.error(e);
+			}
+		} else {
+			toggleLoop();
+		}
+	};
+
+	const { currentUser: user } = useAuthStore();
 	const navigate = useNavigate();
 
 	const renderArtistLinks = (artistString: string, classNames?: string) => {
@@ -75,7 +157,7 @@ export const PlaybackControls = () => {
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const [isMuted, setIsMuted] = useState(false);
 	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-	const [activeTab, setActiveTab] = useState<"details" | "lyrics">("details");
+	const [activeTab, setActiveTab] = useState<"details" | "lyrics" | "queue">("details");
 
 	const songLyrics = currentSong ? lyrics[currentSong._id] : null;
 
@@ -124,19 +206,36 @@ export const PlaybackControls = () => {
 	}, []);
 
 	useEffect(() => {
+		if (isSpotifyTrack) {
+			setCurrentTime(spotifyStore.position / 1000);
+			setDuration(spotifyStore.duration / 1000);
+		}
+	}, [isSpotifyTrack, spotifyStore.position, spotifyStore.duration]);
+
+	useEffect(() => {
 		audioRef.current = document.querySelector("audio");
 
 		const audio = audioRef.current;
 		if (!audio) return;
 
-		const updateTime = () => setCurrentTime(audio.currentTime);
-		const updateDuration = () => setDuration(audio.duration);
+		const updateTime = () => {
+			if (!isSpotifyTrack) {
+				setCurrentTime(audio.currentTime);
+			}
+		};
+		const updateDuration = () => {
+			if (!isSpotifyTrack) {
+				setDuration(audio.duration);
+			}
+		};
 
 		audio.addEventListener("timeupdate", updateTime);
 		audio.addEventListener("loadedmetadata", updateDuration);
 
 		const handleEnded = () => {
-			usePlayerStore.setState({ isPlaying: false });
+			if (!isSpotifyTrack) {
+				usePlayerStore.setState({ isPlaying: false });
+			}
 		};
 
 		audio.addEventListener("ended", handleEnded);
@@ -146,10 +245,14 @@ export const PlaybackControls = () => {
 			audio.removeEventListener("loadedmetadata", updateDuration);
 			audio.removeEventListener("ended", handleEnded);
 		};
-	}, [currentSong]);
+	}, [currentSong, isSpotifyTrack]);
 
 	const handleSeek = (value: number[]) => {
-		if (audioRef.current) {
+		if (isSpotifyTrack) {
+			const ms = value[0] * 1000;
+			spotifyStore.setPosition(ms);
+			spotifyApi.seek(ms).catch(console.error);
+		} else if (audioRef.current) {
 			audioRef.current.currentTime = value[0];
 		}
 	};
@@ -200,8 +303,8 @@ export const PlaybackControls = () => {
 							<Button
 								size='icon'
 								variant='ghost'
-								className={`hidden sm:inline-flex hover:text-white hover:bg-transparent transition-all ${isShuffled ? "text-emerald-500 hover:text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" : "text-zinc-400"}`}
-								onClick={toggleShuffle}
+								className={`hidden sm:inline-flex hover:text-white hover:bg-transparent transition-all ${shuffleActive ? "text-emerald-500 hover:text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" : "text-zinc-400"}`}
+								onClick={handleToggleShuffle}
 							>
 								<Shuffle className='h-4 w-4' />
 							</Button>
@@ -210,7 +313,7 @@ export const PlaybackControls = () => {
 								size='icon'
 								variant='ghost'
 								className='hover:text-white text-zinc-400 hover:bg-transparent active:scale-90 transition-all'
-								onClick={playPrevious}
+								onClick={handlePlayPrevious}
 								disabled={!currentSong}
 							>
 								<SkipBack className='h-4 w-4 fill-zinc-400 hover:fill-white transition-all' />
@@ -219,7 +322,7 @@ export const PlaybackControls = () => {
 							<Button
 								size='icon'
 								className='bg-white hover:bg-white/90 text-black rounded-full h-10 w-10 flex items-center justify-center shadow-[0_4px_16px_rgba(255,255,255,0.15)] hover:scale-105 active:scale-95 transition-all'
-								onClick={togglePlay}
+								onClick={handleTogglePlay}
 								disabled={!currentSong}
 							>
 								{isPlaying ? <Pause className='h-5 w-5 fill-black' /> : <Play className='h-5 w-5 fill-black ml-0.5' />}
@@ -228,7 +331,7 @@ export const PlaybackControls = () => {
 								size='icon'
 								variant='ghost'
 								className='hover:text-white text-zinc-400 hover:bg-transparent active:scale-90 transition-all'
-								onClick={playNext}
+								onClick={handlePlayNext}
 								disabled={!currentSong}
 							>
 								<SkipForward className='h-4 w-4 fill-zinc-400 hover:fill-white transition-all' />
@@ -236,8 +339,8 @@ export const PlaybackControls = () => {
 							<Button
 								size='icon'
 								variant='ghost'
-								className={`hidden sm:inline-flex hover:text-white hover:bg-transparent transition-all ${isLooping ? "text-emerald-500 hover:text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" : "text-zinc-400"}`}
-								onClick={toggleLoop}
+								className={`hidden sm:inline-flex hover:text-white hover:bg-transparent transition-all ${repeatActive ? "text-emerald-500 hover:text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" : "text-zinc-400"}`}
+								onClick={handleToggleRepeat}
 							>
 								<Repeat className='h-4 w-4' />
 							</Button>
@@ -273,7 +376,17 @@ export const PlaybackControls = () => {
 						>
 							<Mic2 className='h-4 w-4' />
 						</Button>
-						<Button size='icon' variant='ghost' className='hover:text-white text-zinc-400 hover:bg-transparent transition-colors'>
+						<Button 
+							size='icon' 
+							variant='ghost' 
+							className={`hover:text-white hover:bg-transparent transition-colors ${isPreviewOpen && activeTab === "queue" ? "text-emerald-400" : "text-zinc-400"}`}
+							onClick={() => {
+								if (currentSong) {
+									setActiveTab("queue");
+									setIsPreviewOpen(true);
+								}
+							}}
+						>
 							<ListMusic className='h-4 w-4' />
 						</Button>
 						<div className="relative group">
@@ -374,13 +487,25 @@ export const PlaybackControls = () => {
 						>
 							Lyrics
 						</button>
+						<button 
+							onClick={() => setActiveTab("queue")}
+							className={`text-xs font-bold uppercase tracking-wider pb-1.5 border-b-2 transition-all duration-200 ${
+								activeTab === "queue" 
+									? "text-emerald-400 border-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]" 
+									: "text-zinc-500 border-transparent hover:text-zinc-300"
+							}`}
+						>
+							Queue
+						</button>
 					</div>
 
 					{/* Middle Content - Apple Music Responsive Layout */}
 					<div className={`flex-1 flex relative z-10 w-full mx-auto my-4 overflow-hidden transition-all duration-500 ${
 						activeTab === "lyrics" 
 							? "max-w-5xl flex-col md:flex-row gap-10 items-stretch justify-center px-4" 
-							: "max-w-lg flex-col items-center justify-center"
+							: activeTab === "queue"
+								? "max-w-3xl flex-col items-stretch justify-start px-4"
+								: "max-w-lg flex-col items-center justify-center"
 					}`}>
 						{activeTab === "details" ? (
 							<div className="relative aspect-square w-64 h-64 sm:w-80 sm:h-80 mb-8 flex justify-center items-center">
@@ -392,7 +517,7 @@ export const PlaybackControls = () => {
 									className="w-full h-full object-cover rounded-2xl sm:rounded-[32px] shadow-[0_24px_50px_rgba(0,0,0,0.7)] border border-white/[0.08] relative z-10 transition-transform duration-500 hover:scale-[1.02]"
 								/>
 							</div>
-						) : (
+						) : activeTab === "lyrics" ? (
 							<>
 								{/* Left Column (Artwork & Song Details) - Only on Desktop for Lyrics view */}
 								<div className="hidden md:flex flex-col justify-center items-center w-[35%] gap-6 shrink-0 text-center select-none">
@@ -445,6 +570,70 @@ export const PlaybackControls = () => {
 									)}
 								</div>
 							</>
+						) : (
+							/* activeTab === "queue" */
+							<div className="flex-1 w-full flex flex-col relative overflow-hidden h-full">
+								<div className="flex justify-between items-center mb-4 px-2 select-none">
+									<h4 className="text-sm font-bold uppercase tracking-wider text-zinc-400">Up Next</h4>
+									<Button 
+										variant="ghost" 
+										size="sm" 
+										onClick={() => usePlayerStore.setState({ queue: [], currentIndex: -1 })}
+										className="text-xs text-zinc-500 hover:text-rose-400 p-0 h-auto hover:bg-transparent"
+									>
+										Clear Queue
+									</Button>
+								</div>
+								{usePlayerStore.getState().queue.length === 0 ? (
+									<div className="text-center p-8 flex flex-col items-center justify-center h-full select-none">
+										<ListMusic className="size-10 text-zinc-600 mb-3 animate-pulse" />
+										<p className="text-zinc-400 font-bold text-base">Queue is empty</p>
+										<p className="text-zinc-600 text-sm mt-1">Play an album or add songs to lineup.</p>
+									</div>
+								) : (
+									<div 
+										className="w-full h-[40vh] md:h-[480px] overflow-y-auto pr-6 text-left select-none scroll-smooth [&::-webkit-scrollbar]:hidden flex flex-col gap-2 pb-10"
+										style={{ scrollbarWidth: 'none' }}
+									>
+										{usePlayerStore.getState().queue.map((song, idx) => {
+											const isCurrent = idx === usePlayerStore.getState().currentIndex;
+											return (
+												<div 
+													key={song._id + idx}
+													onClick={() => {
+														usePlayerStore.setState({ 
+															currentSong: song, 
+															currentIndex: idx, 
+															isPlaying: true 
+														});
+													}}
+													className={`flex items-center gap-3.5 p-2 rounded-xl transition-all duration-300 cursor-pointer ${
+														isCurrent 
+															? "bg-emerald-500/10 border border-emerald-500/20 text-white font-bold" 
+															: "bg-white/[0.01] hover:bg-white/[0.04] border border-transparent text-zinc-300 hover:text-white"
+													}`}
+												>
+													<div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-white/5 relative">
+														<img src={song.imageUrl} alt="" className="w-full h-full object-cover" />
+														{isCurrent && (
+															<div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+																<div className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping" />
+															</div>
+														)}
+													</div>
+													<div className="flex-1 min-w-0">
+														<p className={`text-sm truncate ${isCurrent ? "text-emerald-400" : ""}`}>{song.title}</p>
+														<p className="text-xs text-zinc-500 truncate mt-0.5">{song.artist}</p>
+													</div>
+													<div className="text-[11px] font-mono text-zinc-500 font-bold tabular-nums">
+														{formatTime(song.duration)}
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								)}
+							</div>
 						)}
 					</div>
 
@@ -487,8 +676,8 @@ export const PlaybackControls = () => {
 								<Button
 									variant="ghost"
 									size="icon"
-									className={`hover:text-white transition-all h-10 w-10 ${isShuffled ? "text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]" : "text-zinc-400"}`}
-									onClick={toggleShuffle}
+									className={`hover:text-white transition-all h-10 w-10 ${shuffleActive ? "text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]" : "text-zinc-400"}`}
+									onClick={handleToggleShuffle}
 								>
 									<Shuffle size={20} />
 								</Button>
@@ -497,7 +686,7 @@ export const PlaybackControls = () => {
 									variant="ghost"
 									size="icon"
 									className="text-zinc-400 hover:text-white transition-all h-10 w-10 active:scale-90"
-									onClick={playPrevious}
+									onClick={handlePlayPrevious}
 									disabled={!currentSong}
 								>
 									<SkipBack size={24} fill="currentColor" />
@@ -505,7 +694,7 @@ export const PlaybackControls = () => {
 
 								<Button
 									size="icon"
-									onClick={togglePlay}
+									onClick={handleTogglePlay}
 									className="bg-white hover:bg-white/90 text-black rounded-full h-14 w-14 flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95"
 								>
 									{isPlaying ? (
@@ -519,7 +708,7 @@ export const PlaybackControls = () => {
 									variant="ghost"
 									size="icon"
 									className="text-zinc-400 hover:text-white transition-all h-10 w-10 active:scale-90"
-									onClick={playNext}
+									onClick={handlePlayNext}
 									disabled={!currentSong}
 								>
 									<SkipForward size={24} fill="currentColor" />
@@ -528,8 +717,8 @@ export const PlaybackControls = () => {
 								<Button
 									variant="ghost"
 									size="icon"
-									className={`hover:text-white transition-all h-10 w-10 ${isLooping ? "text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]" : "text-zinc-400"}`}
-									onClick={toggleLoop}
+									className={`hover:text-white transition-all h-10 w-10 ${repeatActive ? "text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]" : "text-zinc-400"}`}
+									onClick={handleToggleRepeat}
 								>
 									<Repeat size={20} />
 								</Button>
@@ -537,7 +726,12 @@ export const PlaybackControls = () => {
 
 							{/* Bottom controls row */}
 							<div className="flex justify-center gap-12 border-t border-white/[0.04] pt-4 text-zinc-500">
-								<Button variant="ghost" size="icon" className="hover:text-white p-0 h-auto">
+								<Button 
+									variant="ghost" 
+									size="icon" 
+									className={`hover:text-white p-0 h-auto transition-colors ${activeTab === "queue" ? "text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]" : "text-zinc-500"}`}
+									onClick={() => setActiveTab(activeTab === "queue" ? "details" : "queue")}
+								>
 									<ListMusic size={18} />
 								</Button>
 								<Button 
@@ -562,7 +756,7 @@ export const PlaybackControls = () => {
 								{user.imageUrl ? (
 									<img src={user.imageUrl} className="w-full h-full object-cover" />
 								) : (
-									user.firstName?.charAt(0) || "U"
+									(user.displayName || user.fullName || "U").charAt(0)
 								)}
 							</div>
 						) : (

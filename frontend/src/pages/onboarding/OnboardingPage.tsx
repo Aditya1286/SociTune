@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "@clerk/clerk-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useChatStore } from "@/stores/useChatStore";
 import { axiosInstance } from "@/lib/axios";
@@ -20,7 +19,6 @@ const BIO_PROMPTS = [
 ];
 
 const OnboardingPage: React.FC = () => {
-  const { user } = useUser();
   const { fetchCurrentUser, currentUser } = useAuthStore();
   const { updateProfile } = useChatStore();
   const navigate = useNavigate();
@@ -61,16 +59,8 @@ const OnboardingPage: React.FC = () => {
           console.error(e);
         }
       }
-    } else if (user) {
-      setDisplayName(user.fullName || "");
-      setPreviewUrl(user.imageUrl || null);
-      
-      // Suggest username
-      const emailLocalPart = user.primaryEmailAddress?.emailAddress.split("@")[0] || "";
-      const baseSuggestion = (user.username || emailLocalPart || user.firstName || "user").toLowerCase().replace(/[^a-z0-9]/g, "");
-      setUsername(baseSuggestion);
     }
-  }, [user, currentUser]);
+  }, [currentUser]);
 
   // Username validation debouncing
   useEffect(() => {
@@ -133,13 +123,6 @@ const OnboardingPage: React.FC = () => {
 
       if (imageFile) {
         formData.append("imageFile", imageFile);
-        if (user) {
-          try {
-            await user.setProfileImage({ file: imageFile });
-          } catch (clerkErr) {
-            console.error("Failed to update Clerk profile image:", clerkErr);
-          }
-        }
       }
 
       await updateProfile(formData);

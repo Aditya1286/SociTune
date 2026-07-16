@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { useChatStore } from "@/stores/useChatStore";
 import { axiosInstance } from "@/lib/axios";
 import {
@@ -50,7 +50,7 @@ interface CreateRoomModalProps {
 const MOOD_CHIPS = ["🔥 Chill", "🌙 Midnight", "☕ Coffee", "🌧 Rain", "⚡ Energetic", "🎸 Rock", "🎧 Lo-Fi", "💃 Party"];
 
 export default function CreateRoomModal({ open, onOpenChange, onRoomCreated }: CreateRoomModalProps) {
-  const { user } = useUser();
+  const { currentUser: user } = useAuthStore();
   const { getUserFriends } = useChatStore();
   const reducedMotion = useReducedMotion();
 
@@ -79,9 +79,9 @@ export default function CreateRoomModal({ open, onOpenChange, onRoomCreated }: C
   const [reminderLeadTime, setReminderLeadTime] = useState(15);
 
   useEffect(() => {
-    if (open && user?.id) {
+    if (open && user?.clerkId) {
       // Fetch friends list for Private invitation selection
-      getUserFriends(user.id).then((res) => {
+      getUserFriends(user.clerkId).then((res) => {
         setFriends(res || []);
       });
       setStep(1);
@@ -96,7 +96,7 @@ export default function CreateRoomModal({ open, onOpenChange, onRoomCreated }: C
       setStartTime("");
       setReminderLeadTime(15);
     }
-  }, [open, user?.id, getUserFriends]);
+  }, [open, user?.clerkId, getUserFriends]);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();

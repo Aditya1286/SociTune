@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useUser } from "@clerk/clerk-react";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { useChatStore } from "@/stores/useChatStore";
 import { useRoomStore } from "@/stores/useRoomStore";
 import { useMusicStore } from "@/stores/useMusicStore";
@@ -37,7 +37,7 @@ import {
 export default function LiveRoom() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { currentUser: user } = useAuthStore();
   const { socket } = useChatStore();
   const { songs, fetchSongs, likedSongs, fetchLikedSongs, toggleLikeSong } = useMusicStore();
   const { currentSong: playerSong, setCurrentSong: setPlayerSong } = usePlayerStore();
@@ -63,7 +63,7 @@ export default function LiveRoom() {
   const [progress, setProgress] = useState(0);
   const progressTimerRef = useRef<any>(null);
 
-  const isHost = activeRoom?.hostId === user?.id;
+  const isHost = activeRoom?.hostId === user?.clerkId;
 
   useEffect(() => {
     fetchSongs();

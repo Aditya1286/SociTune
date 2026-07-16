@@ -1,223 +1,26 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { AlbumArt, ProgressBar, fmt } from "./UI";
 import { useStore } from "../Index";
-import { getStoredToken, getValidToken } from "../services/Auth";
-import type { RepeatMode, WebPlaybackState, WebPlaybackTrack } from "../Index";
+import type { RepeatMode } from "../Index";
 import { api } from "../services/spotifyApi";
 import { useMusicStore } from "@/stores/useMusicStore";
 import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Heart, Laptop2 } from "lucide-react";
-import type { songEventPayload } from "../services/SongEvent/types";
-import { saveSongEvent } from "../services/SongEvent/songEvent.service";
-import { useMutation } from "@tanstack/react-query";
 
 const REPEAT_CYCLE: RepeatMode[] = ["off", "context", "track"];
-const CONFIRM_PLAY_MS = 5000; // ignore skips shorter than this
-const COMPLETED_THRESHOLD = 0.9; // 90% listened = "completed"
-const FAILED_QUEUE_KEY = "song_event_failed_queue";
 
-type SongSession = {
-  sessionId: string;
-  trackId: string;
-  track: WebPlaybackTrack; // whatever type store.track is
-  duration: number;
-  startedAt: string;
-  maxPositionReached: number;
-};
-
-const buildPayload = (session: SongSession, completed: boolean): songEventPayload => ({
-  song_details: {
-    title: session.track.name,
-    artist: fmt.artists(session.track.artists),
-    external_ids: {
-      spotify_id: session.track.id,
-    },
-    genre_primary: "unknown", // TODO: fill once genre lookup is wired in
-    duration: fmt.time(session.duration),
-    image_url: session.track?.album?.images?.[0]?.url ?? "",
-  },
-  played_at: session.startedAt,
-  duration_ms: String(session.maxPositionReached),
-  completed,
-  session_id: session.sessionId,
-  source: "organic", // TODO: derive from nav context (search/playlist/radio) later
-});
-
-// ── Offline-safe queue helpers ──────────────────────────────────────
-const readFailedQueue = (): songEventPayload[] => {
-  try {
-    return JSON.parse(localStorage.getItem(FAILED_QUEUE_KEY) ?? "[]");
-  } catch {
-    return [];
-  }
-};
-const writeFailedQueue = (queue: songEventPayload[]) => {
-  try {
-    localStorage.setItem(FAILED_QUEUE_KEY, JSON.stringify(queue));
-  } catch {
-    // storage full / unavailable — drop silently, this is best-effort telemetry
-  }
-};
 const NowPlayingPanel = () => {
   const store = useStore();
   const { likedSongs, toggleLikeSong, fetchLikedSongs } = useMusicStore();
-  const positionTimer = useRef<ReturnType<typeof setInterval>>(0);
 
-  const sessionRef = useRef<SongSession | null>(null);
-  const confirmTimerRef = useRef<ReturnType<typeof setTimeout>>(0);
-
-  const { mutate: sendSongEvent } = useMutation({
-    mutationFn: saveSongEvent,
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000), // 1s, 2s, 4s cap 10s
-    onError: (err, payload) => {
-      console.error("song-event failed after retries, queueing for later", err);
-      const queue = readFailedQueue();
-      queue.push(payload);
-      writeFailedQueue(queue);
-    },
-  });
-
-  // ── Flush any failed events from a previous session on mount / reconnect ──
   useEffect(() => {
-    const flush = () => {
-      const queue = readFailedQueue();
-      if (!queue.length) return;
-      writeFailedQueue([]); // clear optimistically; failures re-queue themselves
-      queue.forEach((payload) => sendSongEvent(payload));
-    };
-    flush();
-    window.addEventListener("online", flush);
-    return () => window.removeEventListener("online", flush);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const finalizeSession = (session: SongSession) => {
-    const completed =
-      session.duration > 0 && session.maxPositionReached / session.duration >= COMPLETED_THRESHOLD;
-    sendSongEvent(buildPayload(session, completed));
-  };
-
-  // ── Track change detection: confirm play after threshold, finalize previous ──
-  useEffect(() => {
-    const track = store.track;
-    if (!track?.id) return;
-
-    // If this is genuinely a new track, finalize the outgoing session immediately
-    if (sessionRef.current && sessionRef.current.trackId !== track.id) {
-      finalizeSession(sessionRef.current);
-      sessionRef.current = null;
-    }
-
-    clearTimeout(confirmTimerRef.current);
-    confirmTimerRef.current = setTimeout(() => {
-      // Only start a session if still on the same track and actually playing
-      if (store.track?.id !== track.id) return;
-      sessionRef.current = {
-        sessionId: crypto.randomUUID(),
-        trackId: track.id,
-        track,
-        duration: store.duration,
-        startedAt: new Date().toISOString(),
-        maxPositionReached: store.position,
-      };
-    }, CONFIRM_PLAY_MS);
-
-    return () => clearTimeout(confirmTimerRef.current);
-  }, [store.track?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Keep the session's max-position updated as playback ticks ──
-  useEffect(() => {
-    if (sessionRef.current && sessionRef.current.trackId === store.track?.id) {
-      sessionRef.current.maxPositionReached = Math.max(
-        sessionRef.current.maxPositionReached,
-        store.position
-      );
-      sessionRef.current.duration = store.duration;
-    }
-  }, [store.position, store.track?.id, store.duration]);
-
-  // ── Finalize on unmount (e.g. navigating away, closing the app) ──
-  useEffect(() => {
-    return () => {
-      if (sessionRef.current) finalizeSession(sessionRef.current);
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Load Spotify SDK script ──
-  useEffect(() => {
-    if (document.getElementById("spotify-sdk")) return;
-    const script = document.createElement("script");
-    script.id = "spotify-sdk";
-    script.src = "https://sdk.scdn.co/spotify-player.js";
-    document.head.appendChild(script);
-  }, []);
-
-  // ── Init SDK player ──
-  useEffect(() => {
-    const token = getStoredToken();
-    if (!token) return;
-
-    const initPlayer = () => {
-      const player = new window.Spotify.Player({
-        name: "SociTune Player",
-        getOAuthToken: async (cb) => {
-          const t = await getValidToken();
-          if (t) cb(t);
-        },
-        volume: store.volume / 100,
-      });
-
-      player.addListener("ready", async (data) => {
-        const { device_id } = data as { device_id: string };
-
-        store.setDeviceId(device_id);
-        store.setPlayer(player);
-
-        await api.transferPlayback(device_id);
-      });
-
-      player.addListener("player_state_changed", (raw: unknown) => {
-        const state = raw as WebPlaybackState | null;
-        if (!state) return;
-
-        const isSpotifyPlaying = !state.paused;
-        if (isSpotifyPlaying) {
-          import("@/stores/usePlayerStore").then(({ usePlayerStore }) => {
-            const localState = usePlayerStore.getState();
-            if (localState.isPlaying) {
-              usePlayerStore.setState({ isPlaying: false });
-            }
-          });
-        }
-
-        const track = state.track_window.current_track;
-        const repeat = REPEAT_CYCLE[state.repeat_mode] ?? "off";
-
-        store.setPlaybackState({
-          track,
-          isPlaying: isSpotifyPlaying,
-          position: state.position,
-          duration: state.duration,
-          shuffle: state.shuffle,
-          repeat,
-        });
-      });
-      player.connect();
-    };
-
-    window.onSpotifyWebPlaybackSDKReady = initPlayer;
-    if (window.Spotify) initPlayer();
-
-    api.me().then((u) => {
-      if (u) store.setUser(u);
-    });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    fetchLikedSongs().catch(() => {});
+  }, [fetchLikedSongs]);
 
   const pollState = async () => {
     try {
       const data = (await api.player()) as any;
       if (!data || !data.item) return;
 
-      // Skip updating if playing on the local Web SDK device to avoid race conditions
       if (store.deviceId && data.device?.id === store.deviceId) {
         return;
       }
@@ -249,53 +52,8 @@ const NowPlayingPanel = () => {
               ? "context"
               : "off",
       });
-    } catch (e) {
-      // Ignore fetch/empty-state errors
-    }
+    } catch (e) {}
   };
-
-  // ── Polling playback state for external devices ──
-  useEffect(() => {
-    const token = getStoredToken();
-    if (!token) return;
-
-    pollState();
-    const interval = setInterval(pollState, 4000);
-    return () => {
-      clearInterval(interval);
-    };
-  }, [store.deviceId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Sync track saved/liked status ──
-  useEffect(() => {
-    if (!store.track?.id) return;
-
-    // Check Spotify liked status
-    api
-      .isTrackLiked([store.track.id])
-      .then((res) => {
-        if (res && res.length > 0) {
-          store.setIsLiked(res[0]);
-        }
-      })
-      .catch((e) => console.error("Error checking Spotify like state:", e));
-  }, [store.track?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Fetch local liked songs on mount ──
-  useEffect(() => {
-    fetchLikedSongs().catch(() => {});
-  }, [fetchLikedSongs]);
-
-  // ── Position ticker ──
-  useEffect(() => {
-    clearInterval(positionTimer.current);
-    if (store.isPlaying) {
-      positionTimer.current = setInterval(() => {
-        store.setPosition(Math.min(store.position + 1000, store.duration));
-      }, 1000);
-    }
-    return () => clearInterval(positionTimer.current);
-  }, [store.isPlaying, store.position, store.duration]);
 
   // ── Playback controls ──
   const togglePlay = async () => {

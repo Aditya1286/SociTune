@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useMusicStore } from "@/stores/useMusicStore";
 import { usePlayerStore } from "@/stores/usePlayerStore";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, 
@@ -46,7 +46,8 @@ interface GlobalSearchResults {
 
 export default function SearchPage() {
   const navigate = useNavigate();
-  const { userId } = useAuth();
+  const { currentUser } = useAuthStore();
+  const userId = currentUser?.clerkId;
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Client-side search caching

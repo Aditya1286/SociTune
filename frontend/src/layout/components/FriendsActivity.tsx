@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChatStore } from "@/stores/useChatStore";
-import { useUser } from "@clerk/clerk-react";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { HeadphonesIcon, Users } from "lucide-react";
 import { useEffect } from "react";
 
@@ -15,11 +15,11 @@ const PlayingEqualizer = () => (
 
 const FriendsActivity = () => {
 	const { users, fetchUsers, onlineUsers, userActivities } = useChatStore();
-	const { user } = useUser();
+	const { currentUser } = useAuthStore();
 
 	useEffect(() => {
-		if (user) fetchUsers();
-	}, [fetchUsers, user]);
+		if (currentUser) fetchUsers();
+	}, [fetchUsers, currentUser]);
 
 	return (
 		<div className="h-full pl-1 pr-2 pb-2 flex flex-col font-sans select-none relative">
@@ -52,7 +52,7 @@ const FriendsActivity = () => {
 					</div>
 				</div>
 
-				{!user && <LoginPrompt />}
+				{!currentUser && <LoginPrompt />}
 
 				{/* Friends List */}
 				<ScrollArea className="flex-1 min-h-0 -mx-2 px-2 relative z-10">

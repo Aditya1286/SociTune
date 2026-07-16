@@ -1,5 +1,5 @@
 
-import { getValidToken } from "./Auth";
+import { axiosInstance } from "@/lib/axios";
 import type {
   SpotifyUser,
   SpotifyTrack,
@@ -14,28 +14,42 @@ async function spotifyFetch<T = unknown>(
   options: RequestInit = {}
 ): Promise<T | undefined> {
   try {
-    const token = await getValidToken();
-    if (!token){
-      throw new Error("")
+    const [pathPart, queryPart] = path.split("?");
+    const params: Record<string, string> = { path: pathPart };
+
+    if (queryPart) {
+      const searchParams = new URLSearchParams(queryPart);
+      searchParams.forEach((value, key) => {
+        params[key] = value;
+      });
+    }
+
+    const headers: Record<string, string> = {
+      ...(options.headers as Record<string, string>)
     };
-  
-    console.log("PATH: ",path)
-    const res = await fetch(`https://api.spotify.com/v1${path}`, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
-  
+
+    const config: any = {
+      method: options.method || "GET",
+      url: "/spotify/proxy",
+      params,
+      headers
+    };
+
+    if (options.body) {
+      try {
+        config.data = JSON.parse(options.body as string);
+      } catch {
+        config.data = options.body;
+      }
+    }
+
+    const res = await axiosInstance(config);
+
     if (res.status === 204 || res.status === 205) {
       return undefined;
     }
 
-    const text = await res.text();
-    const data = text ? JSON.parse(text) : undefined;
-    return data;
+    return res.data;
   } catch (error) {
     console.error("Spotify Fetch Error:", error);
     throw new Error("Error Encountered in spotify fetch");

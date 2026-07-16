@@ -2,8 +2,6 @@ import { Route, Routes, Navigate, useLocation, useNavigate } from "react-router-
 import { Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import MainLayout from "./layout/MainLayout.tsx";
-import AuthCallbackPage from "./pages/auth-callback/AuthCallbackPage.tsx";
-import { AuthenticateWithRedirectCallback, useAuth } from "@clerk/clerk-react";
 import NotFoundPage from "./pages/404/NotFoundPage.tsx";
 import { useChatStore } from "./stores/useChatStore.ts";
 import { usePlayerStore } from "./stores/usePlayerStore.ts";
@@ -11,16 +9,17 @@ import { SearchCommand } from "./components/SearchCommand.tsx";
 import { SpotifyCallback } from "./Features/SpotifyPlayer/components/SpotifyPlayer.tsx";
 import LoginPage from "./pages/login/LoginPage.tsx";
 import OnboardingPage from "./pages/onboarding/OnboardingPage.tsx";
+import AuthCallbackPage from "./pages/auth-callback/AuthCallbackPage.tsx";
+import { AuthenticateWithRedirectCallback } from "@clerk/clerk-react";
 import { layoutRoutes } from "./routes/routes.config.tsx";
 import { useAuthStore } from "./stores/useAuthStore.ts";
 import { Loader } from "lucide-react";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isSignedIn, isLoaded } = useAuth();
-  const { currentUser, isLoading } = useAuthStore();
+  const { isSignedIn, isLoaded, currentUser, isLoading } = useAuthStore();
   const location = useLocation();
 
-  if (!isLoaded || (isSignedIn && isLoading)) {
+  if (!isLoaded || isLoading) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-black">
         <Loader className="size-8 text-emerald-500 animate-spin" />
@@ -38,8 +37,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const OnboardingRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isSignedIn, isLoaded } = useAuth();
-  const { isLoading } = useAuthStore();
+  const { isSignedIn, isLoaded, isLoading } = useAuthStore();
 
   if (!isLoaded || isLoading) {
     return (
@@ -55,7 +53,8 @@ const OnboardingRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const App = () => {
-  const { userId } = useAuth();
+  const { currentUser } = useAuthStore();
+  const userId = currentUser?.clerkId;
   const { socket } = useChatStore();
   const { currentSong, isPlaying } = usePlayerStore();
   const navigate = useNavigate();

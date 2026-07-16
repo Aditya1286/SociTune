@@ -7,7 +7,7 @@ import { axiosInstance } from "@/lib/axios";
 import type { Song } from "@/types";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { toast } from "sonner";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 interface MonthlyStat {
   name: string;
@@ -88,7 +88,7 @@ export default function TimeTravelPage() {
   }, [displayArtists.length]);
 
   const { currentSong, isPlaying, setCurrentSong, togglePlay } = usePlayerStore();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn } = useAuthStore();
 
   useEffect(() => {
     const fetchStats = async () => {

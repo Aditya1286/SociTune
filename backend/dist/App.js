@@ -1,5 +1,5 @@
 import express from "express";
-import { clerkMiddleware } from '@clerk/express';
+import cookieParser from "cookie-parser";
 import fileUpload from "express-fileupload";
 import path from "path";
 import cors from "cors";
@@ -48,7 +48,7 @@ class App {
             credentials: true
         }));
         this.app.use(express.json());
-        this.app.use(clerkMiddleware()); // auth to req object
+        this.app.use(cookieParser());
         this.app.use(fileUpload({
             useTempFiles: true,
             tempFileDir: path.join(this.__dirname, "tmp"),

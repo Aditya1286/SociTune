@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChatStore } from "@/stores/useChatStore";
 import type { User } from "@/types";
@@ -17,7 +17,8 @@ interface UserProfilePanelProps {
 }
 
 export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProfilePanelProps) => {
-	const { userId } = useAuth();
+	const { currentUser } = useAuthStore();
+	const userId = currentUser?.clerkId;
 	const { getMutualFriends, getUserFriends, onlineUsers, setViewState, sendFriendRequest, removeFriend, setSelectedUser, profileSource } = useChatStore();
 	const [mutualFriends, setMutualFriends] = useState<User[]>([]);
 	const [userFriends, setUserFriends] = useState<User[]>([]);

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useMusicStore } from "@/stores/useMusicStore"
 import { useChatStore } from "@/stores/useChatStore"
 import { useNotificationStore } from "@/stores/useNotificationStore"
-import { SignedIn } from "@clerk/clerk-react"
+import { useAuthStore } from "@/stores/useAuthStore"
 import { 
   Home, 
   Search,
@@ -28,6 +28,7 @@ const LeftSidebar = () => {
     const { albums, fetchAlbums, isLoading } = useMusicStore();
     const { unreadMessages } = useChatStore();
     const { unreadCount: notifUnread } = useNotificationStore();
+    const { isSignedIn } = useAuthStore();
     const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
     const location = useLocation();
 
@@ -64,65 +65,65 @@ const LeftSidebar = () => {
             
             // Only render SignedIn links for non-Home/Search pages
             if (item.path !== "/" && item.path !== "/search") {
+              if (!isSignedIn) return null;
               return (
-                <SignedIn key={item.path}>
-                  <Link
-                    to={item.path}
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-300 group relative pl-5",
+                    active
+                      ? "bg-white/10 text-white font-semibold shadow-inner border border-white/[0.03]"
+                      : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
+                  )}
+                >
+                  {/* Active vertical bar indicator with custom shadow glow */}
+                  {active && (
+                    <div className={cn(
+                      "absolute left-1.5 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full transition-all duration-300",
+                      item.path === "/premium" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" :
+                      item.path === "/time-travel" ? "bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" :
+                      item.path === "/matches" ? "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]" :
+                      item.path === "/notifications" ? "bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]" :
+                      item.path === "/player" ? "bg-[#1db954] shadow-[0_0_8px_rgba(29,185,84,0.6)]" :
+                      "bg-white shadow-[0_0_8px_rgba(255,255,255,0.6)]"
+                    )} />
+                  )}
+
+                  <item.icon 
+                    strokeWidth={1.6}
                     className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-300 group relative pl-5",
-                      active
-                        ? "bg-white/10 text-white font-semibold shadow-inner border border-white/[0.03]"
-                        : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]"
-                    )}
-                  >
-                    {/* Active vertical bar indicator with custom shadow glow */}
-                    {active && (
-                      <div className={cn(
-                        "absolute left-1.5 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-full transition-all duration-300",
-                        item.path === "/premium" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" :
-                        item.path === "/time-travel" ? "bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" :
-                        item.path === "/matches" ? "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]" :
-                        item.path === "/notifications" ? "bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]" :
-                        item.path === "/player" ? "bg-[#1db954] shadow-[0_0_8px_rgba(29,185,84,0.6)]" :
-                        "bg-white shadow-[0_0_8px_rgba(255,255,255,0.6)]"
-                      )} />
-                    )}
+                      "size-5 transition-all duration-300 group-hover:scale-105", 
+                      active ? (
+                        item.path === "/premium" ? "text-emerald-400" :
+                        item.path === "/time-travel" ? "text-indigo-400" :
+                        item.path === "/matches" ? "text-cyan-400" :
+                        item.path === "/notifications" ? "text-purple-400" :
+                        item.path === "/player" ? "text-[#1db954]" :
+                        "text-white"
+                      ) : item.hoverColorClass
+                    )} 
+                  />
+                  <span className="hidden md:inline font-medium transition-transform duration-300 group-hover:translate-x-0.5">{item.label}</span>
 
-                    <item.icon 
-                      strokeWidth={1.6}
-                      className={cn(
-                        "size-5 transition-all duration-300 group-hover:scale-105", 
-                        active ? (
-                          item.path === "/premium" ? "text-emerald-400" :
-                          item.path === "/time-travel" ? "text-indigo-400" :
-                          item.path === "/matches" ? "text-cyan-400" :
-                          item.path === "/notifications" ? "text-purple-400" :
-                          item.path === "/player" ? "text-[#1db954]" :
-                          "text-white"
-                        ) : item.hoverColorClass
-                      )} 
-                    />
-                    <span className="hidden md:inline font-medium transition-transform duration-300 group-hover:translate-x-0.5">{item.label}</span>
+                  {item.path === "/chat" && totalUnread > 0 && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-30"></span>
+                      <span className="relative bg-emerald-500 text-white text-[10px] font-bold size-5 flex items-center justify-center rounded-full md:w-auto md:h-auto md:px-2 md:py-0.5 shadow-sm shadow-emerald-500/50">
+                        {totalUnread}
+                      </span>
+                    </div>
+                  )}
 
-                    {item.path === "/chat" && totalUnread > 0 && (
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-30"></span>
-                        <span className="relative bg-emerald-500 text-white text-[10px] font-bold size-5 flex items-center justify-center rounded-full md:w-auto md:h-auto md:px-2 md:py-0.5 shadow-sm shadow-emerald-500/50">
-                          {totalUnread}
-                        </span>
-                      </div>
-                    )}
-
-                    {item.path === "/notifications" && notifUnread > 0 && (
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-30"></span>
-                        <span className="relative bg-emerald-500 text-white text-[10px] font-bold size-5 flex items-center justify-center rounded-full md:w-auto md:h-auto md:px-2 md:py-0.5 shadow-sm shadow-emerald-500/50">
-                          {notifUnread}
-                        </span>
-                      </div>
-                    )}
-                  </Link>
-                </SignedIn>
+                  {item.path === "/notifications" && notifUnread > 0 && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-30"></span>
+                      <span className="relative bg-emerald-500 text-white text-[10px] font-bold size-5 flex items-center justify-center rounded-full md:w-auto md:h-auto md:px-2 md:py-0.5 shadow-sm shadow-emerald-500/50">
+                        {notifUnread}
+                      </span>
+                    </div>
+                  )}
+                </Link>
               );
             }
 
@@ -156,7 +157,7 @@ const LeftSidebar = () => {
           })}
 
           {/* Feedback button */}
-          <SignedIn>
+          {isSignedIn && (
             <button
               onClick={() => document.dispatchEvent(new CustomEvent("open-feedback"))}
               className={cn(
@@ -166,7 +167,7 @@ const LeftSidebar = () => {
               <MessageSquareHeart strokeWidth={1.6} className="size-5 transition-all duration-300 group-hover:scale-105 text-zinc-400 group-hover:text-white" />
               <span className="hidden md:inline font-medium transition-transform duration-300 group-hover:translate-x-0.5">Feedback</span>
             </button>
-          </SignedIn>
+          )}
         </div>
       </div>
 

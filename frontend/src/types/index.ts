@@ -136,6 +136,8 @@ export interface User {
 	fullName: string;
 	displayName: string;
 	username?: string;
+	email?: string;
+	spotify_user_id?: string;
 	imageUrl: string;
 	bio?: string;
 	favoriteSong?: string;

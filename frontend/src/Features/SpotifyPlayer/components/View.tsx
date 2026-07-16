@@ -4,11 +4,12 @@ import { api } from "../services/spotifyApi";
 import { TrackRow, Section } from "../atom/UI";
 import type { SpotifyTrack, SpotifyPlaylist } from "../utils/types";
 import { Search, Library, Music, Compass } from "lucide-react";
+import { playSpotifyTrackLocally, queueSpotifyTrackLocally } from "../utils/playerBridge";
 
 // ─── Home ─────────────────────────────────────────────────────────────────────
 
 export const HomeView: React.FC = () => {
-  const { deviceId } = useStore();
+  const { deviceId, setView } = useStore();
   const [recent, setRecent] = useState<SpotifyTrack[]>([]);
   const [top, setTop] = useState<SpotifyTrack[]>([]);
 
@@ -17,9 +18,17 @@ export const HomeView: React.FC = () => {
     api.topTracks().then((d) => setTop(d?.items ?? []));
   }, []);
 
-  const play = (track: SpotifyTrack) =>
-    deviceId ? api.play(deviceId, { uris: [track.uri] }) : null;
-  const queue = (track: SpotifyTrack) => api.addToQueue(track.uri);
+  const play = async (track: SpotifyTrack) => {
+    if (deviceId) {
+      api.play(deviceId, { uris: [track.uri] }).catch(console.error);
+    }
+    await playSpotifyTrackLocally(track);
+  };
+  const queue = (track: SpotifyTrack) => {
+    api.addToQueue(track.uri).catch(console.error);
+    queueSpotifyTrackLocally(track);
+    setView("queue");
+  };
 
   return (
     <div className="space-y-8">
@@ -70,7 +79,7 @@ export const HomeView: React.FC = () => {
 // ─── Search ───────────────────────────────────────────────────────────────────
 
 export const SearchView: React.FC = () => {
-  const { searchQuery, setSearchQuery, searchResults, setSearchResults, deviceId } = useStore();
+  const { searchQuery, setSearchQuery, searchResults, setSearchResults, deviceId, setView } = useStore();
   const debounce = useRef<ReturnType<typeof setTimeout>>(0);
 
   const runSearch = useCallback(
@@ -92,9 +101,17 @@ export const SearchView: React.FC = () => {
     debounce.current = setTimeout(() => runSearch(q), 400);
   };
 
-  const play = (track: SpotifyTrack) =>
-    deviceId ? api.play(deviceId, { uris: [track.uri] }) : null;
-  const queue = (track: SpotifyTrack) => api.addToQueue(track.uri);
+  const play = async (track: SpotifyTrack) => {
+    if (deviceId) {
+      api.play(deviceId, { uris: [track.uri] }).catch(console.error);
+    }
+    await playSpotifyTrackLocally(track);
+  };
+  const queue = (track: SpotifyTrack) => {
+    api.addToQueue(track.uri).catch(console.error);
+    queueSpotifyTrackLocally(track);
+    setView("queue");
+  };
 
   return (
     <div className="space-y-6">
@@ -156,8 +173,17 @@ export const LibraryView: React.FC = () => {
               <TrackRow
                 key={t.id + i}
                 track={t}
-                onPlay={() => deviceId && api.play(deviceId, { uris: [t.uri] })}
-                onQueue={() => api.addToQueue(t.uri)}
+                onPlay={async () => {
+                  if (deviceId) {
+                    api.play(deviceId, { uris: [t.uri] }).catch(console.error);
+                  }
+                  await playSpotifyTrackLocally(t);
+                }}
+                onQueue={() => {
+                  api.addToQueue(t.uri).catch(console.error);
+                  queueSpotifyTrackLocally(t);
+                  setView("queue");
+                }}
               />
             ))}
           </div>
@@ -247,11 +273,17 @@ export const PlaylistView: React.FC = () => {
           <TrackRow
             key={i}
             track={t}
-            onPlay={() =>
-              deviceId &&
-              api.play(deviceId, { context_uri: activePlaylist.uri, offset: { position: i } })
-            }
-            onQueue={() => api.addToQueue(t.uri)}
+            onPlay={async () => {
+              if (deviceId) {
+                api.play(deviceId, { context_uri: activePlaylist.uri, offset: { position: i } }).catch(console.error);
+              }
+              await playSpotifyTrackLocally(t);
+            }}
+            onQueue={() => {
+              api.addToQueue(t.uri).catch(console.error);
+              queueSpotifyTrackLocally(t);
+              setView("queue");
+            }}
           />
         ))}
       </div>
@@ -262,7 +294,36 @@ export const PlaylistView: React.FC = () => {
 // ─── Queue ────────────────────────────────────────────────────────────────────
 
 export const QueueView: React.FC = () => {
-  const { queueItems, deviceId } = useStore();
+  const { queueItems, setQueueItems, deviceId } = useStore();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchQueue = async () => {
+      try {
+        const data = await api.getQueue();
+        if (data && data.queue) {
+          setQueueItems(data.queue);
+        }
+      } catch (e) {
+        console.error("Error fetching Spotify queue:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQueue();
+    const interval = setInterval(fetchQueue, 5000);
+    return () => clearInterval(interval);
+  }, [setQueueItems]);
+
+  if (loading && !queueItems.length) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-zinc-500 gap-3">
+        <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-semibold uppercase tracking-wider">Syncing queue...</span>
+      </div>
+    );
+  }
 
   if (!queueItems.length) {
     return (
@@ -281,8 +342,16 @@ export const QueueView: React.FC = () => {
           <TrackRow
             key={t.id + i}
             track={t}
-            onPlay={() => deviceId && api.play(deviceId, { uris: [t.uri] })}
-            onQueue={() => api.addToQueue(t.uri)}
+            onPlay={async () => {
+              if (deviceId) {
+                api.play(deviceId, { uris: [t.uri] }).catch(console.error);
+              }
+              await playSpotifyTrackLocally(t);
+            }}
+            onQueue={() => {
+              api.addToQueue(t.uri).catch(console.error);
+              queueSpotifyTrackLocally(t);
+            }}
           />
         ))}
       </div>

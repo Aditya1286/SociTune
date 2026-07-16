@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useStore } from "../store/PlayerStore";
-import { getStoredToken, redirectToSpotify, clearTokens } from "../services/Auth";
+import { getStoredToken, getValidToken, redirectToSpotify, clearTokens } from "../services/Auth";
 import { SpotifyLogo } from "../atom/Icons";
 import {
   HomeView,
@@ -9,12 +9,68 @@ import {
   PlaylistView,
   QueueView,
 } from "./View";
-import type { ViewId } from "../utils/types";
+import type { ViewId, WebPlaybackState, WebPlaybackTrack } from "../utils/types";
 import NowPlayingPanel from "../atom/NowPlayingPanel";
 import { Home, Search, Library, Disc, LogOut, LayoutList, Music, Heart, Shield } from "lucide-react";
 import { motion } from "framer-motion";
+import { api } from "../services/spotifyApi";
+import { useMutation } from "@tanstack/react-query";
+import { saveSongEvent } from "../services/SongEvent/songEvent.service";
+import type { songEventPayload } from "../services/SongEvent/types";
 
 export { SpotifyCallback } from "./SpotifyCallback";
+
+const REPEAT_CYCLE: ("off" | "context" | "track")[] = ["off", "context", "track"];
+const CONFIRM_PLAY_MS = 5000;
+const COMPLETED_THRESHOLD = 0.9;
+const FAILED_QUEUE_KEY = "song_event_failed_queue";
+
+type SongSession = {
+  sessionId: string;
+  trackId: string;
+  track: WebPlaybackTrack;
+  duration: number;
+  startedAt: string;
+  maxPositionReached: number;
+};
+
+const fmtTime = (ms: number): string => {
+  const s = Math.floor(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+};
+
+const buildPayload = (session: SongSession, completed: boolean): songEventPayload => ({
+  song_details: {
+    title: session.track.name,
+    artist: session.track.artists.map((a: any) => a.name).join(", "),
+    external_ids: {
+      spotify_id: session.track.id,
+    },
+    genre_primary: "unknown",
+    duration: fmtTime(session.duration),
+    image_url: session.track?.album?.images?.[0]?.url ?? "",
+  },
+  played_at: session.startedAt,
+  duration_ms: String(session.maxPositionReached),
+  completed,
+  session_id: session.sessionId,
+  source: "organic",
+});
+
+const readFailedQueue = (): songEventPayload[] => {
+  try {
+    return JSON.parse(localStorage.getItem(FAILED_QUEUE_KEY) ?? "[]");
+  } catch {
+    return [];
+  }
+};
+
+const writeFailedQueue = (queue: songEventPayload[]) => {
+  try {
+    localStorage.setItem(FAILED_QUEUE_KEY, JSON.stringify(queue));
+  } catch {}
+};
+
 
 // ─── Login screen ─────────────────────────────────────────────────────────────
 
@@ -126,6 +182,286 @@ const LoginScreen: React.FC = () => (
 const SpotifyPlayer: React.FC = () => {
   const store = useStore();
   const [isNowPlayingOpen, setIsNowPlayingOpen] = useState(true);
+  const positionTimer = useRef<ReturnType<typeof setInterval>>(0);
+
+  const sessionRef = useRef<SongSession | null>(null);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout>>(0);
+
+  const { mutate: sendSongEvent } = useMutation({
+    mutationFn: saveSongEvent,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+    onError: (err, payload) => {
+      console.error("song-event failed after retries, queueing for later", err);
+      const queue = readFailedQueue();
+      queue.push(payload);
+      writeFailedQueue(queue);
+    },
+  });
+
+  const finalizeSession = (session: SongSession) => {
+    const completed =
+      session.duration > 0 && session.maxPositionReached / session.duration >= COMPLETED_THRESHOLD;
+    sendSongEvent(buildPayload(session, completed));
+  };
+
+  const pollState = async () => {
+    try {
+      const data = (await api.player()) as any;
+      if (!data || !data.item) return;
+
+      if (store.deviceId && data.device?.id === store.deviceId) {
+        return;
+      }
+
+      const item = data.item;
+      const track = {
+        id: item.id,
+        name: item.name,
+        uri: item.uri,
+        album: {
+          uri: item.album.uri,
+          name: item.album.name,
+          images: item.album.images,
+        },
+        artists: item.artists,
+        type: "track",
+        media_type: "audio",
+        is_playable: true,
+      };
+
+      store.setPlaybackState({
+        track,
+        isPlaying: data.is_playing,
+        position: data.progress_ms,
+        duration: item.duration_ms,
+        shuffle: data.shuffle_state,
+        repeat:
+          data.repeat_state === "track"
+            ? "track"
+            : data.repeat_state === "context"
+              ? "context"
+              : "off",
+      });
+
+      import("@/stores/usePlayerStore").then(({ usePlayerStore }) => {
+        const localState = usePlayerStore.getState();
+        const spotifySong = {
+          _id: item.id,
+          title: item.name,
+          artist: item.artists.map((a: any) => a.name).join(", "),
+          imageUrl: item.album.images[0]?.url || "",
+          audioUrl: `spotify:track:${item.id}`,
+          duration: item.duration_ms / 1000,
+          albumId: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          external_ids: {
+            spotify_id: item.id,
+            fuzzy_id: ""
+          }
+        };
+
+        if (localState.currentSong?.external_ids?.spotify_id !== item.id) {
+          usePlayerStore.setState({
+            currentSong: spotifySong,
+            isPlaying: data.is_playing
+          });
+        } else if (localState.isPlaying !== data.is_playing) {
+          usePlayerStore.setState({
+            isPlaying: data.is_playing
+          });
+        }
+      });
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    const flush = () => {
+      const queue = readFailedQueue();
+      if (!queue.length) return;
+      writeFailedQueue([]);
+      queue.forEach((payload) => sendSongEvent(payload));
+    };
+    flush();
+    window.addEventListener("online", flush);
+    return () => window.removeEventListener("online", flush);
+  }, []);
+
+  useEffect(() => {
+    const track = store.track;
+    if (!track?.id) return;
+
+    if (sessionRef.current && sessionRef.current.trackId !== track.id) {
+      finalizeSession(sessionRef.current);
+      sessionRef.current = null;
+    }
+
+    clearTimeout(confirmTimerRef.current);
+    confirmTimerRef.current = setTimeout(() => {
+      if (store.track?.id !== track.id) return;
+      sessionRef.current = {
+        sessionId: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36),
+        trackId: track.id,
+        track,
+        duration: store.duration,
+        startedAt: new Date().toISOString(),
+        maxPositionReached: store.position,
+      };
+    }, CONFIRM_PLAY_MS);
+
+    return () => clearTimeout(confirmTimerRef.current);
+  }, [store.track?.id]);
+
+  useEffect(() => {
+    if (sessionRef.current && sessionRef.current.trackId === store.track?.id) {
+      sessionRef.current.maxPositionReached = Math.max(
+        sessionRef.current.maxPositionReached,
+        store.position
+      );
+      sessionRef.current.duration = store.duration;
+    }
+  }, [store.position, store.track?.id, store.duration]);
+
+  useEffect(() => {
+    return () => {
+      if (sessionRef.current) finalizeSession(sessionRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (document.getElementById("spotify-sdk")) return;
+    const script = document.createElement("script");
+    script.id = "spotify-sdk";
+    script.src = "https://sdk.scdn.co/spotify-player.js";
+    document.head.appendChild(script);
+  }, []);
+
+  useEffect(() => {
+    const token = getStoredToken();
+    if (!token) return;
+
+    const initPlayer = () => {
+      const player = new window.Spotify.Player({
+        name: "SociTune Player",
+        getOAuthToken: async (cb) => {
+          const t = await getValidToken();
+          if (t) cb(t);
+        },
+        volume: store.volume / 100,
+      });
+
+      player.addListener("ready", async (data) => {
+        const { device_id } = data as { device_id: string };
+
+        store.setDeviceId(device_id);
+        store.setPlayer(player);
+
+        await api.transferPlayback(device_id);
+      });
+
+      player.addListener("player_state_changed", (raw: unknown) => {
+        const state = raw as WebPlaybackState | null;
+        if (!state) return;
+
+        const isSpotifyPlaying = !state.paused;
+        if (isSpotifyPlaying) {
+          import("@/stores/usePlayerStore").then(({ usePlayerStore }) => {
+            const localState = usePlayerStore.getState();
+            if (localState.isPlaying) {
+              usePlayerStore.setState({ isPlaying: false });
+            }
+          });
+        }
+
+        const track = state.track_window.current_track;
+        const repeat = REPEAT_CYCLE[state.repeat_mode] ?? "off";
+
+        store.setPlaybackState({
+          track,
+          isPlaying: isSpotifyPlaying,
+          position: state.position,
+          duration: state.duration,
+          shuffle: state.shuffle,
+          repeat,
+        });
+
+        if (track) {
+          import("@/stores/usePlayerStore").then(({ usePlayerStore }) => {
+            const localState = usePlayerStore.getState();
+            const spotifySong = {
+              _id: track.id,
+              title: track.name,
+              artist: track.artists.map(a => a.name).join(", "),
+              imageUrl: track.album.images[0]?.url || "",
+              audioUrl: `spotify:track:${track.id}`,
+              duration: state.duration / 1000,
+              albumId: null,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              external_ids: {
+                spotify_id: track.id,
+                fuzzy_id: ""
+              }
+            };
+            
+            if (localState.currentSong?.external_ids?.spotify_id !== track.id) {
+              usePlayerStore.setState({
+                currentSong: spotifySong,
+                isPlaying: isSpotifyPlaying
+              });
+            } else if (localState.isPlaying !== isSpotifyPlaying) {
+              usePlayerStore.setState({
+                isPlaying: isSpotifyPlaying
+              });
+            }
+          });
+        }
+      });
+      player.connect();
+    };
+
+    window.onSpotifyWebPlaybackSDKReady = initPlayer;
+    if (window.Spotify) initPlayer();
+
+    api.me().then((u) => {
+      if (u) store.setUser(u);
+    });
+  }, []);
+
+  useEffect(() => {
+    const token = getStoredToken();
+    if (!token) return;
+
+    pollState();
+    const interval = setInterval(pollState, 4000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [store.deviceId]);
+
+  useEffect(() => {
+    if (!store.track?.id) return;
+
+    api
+      .isTrackLiked([store.track.id])
+      .then((res) => {
+        if (res && res.length > 0) {
+          store.setIsLiked(res[0]);
+        }
+      })
+      .catch((e) => console.error("Error checking Spotify like state:", e));
+  }, [store.track?.id]);
+
+  useEffect(() => {
+    clearInterval(positionTimer.current);
+    if (store.isPlaying) {
+      positionTimer.current = setInterval(() => {
+        store.setPosition(Math.min(store.position + 1000, store.duration));
+      }, 1000);
+    }
+    return () => clearInterval(positionTimer.current);
+  }, [store.isPlaying, store.position, store.duration]);
 
   const switchView = (v: ViewId) => {
     store.setView(v);

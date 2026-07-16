@@ -35,6 +35,12 @@ class DockerAiService {
         // If response is not ok, throw error to trigger retry (for 5xx / timeout)
         throw new Error(`HTTP status ${response.status}: ${response.statusText}`);
       } catch (error: any) {
+        const isOffline = error.cause?.code === "ECONNREFUSED" || error.message?.includes("ECONNREFUSED");
+        if (isOffline) {
+          console.log(`[DockerAiService] Local AI service is offline at ${url}. Skipping event forwarding.`);
+          break;
+        }
+
         console.error(`[DockerAiService] Attempt ${attempt} failed. Error:`, error.message || error);
 
         // Only retry for network/timeout errors or 5xx server issues

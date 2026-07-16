@@ -1,5 +1,5 @@
 import { useChatStore } from "@/stores/useChatStore";
-import { useUser } from "@clerk/clerk-react";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { CheckCheck, Trash, Reply, Music2, Users, X, Download, Play, Pause } from "lucide-react";
 import { motion } from "framer-motion";
@@ -123,7 +123,7 @@ const VoiceMessagePlayer = ({ url, isSender }: { url: string; isSender: boolean 
 };
 
 const ChatPage = () => {
-	const { user } = useUser();
+	const { currentUser: user } = useAuthStore();
 	const { messages, selectedUser, fetchUsers, fetchMessages, markMessagesAsRead, setReplyingToMessage, deleteMessage, reactToMessage, viewState, setViewState } = useChatStore();
 	const [previewImage, setPreviewImage] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -223,7 +223,7 @@ const ChatPage = () => {
                                                 </div>
                                                 {getSubGroups(group.messages).map((subGroup, subGroupIdx) => {
                                                     const firstMsg = subGroup[0];
-                                                    const isSender = firstMsg.senderId === user?.id;
+                                                    const isSender = firstMsg.senderId === user?.clerkId;
                                                     return (
                                                         <MessageGroup key={subGroupIdx} className={`gap-[3px] ${isSender ? "items-end" : "items-start"}`}>
                                                             {subGroup.map((message, idx) => {
@@ -249,7 +249,7 @@ const ChatPage = () => {
                                                                                     {message.replyTo && (
                                                                                         <div className="mb-2 p-2 rounded-lg text-xs border-l-2 border-emerald-500 bg-black/20">
                                                                                             <span className="font-semibold block mb-0.5 text-emerald-400">
-                                                                                                {message.replyTo.senderId === user?.id ? "You" : selectedUser?.fullName}
+                                                                                                {message.replyTo.senderId === user?.clerkId ? "You" : selectedUser?.fullName}
                                                                                             </span>
                                                                                             <p className="truncate opacity-80">{message.replyTo.content}</p>
                                                                                         </div>
@@ -300,7 +300,7 @@ const ChatPage = () => {
                                                                                         <button 
                                                                                             key={emoji}
                                                                                             onClick={() => reactToMessage(message._id, emoji)}
-                                                                                            className={`hover:scale-125 p-1 rounded-full text-sm transition-transform active:scale-90 ${message.reactions?.[user?.id || ""] === emoji ? "bg-white/10" : ""}`}
+                                                                                            className={`hover:scale-125 p-1 rounded-full text-sm transition-transform active:scale-90 ${message.reactions?.[user?.clerkId || ""] === emoji ? "bg-white/10" : ""}`}
                                                                                         >
                                                                                             {emoji}
                                                                                         </button>

@@ -22,6 +22,7 @@ interface PLayerStore {
     isLoadingLyrics: boolean;
     fetchLyrics: (songId: string) => Promise<void>;
     logPlay: (payload: ListenEventMetaData) => Promise<void>;
+    addToQueue: (song: Song) => void;
 }
 
 export const usePlayerStore = create<PLayerStore>((set,get) => ({
@@ -36,6 +37,15 @@ export const usePlayerStore = create<PLayerStore>((set,get) => ({
               currentSong: get().currentSong || songs[0],
               currentIndex: get().currentIndex === -1 ? 0 : get().currentIndex,
             });
+    },
+    addToQueue: (song: Song) => {
+        const { queue, currentIndex } = get();
+        const exists = queue.some(s => s._id === song._id);
+        if (exists) return;
+        set({
+            queue: [...queue, song],
+            currentIndex: currentIndex === -1 ? 0 : currentIndex,
+        });
     },
     playAlbum: (songs: Song[], startIndex=0) => {
         if(songs.length=== 0)return;

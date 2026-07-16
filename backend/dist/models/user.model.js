@@ -13,6 +13,29 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    email: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+    password: {
+        type: String,
+        select: false
+    },
+    spotify_user_id: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+    spotify_refresh_token: {
+        type: String
+    },
+    spotify_access_token: {
+        type: String
+    },
+    spotify_expires_at: {
+        type: Date
+    },
     username: {
         type: String,
         unique: true,

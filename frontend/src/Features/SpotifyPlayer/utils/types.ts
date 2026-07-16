@@ -26,6 +26,7 @@ export interface SpotifyTrack {
   duration_ms: number;
   artists: SpotifyArtist[];
   album: SpotifyAlbum;
+  preview_url?: string | null;
 }
 
 export interface SpotifyPlaylist {

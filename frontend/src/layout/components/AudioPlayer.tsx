@@ -7,6 +7,7 @@ const AudioPlayer = () => {
   const prevSongRef = useRef<string | null>(null);
 
   const { currentSong, isPlaying, playNext, isLooping } = usePlayerStore();
+  const isSpotifyTrack = currentSong?.audioUrl?.startsWith("spotify:");
 
   const cumulativeTimeRef = useRef(0);
   const lastTickRef = useRef(Date.now());
@@ -85,6 +86,7 @@ const AudioPlayer = () => {
 
   // Cumulative play duration tracker
   useEffect(() => {
+    if (isSpotifyTrack) return;
     if (!currentSong) {
       currentSongIdRef.current = null;
       cumulativeTimeRef.current = 0;
@@ -119,9 +121,13 @@ const AudioPlayer = () => {
     }, 200);
 
     return () => clearInterval(interval);
-  }, [currentSong?._id, isPlaying]);
+  }, [currentSong?._id, isPlaying, isSpotifyTrack]);
 
   useEffect(() => {
+    if (isSpotifyTrack) {
+      audioRef.current?.pause();
+      return;
+    }
     if (isPlaying) {
       audioRef.current?.play();
       const token = localStorage.getItem("spotify_access_token");
@@ -133,7 +139,7 @@ const AudioPlayer = () => {
     } else {
       audioRef.current?.pause();
     }
-  }, [isPlaying]);
+  }, [isPlaying, isSpotifyTrack]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -146,6 +152,12 @@ const AudioPlayer = () => {
   useEffect(() => {
     if (!audioRef.current || !currentSong) return;
     const audio = audioRef.current;
+    if (isSpotifyTrack) {
+      audio.pause();
+      audio.src = "";
+      prevSongRef.current = currentSong.audioUrl;
+      return;
+    }
     const isSongChange = prevSongRef.current !== currentSong?.audioUrl;
     if (isSongChange) {
       audio.src = currentSong?.audioUrl;
@@ -153,7 +165,7 @@ const AudioPlayer = () => {
       prevSongRef.current = currentSong?.audioUrl;
       if (isPlaying) audio.play();
     }
-  }, [currentSong, isPlaying]);
+  }, [currentSong, isPlaying, isSpotifyTrack]);
 
   return <audio ref={audioRef} loop={isLooping} />;
 };

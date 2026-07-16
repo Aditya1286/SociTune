@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useChatStore } from "@/stores/useChatStore";
-import { useUser } from "@clerk/clerk-react";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { Send, X, Paperclip, Mic, Square, Loader2, Smile, Play, Pause, Volume2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { axiosInstance } from "@/lib/axios";
@@ -31,7 +31,7 @@ const MessageInput = () => {
 	const audioChunksRef = useRef<BlobPart[]>([]);
 	const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-	const { user } = useUser();
+	const { currentUser: user } = useAuthStore();
 	const { selectedUser, sendMessage, replyingToMessage, setReplyingToMessage } = useChatStore();
 
 	useEffect(() => {
@@ -173,7 +173,7 @@ const MessageInput = () => {
 			}
 		}
 
-		sendMessage(selectedUser.clerkId, user.id, newMessage.trim(), replyingToMessage?._id, imageUrl, voiceNoteUrl);
+		sendMessage(selectedUser.clerkId, user.clerkId, newMessage.trim(), replyingToMessage?._id, imageUrl, voiceNoteUrl);
 		
 		setNewMessage("");
 		setImageFile(null);
@@ -190,7 +190,7 @@ const MessageInput = () => {
 				<div className='bg-white/[0.04] backdrop-blur-md rounded-2xl p-2.5 px-4 flex items-center justify-between border border-white/[0.06] mb-1'>
 					<div className='text-xs truncate pr-4 text-zinc-300 font-semibold'>
 						<span className='text-emerald-400 mr-2'>
-							Replying to {replyingToMessage.senderId === user?.id ? "Yourself" : selectedUser?.fullName}:
+							Replying to {replyingToMessage.senderId === user?.clerkId ? "Yourself" : selectedUser?.fullName}:
 						</span>
 						{replyingToMessage.content || (replyingToMessage.imageUrl ? "Image" : "Voice Note")}
 					</div>
