@@ -120,6 +120,15 @@ class SpotifyController {
         }
     };
 
+    public getClientId = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            res.status(200).json({ clientId: SPOTIFY_CLIENT_ID });
+        } catch (error) {
+            console.error("Error in Spotify getClientId:", error);
+            next(error);
+        }
+    };
+
     public getToken = async (req: Request, res: Response, next: NextFunction) => {
         try {
             const userId = (req as any).auth.userId;

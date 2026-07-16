@@ -16,6 +16,11 @@ class SpotifyRoutes implements Routes {
     }
 
     private initializeRoutes() {
+        this.router.get(
+            `${this.path}/client-id`,
+            this.authMiddleware.protectRoute,
+            asyncHandler(this.spotifyController.getClientId)
+        );
         this.router.post(
             `${this.path}/exchange`,
             this.authMiddleware.protectRoute,

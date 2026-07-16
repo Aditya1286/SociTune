@@ -35,8 +35,22 @@ export function clearTokens(): void {
 }
 
 export async function redirectToSpotify(): Promise<void> {
+  let clientId: string | undefined;
+  try {
+    const res = await axiosInstance.get("/spotify/client-id");
+    clientId = res.data.clientId;
+  } catch (err) {
+    console.error("Failed to fetch Spotify Client ID from backend, falling back to static config:", err);
+    clientId = CLIENT_ID;
+  }
+
+  if (!clientId) {
+    console.error("Spotify Client ID is not configured.");
+    return;
+  }
+
   const params = new URLSearchParams({
-    client_id: CLIENT_ID,
+    client_id: clientId,
     response_type: "code",
     redirect_uri: REDIRECT_URI,
     scope: SCOPES,

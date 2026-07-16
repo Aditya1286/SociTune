@@ -66,6 +66,11 @@ const UsersList = () => {
 				<div className='flex-1 min-w-0 hidden lg:flex lg:flex-col'>
 					<div className="flex items-center gap-2 min-w-0">
 					    <span className='font-semibold text-white/90 group-hover:text-white transition-colors text-[13.5px] truncate block'>{user.fullName}</span>
+					    {user.similarityScore !== undefined && (
+						    <span className="text-[9px] font-bold text-[#1ED760] bg-[#1ED760]/10 px-1.5 py-0.5 rounded-full uppercase shrink-0">
+							    {Math.round(user.similarityScore)}%
+						    </span>
+					    )}
 					</div>
 					{user.username && <span className="text-[10px] text-zinc-500 truncate block mt-0.5 tracking-wide">@{user.username}</span>}
 					{isFriendTab ? (
@@ -75,8 +80,14 @@ const UsersList = () => {
                                 : (user.lastMessage ? user.lastMessage : "Say hi!")}
 						</p>
 					) : (
-						<p className='text-[10px] text-zinc-500 truncate mt-0.5 font-medium'>
-							{user.mutualFriendsCount || 0} mutual friends
+						<p className='text-[10px] text-zinc-500 truncate mt-0.5 font-medium flex items-center gap-1.5'>
+							<span>{user.mutualFriendsCount || 0} mutual friends</span>
+							{user.similarityScore !== undefined && (
+								<>
+									<span className="text-zinc-700">•</span>
+									<span className="text-emerald-400 font-semibold">{Math.round(user.similarityScore)}% Match</span>
+								</>
+							)}
 						</p>
 					)}
 				</div>

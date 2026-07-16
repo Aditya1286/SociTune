@@ -44,7 +44,8 @@ interface ChatStore {
 	getUserFriends: (userId: string) => Promise<User[]>;
 }
 
-const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "/";
+const host = typeof window !== "undefined" ? window.location.hostname : "localhost";
+const baseURL = import.meta.env.MODE === "development" ? `http://${host}:5000` : "/";
 
 const socket = io(baseURL, {
 	autoConnect: false, // only connect if user is authenticated

@@ -120,7 +120,14 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 							<div className="flex-1 flex flex-col gap-5 text-center md:text-left w-full">
 								<div className="flex flex-col md:flex-row md:items-center gap-4 justify-between flex-wrap">
 									<div>
-										<h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-100">{user.displayName || user.fullName}</h2>
+										<div className="flex flex-col md:flex-row md:items-center gap-3">
+											<h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-zinc-100">{user.displayName || user.fullName}</h2>
+											{user.similarityScore !== undefined && (
+												<span className="inline-flex text-[11px] font-bold text-[#1ED760] bg-[#1ED760]/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider self-start md:self-auto mt-1 md:mt-0">
+													{Math.round(user.similarityScore)}% Match
+												</span>
+											)}
+										</div>
 										{user.username && <p className="text-zinc-500 text-sm mt-0.5">@{user.username}</p>}
 									</div>
 									{user.clerkId !== userId && (
@@ -380,7 +387,17 @@ export const UserProfilePanel = ({ user, onClose, isMainView = false }: UserProf
 							</div>
 
 							<h2 className="text-lg font-semibold text-zinc-100 text-center">{user.displayName || user.fullName}</h2>
-							{user.username && <p className="text-zinc-500 text-xs text-center mt-0.5">@{user.username}</p>}
+							<div className="flex items-center gap-2 mt-0.5 justify-center">
+								{user.username && <p className="text-zinc-500 text-xs">@{user.username}</p>}
+								{user.similarityScore !== undefined && (
+									<>
+										{user.username && <span className="text-zinc-700 text-xs">•</span>}
+										<span className="text-emerald-400 text-xs font-semibold">
+											{Math.round(user.similarityScore)}% Match
+										</span>
+									</>
+								)}
+							</div>
 
 							{/* Sidebar action buttons */}
 							{user.clerkId !== userId && (
